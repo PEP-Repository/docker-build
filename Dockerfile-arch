@@ -1,11 +1,6 @@
-# run with: docker build -f Dockerfile-arch -t "gitlabregistry.pep.cs.ru.nl/pep/core:build-arch" .
-FROM gitlabregistry.pep.cs.ru.nl/pep/core:arch
+FROM gitlabregistry.pep.cs.ru.nl/pep/docker-build/arch
 
-#RUN pacman -Syyu --noconfirm --needed
-#RUN pacman -R --noconfirm usbutils nano dhcpcd device-mapper libusb netctl procps-ng systemd-sysvcompat systemd dbus texinfo && \
+RUN pacman-key --populate archlinux &&pacman-key --refresh-keys
 RUN pacman -Syyu --needed --noconfirm archlinux-keyring && \
     pacman -Syu --needed --noconfirm base-devel ccache distcc git gcc make cmake boost boost-libs sqlite libevent bzip2 zlib curl readline pam valgrind vim qt5-base qt5-declarative qt5-tools libunwind && rm -rf /var/cache/* /tmp/* && \
     pacman-db-upgrade
-#RUN pacman -S --needed --noconfirm openssl curl && rm -rf /var/cache/* /tmp/*
-#RUN pacman -Syu --noconfirm && rm -rf /var/cache/* /tmp/*
-#RUN pacman -S --needed --noconfirm ca-certificates 
