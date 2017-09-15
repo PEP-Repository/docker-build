@@ -1,0 +1,30 @@
+stages:
+- build
+
+variables:
+  CONTAINER_IMAGE_UBUNTU: ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu:${CI_BUILD_REF_NAME}
+  CONTAINER_IMAGE_ARCH: ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-arch:${CI_BUILD_REF_NAME}
+
+.docker-build-base: &docker-build-base
+  stage: build
+  tags:
+  - docker
+  image: docker:git
+  services:
+  - docker:dind
+
+docker-build-ubuntu:
+  <<: *docker-build-base
+  script:
+  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+  - echo ${CONTAINER_IMAGE_UBUNTU}
+  - docker build -f Dockerfile-ubuntu -t ${CONTAINER_IMAGE_UBUNTU} .
+  - docker push ${CONTAINER_IMAGE_UBUNTU}
+
+docker-build-arch:
+  <<: *docker-build-base
+  script:
+  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+  - echo ${CONTAINER_IMAGE_ARCH}
+  - docker build -f Dockerfile-arch -t ${CONTAINER_IMAGE_ARCH} .
+  - docker push ${CONTAINER_IMAGE_ARCH}
