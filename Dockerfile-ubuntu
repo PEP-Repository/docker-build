@@ -10,5 +10,5 @@ RUN add-apt-repository -y ppa:jonathonf/development-tools && apt-get update && a
 
 # Add the compiler for the HSM firmware
 # The following can be downloaded from http://software-dl.ti.com/codegen/non-esd/downloads/download.htm but requires registration for the 7.x.y versions (the 8.x.y branch does not work for us as they dropped support for an option we use)
-COPY ext/ti_cgt_c6000_7.4.21_linux_installer_x86.bin /tmp
+COPY ti_cgt_c6000_7.4.21_linux_installer_x86.bin /tmp
 RUN chmod +x /tmp/ti_cgt_c6000_7.4.21_linux_installer_x86.bin && /tmp/ti_cgt_c6000_7.4.21_linux_installer_x86.bin --mode unattended --prefix /opt && rm /tmp/ti_cgt_c6000_7.4.21_linux_installer_x86.bin
