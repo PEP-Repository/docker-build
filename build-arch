@@ -1,4 +1,4 @@
-FROM gitlabregistry.pep.cs.ru.nl/pep/docker-build/arch
+FROM gitlabregistry.pep.cs.ru.nl/pep/docker-build/arch:master
 
 RUN pacman-key --populate archlinux &&pacman-key --refresh-keys
 RUN pacman -Syyu --needed --noconfirm archlinux-keyring && \
