@@ -33,3 +33,5 @@ build-arch:
 build-ubuntu:
   <<: *docker-build-base
 
+build-compose:
+  <<: *docker-build-base
