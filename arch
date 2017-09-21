@@ -1,0 +1,7 @@
+# docker build --rm=true --no-cache -f Dockerfile -t "bitpowder/archlinux" . && docker push bitpowder/archlinux
+FROM scratch
+#MAINTAINER Travis Cline <travis.cline@gmail.com>
+ADD archlinux.tar.bz2 /
+ADD mirrorlist /etc/pacman.d
+RUN pacman-key --init
+RUN pacman-key --populate archlinux
