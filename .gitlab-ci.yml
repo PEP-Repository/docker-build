@@ -4,6 +4,7 @@ stages:
 variables:
   CONTAINER_IMAGE_UBUNTU: ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu:${CI_BUILD_REF_NAME}
   CONTAINER_IMAGE_ARCH: ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-arch:${CI_BUILD_REF_NAME}
+  CONTAINER_IMAGE_COMPOSE: ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-docker-compose:${CI_BUILD_REF_NAME}
 
 .docker-build-base: &docker-build-base
   stage: build
@@ -28,3 +29,11 @@ docker-build-arch:
   - echo ${CONTAINER_IMAGE_ARCH}
   - docker build -f Dockerfile-arch -t ${CONTAINER_IMAGE_ARCH} .
   - docker push ${CONTAINER_IMAGE_ARCH}
+
+docker-build-compose:
+  <<: *docker-build-base
+  script:
+  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+  - echo ${CONTAINER_IMAGE_COMPOSE}
+  - docker build -f Dockerfile-docker-compose -t ${CONTAINER_IMAGE_COMPOSE} .
+  - docker push ${CONTAINER_IMAGE_COMPOSE}
