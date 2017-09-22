@@ -1,4 +1,4 @@
 FROM docker:latest
 
-RUN apk add --no-cache --virtual .fetch-deps py2-pip \
+RUN apk add --no-cache curl py2-pip \
  	&& pip install docker-compose
