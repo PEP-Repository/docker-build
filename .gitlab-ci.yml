@@ -19,13 +19,10 @@ stages:
 arch:
   <<: *docker-build-base
   stage: prepare
-  script:
+  before_script:
   - wget http://ftp.nluug.nl/os/Linux/distr/archlinux/iso/`date +%Y.%m`.01/archlinux-bootstrap-`date +%Y.%m`.01-x86_64.tar.gz
   - tar -xzpf archlinux-bootstrap-`date +%Y.%m`.01-x86_64.tar.gz
   - (cd root.x86_64/; tar -cjpf ../archlinux.tar.bz2 .)
-  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-  - docker build -f ${CI_JOB_NAME} -t ${CONTAINER_IMAGE} .
-  - docker push ${CONTAINER_IMAGE}
 
 build-arch:
   <<: *docker-build-base
