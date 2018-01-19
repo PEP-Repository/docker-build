@@ -32,3 +32,6 @@ build-ubuntu:
 
 build-compose:
   <<: *docker-build-base
+
+build-doxygen:
+  <<: *docker-build-base
