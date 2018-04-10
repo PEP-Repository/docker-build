@@ -1,0 +1,16 @@
+# run with: docker build -f build-ubuntu -t "gitlabregistry.pep.cs.ru.nl/pep/docker-build/build-ubuntu" .
+# docker build -f build-ubuntu -t gitlabregistry.pep.cs.ru.nl/pep/docker-build/build-ubuntu .
+# docker push gitlabregistry.pep.cs.ru.nl/pep/docker-build/build-ubuntu
+FROM ubuntu:rolling
+
+RUN apt-get update && apt-get install -y ccache distcc git g++ cmake libboost-dbg libboost-all-dev zlib1g-dev libbz2-dev libsqlite3-dev libcurl4-openssl-dev curl libpam0g-dev libssl-dev libreadline-dev patch vim flex qt5-default qtdeclarative5-dev qttools5-dev-tools libunwind-dev libc6-dev libc6-dev-i386 software-properties-common valgrind && apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
+
+# Add the compiler for the HSM firmware
+# The following can be downloaded from http://software-dl.ti.com/codegen/non-esd/downloads/download.htm but requires registration for the 7.x.y versions (the 8.x.y branch does not work for us as they dropped support for an option we use)
+COPY ti_cgt_c6000_7.4.21_linux_installer_x86.bin /tmp
+RUN chmod +x /tmp/ti_cgt_c6000_7.4.21_linux_installer_x86.bin && /tmp/ti_cgt_c6000_7.4.21_linux_installer_x86.bin --mode unattended --prefix /opt && rm /tmp/ti_cgt_c6000_7.4.21_linux_installer_x86.bin
+
+# Add Qt installer framework
+ENV PATH="/opt/QtIFW/bin:${PATH}"
+COPY QtInstallerFramework-linux-x64-3.0.1.run QtIFW-noninteractive.qs /tmp/
+RUN chmod +x /tmp/QtInstallerFramework-linux-x64-3.0.1.run && /tmp/QtInstallerFramework-linux-x64-3.0.1.run --platform minimal --verbose --script /tmp/QtIFW-noninteractive.qs && rm -rf /tmp/*
