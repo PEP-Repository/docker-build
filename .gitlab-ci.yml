@@ -30,6 +30,9 @@ build-arch:
 build-ubuntu:
   <<: *docker-build-base
 
+build-ubuntu-1804:
+  <<: *docker-build-base
+
 build-ubuntu-latest:
   <<: *docker-build-base
 
