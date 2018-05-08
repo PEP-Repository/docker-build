@@ -3,7 +3,7 @@
 # docker push gitlabregistry.pep.cs.ru.nl/pep/docker-build/build-ubuntu-1804
 FROM ubuntu:18.04
 
-RUN apt-get update && apt-get install -y ccache distcc git g++ cmake libboost-all-dev zlib1g-dev libbz2-dev libsqlite3-dev libcurl4-openssl-dev curl libpam0g-dev libssl-dev libreadline-dev patch vim flex qt5-default qtdeclarative5-dev qttools5-dev qttools5-dev-tools libunwind-dev libc6-dev libc6-dev-i386 software-properties-common && apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
+RUN apt-get update && apt-get install -y golang golang-goprotobuf-dev ccache distcc git g++ cmake libboost-all-dev zlib1g-dev libbz2-dev libsqlite3-dev libcurl4-openssl-dev curl libpam0g-dev libssl-dev libreadline-dev patch vim flex qt5-default qtdeclarative5-dev qttools5-dev qttools5-dev-tools libunwind-dev libc6-dev libc6-dev-i386 software-properties-common && apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
 # Add the compiler for the HSM firmware
 # The following can be downloaded from http://software-dl.ti.com/codegen/non-esd/downloads/download.htm but requires registration for the 7.x.y versions (the 8.x.y branch does not work for us as they dropped support for an option we use)
