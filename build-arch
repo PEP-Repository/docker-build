@@ -1,5 +1,7 @@
 FROM gitlabregistry.pep.cs.ru.nl/pep/docker-build/arch:master
 
 RUN pacman -Syyu --needed --noconfirm archlinux-keyring && \
-    pacman -Syu --needed --noconfirm base-devel ccache distcc git gcc make cmake boost boost-libs sqlite libevent bzip2 zlib curl readline pam valgrind vim qt5-base qt5-declarative qt5-tools libunwind && rm -rf /var/cache/* /tmp/* && \
+    pacman -Syu --needed --noconfirm base-devel ccache distcc git gcc make cmake boost boost-libs sqlite libevent bzip2 zlib curl readline pam valgrind vim qt5-base qt5-declarative qt5-tools libunwind go && rm -rf /var/cache/* /tmp/* && \
     pacman-db-upgrade
+
+RUN go get -u github.com/golang/protobuf/protoc-gen-go
