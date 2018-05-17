@@ -33,7 +33,7 @@ build-ubuntu:
 build-ubuntu-1804:
   <<: *docker-build-base
 
-build-ubuntu-latest:
+build-ubuntu-rolling:
   <<: *docker-build-base
 
 build-compose:
