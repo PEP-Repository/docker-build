@@ -36,6 +36,9 @@ build-ubuntu-1804:
 build-ubuntu-rolling:
   <<: *docker-build-base
 
+build-ubuntu-templight:
+  <<: *docker-build-base
+
 build-compose:
   <<: *docker-build-base
 
