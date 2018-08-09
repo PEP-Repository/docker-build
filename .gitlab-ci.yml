@@ -37,6 +37,7 @@ build-ubuntu-rolling:
   <<: *docker-build-base
 
 build-ubuntu-templight:
+  when: manual
   <<: *docker-build-base
 
 build-compose:
