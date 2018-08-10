@@ -7,7 +7,7 @@ ARG llvm_build_dir=/llvm/build
 ARG templight_tools_source_dir=/templight-tools/src
 ARG templight_tools_build_dir=/templight-tools/build
 
-RUN apt-get update && apt-get install -y subversion ninja-build clang && apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/* \
+RUN apt-get update && apt-get install -y subversion ninja-build && apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/* \
   && mkdir -p ${llvm_source_dir} && mkdir -p ${llvm_build_dir} \
   && echo "Downloading sources" \
   && svn co --quiet http://llvm.org/svn/llvm-project/llvm/branches/release_60 ${llvm_source_dir} \
@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y subversion ninja-build clang && apt-get
   && echo "add_clang_subdirectory(templight)" >> CMakeLists.txt \
   && cd ${llvm_build_dir} \
   && echo "Building clang/templight" \
-  && cmake -G Ninja -DCMAKE_C_COMPILER=/usr/bin/clang -DCAMKE_CXX_COMPILER=/usr/bin/clang++ ${llvm_source_dir} \
+  && cmake -G Ninja -DLLVM_USE_LINKER=gold ${llvm_source_dir} \
   && ninja \
   && ninja install \
   && echo "Downloading and building templight-tools" \
@@ -34,4 +34,4 @@ RUN apt-get update && apt-get install -y subversion ninja-build clang && apt-get
   && make \
   && make install \
   && rm -rf ${llvm_source_dir} ${llvm_build_dir} ${templight_tools_source_dir} ${templight_tools_build_dir} \
-  && apt-get remove --purge subversion ninja-build clang && apt-get autoremove
+  && apt-get purge --auto-remove subversion ninja-build
