@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y subversion ninja-build && apt-get clean
   && cd ${llvm_build_dir} \
   && echo "Building clang/templight" \
   && cmake -G Ninja -DLLVM_USE_LINKER=gold ${llvm_source_dir} \
-  && ninja \
+  && ninja -j1 \
   && ninja install \
   && echo "Downloading and building templight-tools" \
   && mkdir -p ${templight_tools_source_dir} && mkdir -p ${templight_tools_build_dir} \
