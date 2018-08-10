@@ -7,31 +7,31 @@ ARG llvm_build_dir=/llvm/build
 ARG templight_tools_source_dir=/templight-tools/src
 ARG templight_tools_build_dir=/templight-tools/build
 
-RUN apt-get update && apt-get install -y subversion && apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
-
-RUN mkdir -p ${llvm_source_dir} && mkdir -p ${llvm_build_dir} \
-	&& echo "Downloading sources" \
-	&& svn co --quiet http://llvm.org/svn/llvm-project/llvm/branches/release_60 ${llvm_source_dir} \
-	&& svn co --quiet http://llvm.org/svn/llvm-project/cfe/branches/release_60 ${llvm_source_dir}/tools/clang \
-	&& cd ${llvm_source_dir}/tools/clang/tools \
-  	&& mkdir templight \
-  	&& git clone https://github.com/mikael-s-persson/templight.git templight \
-  	&& cd templight \
-  	&& git checkout release_60 \
-  	&& cd ${llvm_source_dir}/tools/clang \
-  	&& svn patch tools/templight/templight_clang_patch.diff \
-  	&& cd ${llvm_source_dir}/tools/clang/tools \
-	&& echo "add_clang_subdirectory(templight)" >> CMakeLists.txt \
-	&& cd ${llvm_build_dir} \
-	&& echo "Building clang/templight" \
-  	&& cmake ${llvm_source_dir} \
-  	&& make \
-  	&& make install \
-  	&& echo "Downloading and building templight-tools" \
-  	&& mkdir -p ${templight_tools_source_dir} && mkdir -p ${templight_tools_build_dir} \
-  	&& git clone https://github.com/mikael-s-persson/templight-tools.git ${templight_tools_source_dir} \
- 	&& cd ${templight_tools_build_dir} \
- 	&& cmake ${templight_tools_source_dir} \
- 	&& make \
- 	&& make install \
- 	&& rm -rf ${llvm_source_dir} ${llvm_build_dir} ${templight_tools_source_dir} ${templight_tools_build_dir}
+RUN apt-get update && apt-get install -y subversion ninja-build clang && apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/* \
+  && mkdir -p ${llvm_source_dir} && mkdir -p ${llvm_build_dir} \
+  && echo "Downloading sources" \
+  && svn co --quiet http://llvm.org/svn/llvm-project/llvm/branches/release_60 ${llvm_source_dir} \
+  && svn co --quiet http://llvm.org/svn/llvm-project/cfe/branches/release_60 ${llvm_source_dir}/tools/clang \
+  && cd ${llvm_source_dir}/tools/clang/tools \
+  && mkdir templight \
+  && git clone https://github.com/mikael-s-persson/templight.git templight \
+  && cd templight \
+  && git checkout release_60 \
+  && cd ${llvm_source_dir}/tools/clang \
+  && svn patch tools/templight/templight_clang_patch.diff \
+  && cd ${llvm_source_dir}/tools/clang/tools \
+  && echo "add_clang_subdirectory(templight)" >> CMakeLists.txt \
+  && cd ${llvm_build_dir} \
+  && echo "Building clang/templight" \
+  && cmake -G Ninja -DCMAKE_C_COMPILER=/usr/bin/clang -DCAMKE_CXX_COMPILER=/usr/bin/clang++ ${llvm_source_dir} \
+  && ninja \
+  && ninja install \
+  && echo "Downloading and building templight-tools" \
+  && mkdir -p ${templight_tools_source_dir} && mkdir -p ${templight_tools_build_dir} \
+  && git clone https://github.com/mikael-s-persson/templight-tools.git ${templight_tools_source_dir} \
+  && cd ${templight_tools_build_dir} \
+  && cmake ${templight_tools_source_dir} \
+  && make \
+  && make install \
+  && rm -rf ${llvm_source_dir} ${llvm_build_dir} ${templight_tools_source_dir} ${templight_tools_build_dir} \
+  && apt-get remove --purge subversion ninja-build clang && apt-get autoremove
