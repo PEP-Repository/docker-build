@@ -23,15 +23,16 @@ RUN apt-get update && apt-get install -y subversion ninja-build && apt-get clean
   && echo "add_clang_subdirectory(templight)" >> CMakeLists.txt \
   && cd ${llvm_build_dir} \
   && echo "Building clang/templight" \
-  && cmake -G Ninja -DLLVM_USE_LINKER=gold ${llvm_source_dir} \
+  && cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DLLVM_USE_LINKER=gold ${llvm_source_dir} \
   && ninja -j1 \
-  && ninja install \
+  && ln -s ${llvm_build_dir}/bin/templight /usr/local/bin/templight \
+  && ln -s ${llvm_build_dir}/bin/templight++ /usr/local/bin/templight++ \
   && echo "Downloading and building templight-tools" \
   && mkdir -p ${templight_tools_source_dir} && mkdir -p ${templight_tools_build_dir} \
   && git clone https://github.com/mikael-s-persson/templight-tools.git ${templight_tools_source_dir} \
   && cd ${templight_tools_build_dir} \
-  && cmake ${templight_tools_source_dir} \
+  && cmake -DCMAKE_BUILD_TYPE=Release ${templight_tools_source_dir} \
   && make \
   && make install \
-  && rm -rf ${llvm_source_dir} ${llvm_build_dir} ${templight_tools_source_dir} ${templight_tools_build_dir} \
+  && rm -rf ${llvm_source_dir} ${templight_tools_source_dir} ${templight_tools_build_dir} \
   && apt-get purge --auto-remove subversion ninja-build
