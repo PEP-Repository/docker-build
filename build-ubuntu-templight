@@ -4,7 +4,7 @@
 # Usage:
 # Start a docker container with this image:
 #   > docker run -it -v <PATH TO YOUR CODE>:/code -v <PATH TO A BUILD DIRECTORY>:/build gitlabregistry.pep.cs.ru.nl/pep/docker-build/build-ubuntu-templight:latest bash
-# The build directory you're host mounting, should probably not be your normal build directory.
+# The build directory you're host mounting, should probably not be your normal build directory. It's also possible to not host mount the build directory at all, but I find it convenient to do so.
 #
 # In the docker container:
 #   > cd /build
@@ -51,4 +51,4 @@ RUN apt-get update && apt-get install -y subversion ninja-build && apt-get clean
   && make \
   && make install \
   && rm -rf ${llvm_source_dir} ${templight_tools_source_dir} ${templight_tools_build_dir} \
-  && apt-get purge --auto-remove subversion ninja-build
+  && apt-get purge -y --auto-remove subversion ninja-build
