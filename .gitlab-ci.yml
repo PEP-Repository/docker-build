@@ -1,6 +1,7 @@
 stages:
 - prepare
 - build
+- build-derived
 
 .docker-build-base: &docker-build-base
   stage: build
@@ -37,8 +38,9 @@ build-ubuntu-rolling:
   <<: *docker-build-base
 
 build-ubuntu-templight:
-  when: manual
   <<: *docker-build-base
+  stage: build-derived
+  when: manual
 
 build-compose:
   <<: *docker-build-base
