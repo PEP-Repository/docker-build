@@ -11,11 +11,15 @@
 #   > cmake /code
 #   > cmake --build . --target "<TARGET CONTAINING THE SOURCE FILE TO PROFILE>" -- -i VERBOSE=1
 # Because of the VERBOSE=1, make will print the commands it's executing. Find the one compiling the targeted source file.
-# Replace '/usr/bin/c++' (or whatever command is used to compile c++) with 'templight++ -Xtemplight -profiler -Xtemplight -memory -Xtemplight -ignore-system'
-# Run this command. The trace can then be found in the same location as the created object file.
+# Replace '/usr/bin/c++' with 'templight++ -Xtemplight -profiler -Xtemplight -memory -Xtemplight -ignore-system'
+# Run this command. Note that there may also be a cd-command. You may need to remove some flags templight++ does not know. It will give a warning about these.
+# The trace (which has the extension .trace.pbf) can be found in the same location as the created object file.
 # 
 # templight-tools is also included in this docker image. See https://github.com/mikael-s-persson/templight-tools for documentation on how to use that.
-# qcachegrind can be installed from homebrew, and can be used to open callgrind files.
+# The callgrind output is very useful
+#   > templight-convert -f callgrind -o <OUTPUT_FILE> <TRACE FILE>
+# The resulting file can be opened (outside docker) with kcachegrind (KDE) or qcachegrind (Qt)
+# qcachegrind can be installed from homebrew
 FROM gitlabregistry.pep.cs.ru.nl/pep/docker-build/build-ubuntu-1804:master
 
 ARG llvm_source_dir=/llvm/src
