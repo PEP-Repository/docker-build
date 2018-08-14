@@ -9,7 +9,7 @@
 # In the docker container:
 #   > cd /build
 #   > cmake /code
-#   > cmake --build . --config "Release" --target "<TARGET CONTAINING THE SOURCE FILE TO PROFILE>" -- -i VERBOSE=1
+#   > cmake --build . --target "<TARGET CONTAINING THE SOURCE FILE TO PROFILE>" -- -i VERBOSE=1
 # Because of the VERBOSE=1, make will print the commands it's executing. Find the one compiling the targeted source file.
 # Replace '/usr/bin/c++' (or whatever command is used to compile c++) with 'templight++ -Xtemplight -profiler -Xtemplight -memory -Xtemplight -ignore-system'
 # Run this command. The trace can then be found in the same location as the created object file.
@@ -41,8 +41,7 @@ RUN apt-get update && apt-get install -y subversion ninja-build && apt-get clean
   && echo "Building clang/templight" \
   && cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DLLVM_USE_LINKER=gold ${llvm_source_dir} \
   && ninja -j1 \
-  && ln -s ${llvm_build_dir}/bin/templight /usr/local/bin/templight \
-  && ln -s ${llvm_build_dir}/bin/templight++ /usr/local/bin/templight++ \
+  && ninja -j1 install \
   && echo "Downloading and building templight-tools" \
   && mkdir -p ${templight_tools_source_dir} && mkdir -p ${templight_tools_build_dir} \
   && git clone https://github.com/mikael-s-persson/templight-tools.git ${templight_tools_source_dir} \
@@ -50,5 +49,5 @@ RUN apt-get update && apt-get install -y subversion ninja-build && apt-get clean
   && cmake -DCMAKE_BUILD_TYPE=Release ${templight_tools_source_dir} \
   && make \
   && make install \
-  && rm -rf ${llvm_source_dir} ${templight_tools_source_dir} ${templight_tools_build_dir} \
+  && rm -rf ${llvm_source_dir} ${llvm_build_dir} ${templight_tools_source_dir} ${templight_tools_build_dir} \
   && apt-get purge -y --auto-remove subversion ninja-build
