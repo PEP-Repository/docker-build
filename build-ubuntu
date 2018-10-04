@@ -3,7 +3,7 @@
 # docker push gitlabregistry.pep.cs.ru.nl/pep/docker-build/build-ubuntu
 FROM ubuntu:16.04
 
-RUN apt-get update && apt-get install -y ninja-build ccache distcc git g++ golang golang-goprotobuf-dev cmake libboost-dbg libboost-all-dev zlib1g-dev libbz2-dev libsqlite3-dev libcurl4-openssl-dev curl libpam0g-dev libssl-dev libreadline-dev patch vim flex qt5-default qtdeclarative5-dev qttools5-dev-tools libunwind-dev libc6-dev libc6-dev-i386 software-properties-common && apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
+RUN apt-get update && apt-get install -y clang ninja-build ccache distcc git g++ golang golang-goprotobuf-dev cmake libboost-dbg libboost-all-dev zlib1g-dev libbz2-dev libsqlite3-dev libcurl4-openssl-dev curl libpam0g-dev libssl-dev libreadline-dev patch vim flex qt5-default qtdeclarative5-dev qttools5-dev-tools libunwind-dev libc6-dev libc6-dev-i386 software-properties-common && apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
 # Add PPA which contains newer version of Valgrind (3.12)
 RUN add-apt-repository -y ppa:jonathonf/development-tools && apt-get update && apt-get install -y valgrind && apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
