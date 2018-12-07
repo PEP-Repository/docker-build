@@ -28,9 +28,6 @@ arch:
 build-arch:
   <<: *docker-build-base
 
-build-ubuntu:
-  <<: *docker-build-base
-
 build-ubuntu-1804:
   <<: *docker-build-base
 
