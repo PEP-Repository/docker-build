@@ -1,6 +1,14 @@
 #!/bin/sh
-pipelineid=$(curl -sS --request POST --header "PRIVATE-TOKEN:${GITLAB_ACCESS_TOKEN}" "https://gitlab.pep.cs.ru.nl/api/v4/projects/pep%2fcore/pipeline?ref=753-run-a-core-pipeline-in-docker-build-ci" | jq ".id")
+echo "CI_COMMIT_REF_NAME: ${CI_COMMIT_REF_NAME}"
+response=$(curl -sS --globoff --request POST --header "PRIVATE-TOKEN:${GITLAB_ACCESS_TOKEN}" \
+    "https://gitlab.pep.cs.ru.nl/api/v4/projects/pep%2fcore/pipeline?ref=753-run-a-core-pipeline-in-docker-build-ci&variables[][key]=RUNNER_IMAGE_TAG&variables[][value]=${CI_COMMIT_REF_NAME}")
+echo "Response: ${response}"
+pipelineid=$(echo "${response}" | jq ".id")
 echo "Pipeline ID ${pipelineid}"
+if [ "${pipelineid}" = "null" ]
+then
+  exit 1
+fi
 
 status="\"pending\""
 while [ "$status" = "\"pending\"" ] || [ "$status" = "\"running\"" ]
@@ -26,3 +34,5 @@ do
 
   sleep 30
 done
+
+[{'key':'RUNNER_IMAGE_TAG','value':'BLAAT'}]
