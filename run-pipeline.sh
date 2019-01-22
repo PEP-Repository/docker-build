@@ -1,7 +1,7 @@
 #!/bin/sh
 echo "CI_COMMIT_REF_NAME: ${CI_COMMIT_REF_NAME}"
 response=$(curl -sS --globoff --request POST --header "PRIVATE-TOKEN:${GITLAB_ACCESS_TOKEN}" \
-    "https://gitlab.pep.cs.ru.nl/api/v4/projects/pep%2fcore/pipeline?ref=753-run-a-core-pipeline-in-docker-build-ci&variables[][key]=RUNNER_IMAGE_TAG&variables[][value]=${CI_COMMIT_REF_NAME}")
+    "https://gitlab.pep.cs.ru.nl/api/v4/projects/pep%2fcore/pipeline?ref=master&variables[][key]=RUNNER_IMAGE_TAG&variables[][value]=${CI_COMMIT_REF_NAME}")
 echo "Response: ${response}"
 pipelineid=$(echo "${response}" | jq ".id")
 echo "Pipeline ID ${pipelineid}"
