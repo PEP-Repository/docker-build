@@ -1,6 +1,8 @@
 stages:
 - prepare
 - build
+- analyse
+- deploy
 - build-derived
 
 .docker-build-base: &docker-build-base
@@ -44,3 +46,35 @@ build-compose:
 
 build-doxygen:
   <<: *docker-build-base
+
+test-images:
+  stage: analyse
+  tags:
+  - docker
+  image: endeveit/docker-jq
+  script:
+  - ./run-pipeline.sh
+
+deploy-images:
+  stage: deploy
+  only:
+  - master
+  tags:
+  - docker
+  image: docker:git
+  services:
+  - docker:dind
+  script:
+  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+  - docker pull ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-arch:${CI_BUILD_REF_NAME}
+  - docker pull ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-1804:${CI_BUILD_REF_NAME}
+  - docker pull ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-compose:${CI_BUILD_REF_NAME}
+  - docker pull ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-doxygen:${CI_BUILD_REF_NAME}
+  - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-arch:${CI_BUILD_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-arch:latest
+  - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-1804:${CI_BUILD_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-1804:latest
+  - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-compose:${CI_BUILD_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-compose:latest
+  - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-doxygen:${CI_BUILD_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-doxygen:latest
+  - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-arch:latest
+  - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-1804:latest
+  - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-compose:latest
+  - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-doxygen:latest
