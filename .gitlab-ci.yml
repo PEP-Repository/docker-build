@@ -49,9 +49,6 @@ build-ubuntu-templight:
 build-compose:
   <<: *docker-build-base
 
-build-doxygen:
-  <<: *docker-build-base
-
 test-images:
   stage: analyse
   tags:
