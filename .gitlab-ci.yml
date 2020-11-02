@@ -38,6 +38,9 @@ build-arch:
 build-ubuntu-1804:
   <<: *docker-build-base
 
+build-ubuntu-2004:
+  <<: *docker-build-base
+
 build-ubuntu-rolling:
   <<: *docker-build-base
 
