@@ -49,9 +49,6 @@ build-ubuntu-templight:
   stage: build-derived
   when: manual
 
-build-compose:
-  <<: *docker-build-base
-
 test-images:
   stage: analyse
   tags:
@@ -75,17 +72,14 @@ deploy-images:
   - docker pull ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-1804:${CI_COMMIT_REF_NAME}
   - docker pull ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-2004:${CI_COMMIT_REF_NAME}
   - docker pull ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-rolling:${CI_COMMIT_REF_NAME}
-  - docker pull ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-compose:${CI_COMMIT_REF_NAME}
   - docker pull ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-doxygen:${CI_COMMIT_REF_NAME}
   - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-arch:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-arch:latest
   - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-1804:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-1804:latest
   - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-2004:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-2004:latest
   - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-rolling:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-rolling:latest
-  - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-compose:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-compose:latest
   - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-doxygen:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-doxygen:latest
   - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-arch:latest
   - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-1804:latest
   - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-2004:latest
   - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-rolling:latest
-  - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-compose:latest
   - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-doxygen:latest
