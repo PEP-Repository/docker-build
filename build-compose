@@ -1,6 +1,0 @@
-FROM docker:latest
-
-RUN apk update \
-    && apk add --no-cache curl py-pip gcc python3-dev musl-dev libffi-dev openssl-dev make \
- 	&& pip install docker-compose \
-	&& apk del gcc python3-dev musl-dev libffi-dev openssl-dev make
