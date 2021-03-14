@@ -23,18 +23,6 @@ variables:
   - docker build -f ${CI_JOB_NAME} -t ${CONTAINER_IMAGE} .
   - docker push ${CONTAINER_IMAGE}
 
-arch:
-  <<: *docker-build-base
-  stage: prepare
-  before_script:
-  - export VERSION=`date -d@"$(($(date +%s) - 2*86400))" +%Y.%m` # busybox stupid syntax for 2 days ago (safer)
-  - wget http://ftp.nluug.nl/os/Linux/distr/archlinux/iso/$VERSION.01/archlinux-bootstrap-$VERSION.01-x86_64.tar.gz
-  - tar -xzpf archlinux-bootstrap-$VERSION.01-x86_64.tar.gz
-  - (cd root.x86_64/; tar -cjpf ../archlinux.tar.bz2 .)
-
-build-arch:
-  <<: *docker-build-base
-
 build-ubuntu-1804:
   <<: *docker-build-base
 
