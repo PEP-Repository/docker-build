@@ -34,5 +34,3 @@ do
 
   sleep 30
 done
-
-[{'key':'RUNNER_IMAGE_TAG','value':'BLAAT'}]
