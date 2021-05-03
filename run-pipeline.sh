@@ -31,6 +31,7 @@ do
     echo "Pipeline canceled"
     exit 1
   elif [ "$status" != "\"pending\"" ] && [ "$status" != "\"running\"" ]
+  then
     echo "Received unsupported status \"$status\" from Gitlab API"
     exit 1
   fi
