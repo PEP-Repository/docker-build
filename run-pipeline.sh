@@ -30,6 +30,9 @@ do
   then
     echo "Pipeline canceled"
     exit 1
+  else
+    echo "Received unsupported \"$status\" status from Gitlab API"
+    exit 1
   fi
 
   sleep 30
