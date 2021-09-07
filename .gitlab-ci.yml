@@ -32,6 +32,9 @@ build-ubuntu-2004:
 .build-ubuntu-rolling:
   <<: *docker-build-base
 
+.build-python:
+  <<: *docker-build-base
+
 build-ubuntu-templight:
   <<: *docker-build-base
   stage: build-derived
