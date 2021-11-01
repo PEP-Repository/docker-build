@@ -1,4 +1,16 @@
 #!/bin/sh
+contains() {
+    string="$1"
+    substring="$2"
+    if [ "${string#*$substring}" != "$string" ]
+    then
+        return 0
+    else
+        return 1
+    fi
+}
+
+
 echo "CI_COMMIT_REF_NAME: ${CI_COMMIT_REF_NAME}"
 response=$(curl -sS --globoff --request POST --header "PRIVATE-TOKEN:${GITLAB_ACCESS_TOKEN}" \
     "https://gitlab.pep.cs.ru.nl/api/v4/projects/pep%2fcore/pipeline?ref=master&variables[][key]=RUNNER_IMAGE_TAG&variables[][value]=${CI_COMMIT_REF_NAME}")
@@ -10,27 +22,28 @@ then
   exit 1
 fi
 
+# All possible statuses are documented on https://docs.gitlab.com/ee/api/pipelines.html. I cannot fine any documentation on what these statuses mean.
+# Not all statuses are listed below. I don't expect we will encounter the missing statuses, but if we do we must investigate in which category they should fall.
+running_statuses="\"pending\" \"running\" \"created\" \"preparing\" \"waiting_for_resource\""
+success_statuses="\"success\" \"skipped\""
+failure_statuses="\"failed\" \"canceled\""
+
+
 status="\"pending\""
-while [ "$status" = "\"pending\"" ] || [ "$status" = "\"running\"" ]
+while true
 do
   status=$(curl -sS --header "PRIVATE-TOKEN:${GITLAB_ACCESS_TOKEN}" "https://gitlab.pep.cs.ru.nl/api/v4/projects/pep%2fcore/pipelines/${pipelineid}" | jq ".status")
-  if [ "$status" = "\"success\"" ]
+
+  if contains "$success_statuses" "$status"
   then
-    echo "Pipeline succeeded"
+    echo "Pipeline succeeded with status: '$status'"
     exit 0
-  elif [ "$status" = "\"skipped\"" ]
+  elif contains "$failure_statuses" "$status"
   then
-    echo "Pipeline skipped"
-    exit 0
-  elif [ "$status" = "\"failed\"" ]
-  then
-    echo "Pipeline failed"
+    echo "Pipeline failed with status: '$status'"
     exit 1
-  elif [ "$status" = "\"canceled\"" ]
+  elif ! contains "$running_statuses" "$status"
   then
-    echo "Pipeline canceled"
-    exit 1
-  elif [ "$status" != "\"pending\"" ] && [ "$status" != "\"running\"" ]
     echo "Received unsupported status \"$status\" from Gitlab API"
     exit 1
   fi
