@@ -29,10 +29,10 @@ build-ubuntu-1804:
 build-ubuntu-2004:
   <<: *docker-build-base
 
-build-ubuntu-2204:
+.build-ubuntu-2204:
   <<: *docker-build-base
 
-build-ubuntu-rolling:
+.build-ubuntu-rolling:
   <<: *docker-build-base
 
 build-python:
