@@ -1,5 +1,5 @@
-# docker build -f build-ubuntu-rolling -t gitlabregistry.pep.cs.ru.nl/pep/docker-build/build-ubuntu-rolling .
-# docker push gitlabregistry.pep.cs.ru.nl/pep/docker-build/build-ubuntu-rolling
+# docker build -f build-ubuntu-2004 -t gitlabregistry.pep.cs.ru.nl/pep/docker-build/build-ubuntu-2004 .
+# docker push gitlabregistry.pep.cs.ru.nl/pep/docker-build/build-ubuntu-2004
 FROM ubuntu:20.04
 
 RUN apt-get update \
