@@ -11,15 +11,3 @@ RUN apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io &
 
 ENV CC=clang
 ENV CXX=clang++
-
-# Add the compiler for the HSM firmware
-# The following can be downloaded from http://software-dl.ti.com/codegen/non-esd/downloads/download.htm but requires registration for the 7.x.y versions (the 8.x.y branch does not work for us as they dropped support for an option we use)
-#COPY ti_cgt_c6000_7.4.21_linux_installer_x86.bin /tmp
-#RUN chmod +x /tmp/ti_cgt_c6000_7.4.21_linux_installer_x86.bin && /tmp/ti_cgt_c6000_7.4.21_linux_installer_x86.bin --mode unattended --prefix /opt && rm /tmp/ti_cgt_c6000_7.4.21_linux_installer_x86.bin
-# Installer did not exit anymore (even though install seems successful), so installed files are now included in tgz file
-ADD c6000_7.4.21.tgz /opt/
-
-# Add Qt installer framework
-ENV PATH="/opt/QtIFW/bin:${PATH}"
-COPY QtInstallerFramework-linux-x64-3.0.1.run QtIFW-noninteractive.qs /tmp/
-RUN chmod +x /tmp/QtInstallerFramework-linux-x64-3.0.1.run && /tmp/QtInstallerFramework-linux-x64-3.0.1.run --platform minimal --verbose --script /tmp/QtIFW-noninteractive.qs && rm -rf /tmp/*
