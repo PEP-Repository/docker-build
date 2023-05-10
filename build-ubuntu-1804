@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io &
 # the URL's "focal" literal was replaced by the ${UBUNTU_CODENAME} variable to make the code portable over OS versions.
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y wget \
-    && wget -O- http://neuro.debian.net/lists/${UBUNTU_CODENAME}.de-m.full | tee /etc/apt/sources.list.d/neurodebian.sources.list \
+    && wget -O- http://neuro.debian.net/lists/$UBUNTU_CODENAME.de-m.full | tee /etc/apt/sources.list.d/neurodebian.sources.list \
     && apt-key adv --recv-keys --keyserver hkps://keyserver.ubuntu.com 0xA5D32F012649A5A9 \
     && apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y singularity-container \

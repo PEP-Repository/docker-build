@@ -21,7 +21,7 @@ RUN apt-get update \
 
 # Install Singularity as per instructions adapted from https://docs.sylabs.io/guides/3.0/user-guide/installation.html#install-the-debian-ubuntu-package-using-apt
 # The repo URL (passed to wget) was determined using the HTML form on https://neuro.debian.net/ , then
-# the URL's "focal" literal was replaced by the ${UBUNTU_CODENAME} variable to make the code portable over OS versions.
+# the URL's "focal" literal was replaced by the $UBUNTU_CODENAME variable to make the code portable over OS versions.
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y wget \
     && wget -O- http://neuro.debian.net/lists/${UBUNTU_CODENAME}.de-m.full | tee /etc/apt/sources.list.d/neurodebian.sources.list \
