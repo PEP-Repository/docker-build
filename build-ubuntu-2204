@@ -19,17 +19,12 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
-# # Install Singularity as per instructions adapted from https://docs.sylabs.io/guides/3.0/user-guide/installation.html#install-the-debian-ubuntu-package-using-apt
-# # The repo URL (passed to wget) was determined using the HTML form on https://neuro.debian.net/ .
-# # NOTE THAT the URL is specific to this OS version: pay attention when copy+pasting it.
-# RUN apt-get update \
-#     && DEBIAN_FRONTEND=noninteractive apt-get install -y wget \
-#     && wget -O- http://neuro.debian.net/lists/jammy.de-m.full | tee /etc/apt/sources.list.d/neurodebian.sources.list \
-#     && apt-key adv --recv-keys --keyserver hkps://keyserver.ubuntu.com 0xA5D32F012649A5A9 \
-#     && apt-get update \
-#     && DEBIAN_FRONTEND=noninteractive apt-get install -y singularity-container \
-#     && apt-get clean \
-#     && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
+# Install apptainer as per instructions adapted from https://apptainer.org/docs/admin/main/installation.html#install-ubuntu-packages
+RUN add-apt-repository -y ppa:apptainer/ppa \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y apptainer-suid \
+    && apt-get clean \
+    && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
 ENV CC=clang
 ENV CXX=clang++
