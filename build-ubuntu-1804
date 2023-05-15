@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io &
 # Install apptainer as per instructions adapted from https://apptainer.org/docs/admin/main/installation.html#install-ubuntu-packages
 RUN add-apt-repository -y ppa:apptainer/ppa \
     && apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y apptainer-suid \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y apptainer \
     && apt-get clean \
     && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
