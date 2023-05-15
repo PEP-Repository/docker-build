@@ -10,12 +10,5 @@ RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /
 RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 RUN apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io && apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
-# Install apptainer as per instructions adapted from https://apptainer.org/docs/admin/main/installation.html#install-ubuntu-packages
-RUN add-apt-repository -y ppa:apptainer/ppa \
-    && apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y apptainer \
-    && apt-get clean \
-    && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
-
 ENV CC=clang
 ENV CXX=clang++

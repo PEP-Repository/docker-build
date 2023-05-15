@@ -17,12 +17,5 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
-# Install apptainer as per instructions adapted from https://apptainer.org/docs/admin/main/installation.html#install-ubuntu-packages
-RUN add-apt-repository -y ppa:apptainer/ppa \
-    && apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y apptainer \
-    && apt-get clean \
-    && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
-
 ENV CC=clang
 ENV CXX=clang++
