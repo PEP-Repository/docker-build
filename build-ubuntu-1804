@@ -3,11 +3,18 @@
 # docker push gitlabregistry.pep.cs.ru.nl/pep/docker-build/build-ubuntu-1804
 FROM ubuntu:18.04
 
-RUN apt-get update && apt-get install -y clang ninja-build golang golang-goprotobuf-dev ccache distcc git cmake valgrind libboost-all-dev zlib1g-dev libbz2-dev libsqlite3-dev libcurl4-openssl-dev curl libpam0g-dev libssl-dev libreadline-dev patch vim flex qt5-default qtdeclarative5-dev qttools5-dev qttools5-dev-tools libunwind-dev libc6-dev libc6-dev-i386 software-properties-common unzip zip ca-certificates gnupg lsb-release jq && apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
-# Install Docker as per instructions on https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository
+RUN apt-get update \
+    && apt-get install -y clang ninja-build golang golang-goprotobuf-dev ccache distcc git cmake valgrind libboost-all-dev zlib1g-dev libbz2-dev libsqlite3-dev libcurl4-openssl-dev curl libpam0g-dev libssl-dev libreadline-dev patch vim flex qt5-default qtdeclarative5-dev qttools5-dev qttools5-dev-tools libunwind-dev libc6-dev libc6-dev-i386 software-properties-common unzip zip ca-certificates gnupg lsb-release jq \
+    && apt-get clean \
+    && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
+
+# Install Docker: https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-RUN apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io && apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
+RUN apt-get update \
+    && apt-get install -y docker-ce docker-ce-cli containerd.io \
+    && apt-get clean \
+    && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
 ENV CC=clang
 ENV CXX=clang++
