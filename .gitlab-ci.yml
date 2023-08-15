@@ -21,6 +21,7 @@ variables:
   script:
   - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
   - docker build -f ${CI_JOB_NAME} -t ${CONTAINER_IMAGE} .
+  - echo "Pushing image as ${CONTAINER_IMAGE}"
   - docker push ${CONTAINER_IMAGE}
 
 build-ubuntu-1804:
