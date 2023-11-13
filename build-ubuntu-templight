@@ -20,7 +20,7 @@
 #   > templight-convert -f callgrind -o <OUTPUT_FILE> <TRACE FILE>
 # The resulting file can be opened (outside docker) with kcachegrind (KDE) or qcachegrind (Qt)
 # qcachegrind can be installed from homebrew
-FROM gitlabregistry.pep.cs.ru.nl/pep/docker-build/build-ubuntu-1804:master
+FROM gitlabregistry.pep.cs.ru.nl/pep/docker-build/build-ubuntu-2204:master
 
 ARG llvm_source_dir=/llvm/src
 ARG llvm_build_dir=/llvm/build
