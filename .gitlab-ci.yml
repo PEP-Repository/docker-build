@@ -45,6 +45,9 @@ build-python:
 build-flatpak:
   <<: *docker-build-base
 
+build-flatpak-qt6:
+  <<: *docker-build-base
+
 build-ubuntu-templight:
   <<: *docker-build-base
   stage: build-derived
@@ -77,6 +80,7 @@ deploy-images:
   - docker pull ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-rolling-qt6:${CI_COMMIT_REF_NAME}
   - docker pull ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-python:${CI_COMMIT_REF_NAME}
   - docker pull ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-flatpak:${CI_COMMIT_REF_NAME}
+  - docker pull ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-flatpak-qt6:${CI_COMMIT_REF_NAME}
   - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-arch:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-arch:latest
   - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-1804:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-1804:latest
   - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-2004:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-2004:latest
@@ -85,6 +89,7 @@ deploy-images:
   - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-rolling-qt6:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-rolling-qt6:latest
   - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-python:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-python:latest
   - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-flatpak:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-flatpak:latest
+  - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-flatpak-qt6:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-flatpak-qt6:latest
   - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-arch:latest
   - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-1804:latest
   - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-2004:latest
@@ -93,3 +98,4 @@ deploy-images:
   - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-rolling-qt6:latest
   - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-python:latest
   - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-flatpak:latest
+  - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-flatpak-qt6:latest
