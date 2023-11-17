@@ -36,10 +36,16 @@ build-ubuntu-2204:
 build-ubuntu-rolling:
   <<: *docker-build-base
 
+build-ubuntu-rolling-qt6:
+  <<: *docker-build-base
+
 build-python:
   <<: *docker-build-base
 
 build-flatpak:
+  <<: *docker-build-base
+
+build-flatpak-qt6:
   <<: *docker-build-base
 
 build-ubuntu-templight:
@@ -71,19 +77,25 @@ deploy-images:
   - docker pull ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-2004:${CI_COMMIT_REF_NAME}
   - docker pull ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-2204:${CI_COMMIT_REF_NAME}
   - docker pull ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-rolling:${CI_COMMIT_REF_NAME}
+  - docker pull ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-rolling-qt6:${CI_COMMIT_REF_NAME}
   - docker pull ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-python:${CI_COMMIT_REF_NAME}
   - docker pull ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-flatpak:${CI_COMMIT_REF_NAME}
+  - docker pull ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-flatpak-qt6:${CI_COMMIT_REF_NAME}
   - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-arch:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-arch:latest
   - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-1804:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-1804:latest
   - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-2004:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-2004:latest
   - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-2204:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-2204:latest
   - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-rolling:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-rolling:latest
+  - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-rolling-qt6:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-rolling-qt6:latest
   - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-python:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-python:latest
   - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-flatpak:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-flatpak:latest
+  - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-flatpak-qt6:${CI_COMMIT_REF_NAME} ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-flatpak-qt6:latest
   - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-arch:latest
   - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-1804:latest
   - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-2004:latest
   - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-2204:latest
   - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-rolling:latest
+  - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-ubuntu-rolling-qt6:latest
   - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-python:latest
   - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-flatpak:latest
+  - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/build-flatpak-qt6:latest
