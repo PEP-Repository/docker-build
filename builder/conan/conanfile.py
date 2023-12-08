@@ -152,7 +152,7 @@ class CompressorRecipe(ConanFile):
         self.requires('civetweb/[^1.16]', options=self._custom_opts({
             'with_caching': False,
             'with_cgi': False,
-            'with_ssl': False,
+            'with_ssl': True,
             'with_static_files': False,
             'with_websockets': False,
         }))
