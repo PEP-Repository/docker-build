@@ -10,10 +10,11 @@ contains() {
     fi
 }
 
+image_tag="$1"
 
-echo "Running a core pipeline using a RUNNER_IMAGE_TAG equal to the CI_COMMIT_REF_NAME: ${CI_COMMIT_REF_NAME}"
+echo "Running a core pipeline using a RUNNER_IMAGE_TAG=$image_tag"
 response=$(curl -sS --globoff --request POST --header "PRIVATE-TOKEN:${GITLAB_ACCESS_TOKEN}" \
-    "https://gitlab.pep.cs.ru.nl/api/v4/projects/pep%2fcore/pipeline?ref=master&variables[][key]=RUNNER_IMAGE_TAG&variables[][value]=${CI_COMMIT_REF_NAME}")
+    "https://gitlab.pep.cs.ru.nl/api/v4/projects/pep%2fcore/pipeline?ref=master&variables[][key]=RUNNER_IMAGE_TAG&variables[][value]=$image_tag")
 echo "Response: ${response}"
 pipelineid=$(echo "${response}" | jq ".id")
 echo "Pipeline ID ${pipelineid}"
