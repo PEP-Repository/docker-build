@@ -27,9 +27,6 @@ variables:
   - echo "Pushing image as ${CONTAINER_IMAGE}"
   - docker push ${CONTAINER_IMAGE}
 
-build-ubuntu-2004:
-  <<: *docker-build-base
-
 build-ubuntu-2204:
   <<: *docker-build-base
 
@@ -65,7 +62,7 @@ deploy-images:
   script:
   - crane auth login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
   - |
-    for image in build-ubuntu-2004 build-ubuntu-2204 build-ubuntu-rolling build-python build-flatpak; do
+    for image in build-ubuntu-2204 build-ubuntu-rolling build-python build-flatpak; do
       crane tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST} ${IMAGE_TAG}
       crane delete ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}
     done
