@@ -66,6 +66,6 @@ deploy-images:
   - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
   - |
     for image in build-ubuntu-2004 build-ubuntu-2204 build-ubuntu-rolling build-python build-flatpak; do
-      docker -H ${CI_REGISTRY} tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST} ${PROJECT_REGISTRY}/$image:${IMAGE_TAG}
+      docker buildx imagetools create --tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG} ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}
       docker rmi ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}
     done
