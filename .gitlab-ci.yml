@@ -57,8 +57,6 @@ test-images:
 
 deploy-images:
   stage: deploy
-  only:
-  - master
   tags:
   - docker
   image: docker:git
