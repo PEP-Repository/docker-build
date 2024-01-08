@@ -59,13 +59,13 @@ deploy-images:
   stage: deploy
   tags:
   - docker
-  image: docker:git
-  services:
-  - docker:dind
+  image:
+    name: gcr.io/go-containerregistry/crane:debug
+    entrypoint: ['']
   script:
-  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+  - crane auth login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
   - |
     for image in build-ubuntu-2004 build-ubuntu-2204 build-ubuntu-rolling build-python build-flatpak; do
-      docker buildx imagetools create --tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG} ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}
-      docker rmi ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}
+      crane tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST} ${IMAGE_TAG}
+      crane delete ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}
     done
