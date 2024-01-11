@@ -45,11 +45,13 @@ build-ubuntu-templight:
 
 test-images:
   stage: analyse
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
   tags:
-  - docker
+    - docker
   image: endeveit/docker-jq
   script:
-  - ./run-pipeline.sh ${IMAGE_TAG_TEST}
+    - ./run-pipeline.sh ${IMAGE_TAG_TEST}
 
 deploy-images:
   stage: deploy
