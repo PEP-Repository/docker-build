@@ -46,7 +46,7 @@ build-ubuntu-templight:
 test-images:
   stage: analyse
   rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE != "push"
   tags:
     - docker
   image: endeveit/docker-jq
