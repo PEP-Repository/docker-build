@@ -53,6 +53,7 @@ test-images:
   script:
     - ./run-pipeline.sh ${IMAGE_TAG_TEST}
 
+# Use crane for efficient remote retagging
 deploy-images:
   stage: deploy
   tags:
