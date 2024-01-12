@@ -14,7 +14,7 @@ image_tag="$1"
 
 echo "Running a core pipeline using a RUNNER_IMAGE_TAG=$image_tag"
 response=$(curl -sS --globoff --request POST --header "PRIVATE-TOKEN:${GITLAB_ACCESS_TOKEN}" \
-    "https://gitlab.pep.cs.ru.nl/api/v4/projects/pep%2fcore/pipeline?ref=master&variables[][key]=RUNNER_IMAGE_TAG&variables[][value]=$image_tag")
+    "${CI_API_V4_URL}/projects/pep%2fcore/pipeline?ref=master&variables[][key]=RUNNER_IMAGE_TAG&variables[][value]=$image_tag")
 echo "Response: ${response}"
 pipelineid=$(echo "${response}" | jq ".id")
 echo "Pipeline ID ${pipelineid}"
@@ -33,7 +33,7 @@ failure_statuses="\"failed\" \"canceled\""
 status="\"pending\""
 while true
 do
-  status=$(curl -sS --header "PRIVATE-TOKEN:${GITLAB_ACCESS_TOKEN}" "https://gitlab.pep.cs.ru.nl/api/v4/projects/pep%2fcore/pipelines/${pipelineid}" | jq ".status")
+  status=$(curl -sS --header "PRIVATE-TOKEN:${GITLAB_ACCESS_TOKEN}" "${CI_API_V4_URL}/projects/pep%2fcore/pipelines/${pipelineid}" | jq ".status")
 
   if contains "$success_statuses" "$status"
   then
