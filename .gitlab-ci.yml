@@ -30,11 +30,11 @@ variables:
     - echo "Pushing image as ${CONTAINER_IMAGE}"
     - >
       docker buildx build
-        --push
-        --annotation "org.opencontainers.image.title=${CI_COMMIT_TITLE} [${CI_COMMIT_REF_NAME} ${CI_COMMIT_SHORT_SHA}]"
-        --file ./${IMAGE_KIND}/${IMAGE_NAME}.Dockerfile
-        --tag ${CONTAINER_IMAGE}
-        ./${IMAGE_KIND}/
+      --push
+      --annotation "org.opencontainers.image.title=${CI_COMMIT_TITLE} [${CI_COMMIT_REF_NAME} ${CI_COMMIT_SHORT_SHA}]"
+      --file ./${IMAGE_KIND}/${IMAGE_NAME}.Dockerfile
+      --tag ${CONTAINER_IMAGE}
+      ./${IMAGE_KIND}/
 
 
 builder/ubuntu-2204:
