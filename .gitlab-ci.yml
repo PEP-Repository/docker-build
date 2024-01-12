@@ -15,6 +15,10 @@ variables:
     builder-ubuntu-rolling
     builder-flatpak
     runtime-ubuntu-2204
+  SCHEDULE_BRANCHES: >-
+    master
+    stable
+    release
 
 .docker-build-base:
   stage: build
@@ -26,8 +30,22 @@ variables:
   services:
     - docker:dind
   script:
+    - |
+      for branch in ${SCHEDULE_BRANCHES}; do
+        if [ "$branch" = "${CI_COMMIT_BRANCH}" ]; then
+          break
+        fi
+        if [ "$(git rev-parse '$branch')" = "${CI_COMMIT_SHA}" ]; then
+          SKIP_BUILD=1
+        fi
+      done
+      echo "SKIP_BUILD=$SKIP_BUILD" >>build.env
+      if [ "$SKIP_BUILD" = 1 ]; then
+        echo "Will skip build, since this will commit will already be built on $branch"
+        exit
+      fi
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - echo "Pushing image as ${CONTAINER_IMAGE}"
+    - echo "Pushing image as $CONTAINER_IMAGE"
     - >
       docker buildx build
       --push
@@ -35,6 +53,9 @@ variables:
       --file ./${IMAGE_KIND}/${IMAGE_NAME}.Dockerfile
       --tag ${CONTAINER_IMAGE}
       ./${IMAGE_KIND}/
+  artifacts:
+    reports:
+      dotenv: build.env
 
 
 builder/ubuntu-2204:
@@ -79,6 +100,8 @@ test-images:
     - docker
   image: endeveit/docker-jq
   script:
+    # A better way to skip jobs is not yet available, see https://gitlab.com/gitlab-org/gitlab/-/issues/292816, https://gitlab.com/gitlab-org/gitlab/-/issues/329217
+    - if [ "$SKIP_BUILD" = 1 ]; then exit; fi
     - ./run-pipeline.sh ${IMAGE_TAG_TEST}
 
 # Use crane for efficient remote retagging
@@ -91,9 +114,11 @@ deploy-images:
     name: gcr.io/go-containerregistry/crane:debug
     entrypoint: ['']
   script:
+    - if [ "$SKIP_BUILD" = 1 ]; then exit; fi
     - crane auth login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - |
       for image in ${DEPLOY_IMAGES}; do
+        echo "Retagging $image:${IMAGE_TAG_TEST} as ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}"
         crane tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST} ${IMAGE_TAG}
         crane delete ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}
       done
