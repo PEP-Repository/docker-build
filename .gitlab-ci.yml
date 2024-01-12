@@ -65,7 +65,7 @@ deploy-images:
   stage: deploy
   only:
   - master
-  - old-tagbased
+  - old-not-sha-based
   tags:
   - docker
   image: docker:git
