@@ -98,7 +98,7 @@ runtime/ubuntu-2204:
 test-images:
   stage: analyze
   rules:
-    - if: $CI_PIPELINE_SOURCE != "push"
+    - if: $CI_PIPELINE_SOURCE != 'push' && $CI_PIPELINE_SOURCE != 'merge_request_event'
   tags:
     - docker
   image: endeveit/docker-jq
