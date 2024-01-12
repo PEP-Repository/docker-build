@@ -3,7 +3,7 @@
 #
 # Usage:
 # Start a docker container with this image:
-#   > docker run -it -v <PATH TO YOUR CODE>:/code -v <PATH TO A BUILD DIRECTORY>:/build gitlabregistry.pep.cs.ru.nl/pep/docker-build/build-ubuntu-templight:latest bash
+#   > docker run -it -v <PATH TO YOUR CODE>:/code -v <PATH TO A BUILD DIRECTORY>:/build gitlabregistry.pep.cs.ru.nl/pep/docker-build/builder-ubuntu-templight:sha-<commit SHA> bash
 # The build directory you're host mounting, should probably not be your normal build directory. It's also possible to not host mount the build directory at all, but I find it convenient to do so.
 #
 # In the docker container:
@@ -20,7 +20,8 @@
 #   > templight-convert -f callgrind -o <OUTPUT_FILE> <TRACE FILE>
 # The resulting file can be opened (outside docker) with kcachegrind (KDE) or qcachegrind (Qt)
 # qcachegrind can be installed from homebrew
-FROM gitlabregistry.pep.cs.ru.nl/pep/docker-build/build-ubuntu-2204:master
+#TODO :master is not what we want
+FROM gitlabregistry.pep.cs.ru.nl/pep/docker-build/builder-ubuntu-2204:master
 
 ARG llvm_source_dir=/llvm/src
 ARG llvm_build_dir=/llvm/build

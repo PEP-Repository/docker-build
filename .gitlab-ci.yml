@@ -1,9 +1,8 @@
 stages:
-- prepare
-- build
-- analyse
-- deploy
-- build-derived
+  - build
+  - analyze
+  - deploy
+  - build-derived
 
 variables:
   DOCKER_DRIVER: overlay2 # faster docker builds, see https://gitlab.com/gitlab-org/gitlab-ce/issues/21374, https://docs.docker.com/storage/storagedriver/overlayfs-driver/
@@ -11,40 +10,69 @@ variables:
   PROJECT_REGISTRY: ${CI_REGISTRY}/${CI_PROJECT_PATH}
   IMAGE_TAG: sha-${CI_COMMIT_SHA}
   IMAGE_TAG_TEST: sha-test-${CI_COMMIT_SHA}
+  DEPLOY_IMAGES: >-
+    builder-ubuntu-2204
+    builder-ubuntu-rolling
+    builder-flatpak
+    runtime-ubuntu-2204
 
-.docker-build-base: &docker-build-base
+.docker-build-base:
   stage: build
   tags:
-  - docker
+    - docker
   image: docker:git
   variables:
-    CONTAINER_IMAGE: ${PROJECT_REGISTRY}/${CI_JOB_NAME}:${IMAGE_TAG_TEST}
+    CONTAINER_IMAGE: ${PROJECT_REGISTRY}/${IMAGE_KIND}-${IMAGE_NAME}:${IMAGE_TAG_TEST}
   services:
-  - docker:dind
+    - docker:dind
   script:
-  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-  - echo "Pushing image as ${CONTAINER_IMAGE}"
-  - docker buildx build --push --annotation "org.opencontainers.image.title=${CI_COMMIT_TITLE} [${CI_COMMIT_REF_NAME} ${CI_COMMIT_SHORT_SHA}]" -f ${CI_JOB_NAME} -t ${CONTAINER_IMAGE} .
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - echo "Pushing image as ${CONTAINER_IMAGE}"
+    - >
+      docker buildx build
+        --push
+        --annotation "org.opencontainers.image.title=${CI_COMMIT_TITLE} [${CI_COMMIT_REF_NAME} ${CI_COMMIT_SHORT_SHA}]"
+        --file ./${IMAGE_KIND}/${IMAGE_NAME}.Dockerfile
+        --tag ${CONTAINER_IMAGE}
+        ./${IMAGE_KIND}/
 
-build-ubuntu-2204:
-  <<: *docker-build-base
 
-build-ubuntu-rolling:
-  <<: *docker-build-base
+builder/ubuntu-2204:
+  extends: .docker-build-base
+  variables:
+    IMAGE_KIND: builder
+    IMAGE_NAME: ubuntu-2204
 
-build-python:
-  <<: *docker-build-base
+builder/ubuntu-rolling:
+  extends: .docker-build-base
+  variables:
+    IMAGE_KIND: builder
+    IMAGE_NAME: ubuntu-rolling
 
-build-flatpak:
-  <<: *docker-build-base
+builder/flatpak:
+  extends: .docker-build-base
+  variables:
+    IMAGE_KIND: builder
+    IMAGE_NAME: flatpak
 
-build-ubuntu-templight:
-  <<: *docker-build-base
+builder/ubuntu-templight:
+  extends: .docker-build-base
   stage: build-derived
   when: manual
+  variables:
+    IMAGE_KIND: builder
+    IMAGE_NAME: ubuntu-templight
+
+
+runtime/ubuntu-2204:
+  extends: .docker-build-base
+  variables:
+    IMAGE_KIND: runtime
+    IMAGE_NAME: ubuntu-2204
+
 
 test-images:
-  stage: analyse
+  stage: analyze
   rules:
     - if: $CI_PIPELINE_SOURCE != "push"
   tags:
@@ -57,14 +85,15 @@ test-images:
 deploy-images:
   stage: deploy
   tags:
-  - docker
+    - docker
+  # See https://github.com/google/go-containerregistry/tree/main/cmd/crane#using-with-gitlab
   image:
     name: gcr.io/go-containerregistry/crane:debug
     entrypoint: ['']
   script:
-  - crane auth login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-  - |
-    for image in build-ubuntu-2204 build-ubuntu-rolling build-python build-flatpak; do
-      crane tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST} ${IMAGE_TAG}
-      crane delete ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}
-    done
+    - crane auth login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - |
+      for image in ${DEPLOY_IMAGES}; do
+        crane tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST} ${IMAGE_TAG}
+        crane delete ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}
+      done
