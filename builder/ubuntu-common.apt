@@ -17,7 +17,6 @@ libboost-filesystem1.74-dev
 libboost-iostreams1.74-dev
 libboost-log1.74-dev
 libboost-random1.74-dev
-libboost-regex1.74-dev
 libboost-system1.74-dev
 libc6-dev
 libc6-dev-i386
