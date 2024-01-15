@@ -7,7 +7,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y $(cat /t
     apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
 COPY ./python-requirements.txt /tmp/python-requirements.txt
-RUN pip3 install --requirement /tmp/python-requirements.txt
+RUN pip3 install --user --requirement /tmp/python-requirements.txt
 
 # Install Docker: https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository
 # Install apptainer: adapted from https://apptainer.org/docs/admin/main/installation.html#install-ubuntu-packages
