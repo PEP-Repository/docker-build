@@ -3,7 +3,7 @@ FROM ubuntu:22.04
 COPY ./ubuntu-common.apt ./ubuntu-2204.apt /tmp/
 
 # should be in one RUN command, to avoid huge caches between steps
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y $(cat ./ubuntu-common.apt ./ubuntu-2204.apt) && \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y $(cat /tmp/ubuntu-common.apt /tmp/ubuntu-2204.apt) && \
     apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
 COPY ./python-requirements.txt /tmp/python-requirements.txt
