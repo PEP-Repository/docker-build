@@ -31,14 +31,14 @@ variables:
     - docker:dind
   script:
     - |
-      bash <<EOF
-      set -e -o pipefail
       if [ -n "${CI_COMMIT_BRANCH}" ]; then
         for branch in ${SCHEDULE_BRANCHES}; do
           if [ "$branch" = "${CI_COMMIT_BRANCH}" ]; then
             break
           fi
-          if [ "$(git rev-parse "origin/$branch" --)" = "${CI_COMMIT_SHA}" ]; then
+          sha="$(git rev-parse "origin/$branch" --)"
+          [ -n "$sha" ] || exit 1
+          if [ "$sha" = "${CI_COMMIT_SHA}" ]; then
             SKIP_BUILD=1
           fi
         done
@@ -48,7 +48,6 @@ variables:
           exit
         fi
       fi
-      EOF
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - echo "Pushing image as $CONTAINER_IMAGE"
     - >
