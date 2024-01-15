@@ -1,8 +1,8 @@
 FROM ubuntu:rolling
 
-COPY ./ubuntu-rolling.apt /tmp/requirements.apt
+COPY ./ubuntu-common.apt ./ubuntu-rolling.apt /tmp/
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y $(cat /tmp/requirements.apt) && \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y $(cat ./ubuntu-common.apt ./ubuntu-rolling.apt) && \
     apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
 COPY ./python-requirements.txt /tmp/python-requirements.txt
