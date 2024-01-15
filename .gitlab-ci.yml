@@ -31,13 +31,14 @@ variables:
     - docker:dind
   script:
     - |
-      set -e
+      bash -c "
+      set -e -o pipefail
       if [ -n "${CI_COMMIT_BRANCH}" ]; then
         for branch in ${SCHEDULE_BRANCHES}; do
           if [ "$branch" = "${CI_COMMIT_BRANCH}" ]; then
             break
           fi
-          if [ "$(git rev-parse "$branch")" = "${CI_COMMIT_SHA}" ]; then
+          if [ "$(git rev-parse "origin/$branch" --)" = "${CI_COMMIT_SHA}" ]; then
             SKIP_BUILD=1
           fi
         done
@@ -47,6 +48,7 @@ variables:
           exit
         fi
       fi
+      "
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - echo "Pushing image as $CONTAINER_IMAGE"
     - >
@@ -120,7 +122,6 @@ deploy-images:
     - if [ "$SKIP_BUILD" = 1 ]; then exit; fi
     - crane auth login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - |
-      set -e
       for image in ${DEPLOY_IMAGES}; do
         echo "Retagging $image:${IMAGE_TAG_TEST} as ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}"
         crane tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST} ${IMAGE_TAG}
