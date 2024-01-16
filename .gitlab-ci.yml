@@ -109,11 +109,16 @@ runtime/ubuntu-2204:
 
 test-images:
   stage: analyze
+  variables:
+    # Override to set branch/ref of pep/core to test images on
+    CORE_TEST_REF: ${CI_COMMIT_BRANCH}
   rules:
-    # Do not run on feature branches
-    - if: $CI_COMMIT_BRANCH =~ $SCHEDULE_BRANCHES_REGEX
-    # ...unless requested
-    - when: manual
+    # Only enable manual run not run on feature branches, but do not create MR pipelines (see https://docs.gitlab.com/ee/ci/pipelines/merge_request_pipelines.html )
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: never
+    - if: $CI_COMMIT_BRANCH !~ $SCHEDULE_BRANCHES_REGEX
+      when: manual
+    - when: on_success
   tags:
     - docker
   image: endeveit/docker-jq
@@ -121,7 +126,7 @@ test-images:
     # A better way to skip jobs is not yet available, see https://gitlab.com/gitlab-org/gitlab/-/issues/292816, https://gitlab.com/gitlab-org/gitlab/-/issues/329217
     # $SKIP is retrieved from jobs above via skip.env
     - if [ "$SKIP" = 1 ]; then exit; fi
-    - ./run-pipeline.sh ${IMAGE_TAG_TEST} "${CI_COMMIT_BRANCH}"
+    - ./run-pipeline.sh ${IMAGE_TAG_TEST} "${CORE_TEST_REF}"
 
 deploy-images:
   stage: deploy
