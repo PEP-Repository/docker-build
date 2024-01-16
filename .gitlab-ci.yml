@@ -58,6 +58,7 @@ variables:
       --annotation "org.opencontainers.image.title=${CI_COMMIT_TITLE} [${CI_COMMIT_REF_NAME} ${CI_COMMIT_SHORT_SHA}]"
       --file ./${IMAGE_KIND}/${IMAGE_NAME}.Dockerfile
       --tag ${CONTAINER_IMAGE}
+      ${DOCKER_ARGS}
       ./${IMAGE_KIND}/
   artifacts:
     reports:
@@ -85,11 +86,13 @@ builder/flatpak:
 
 builder/ubuntu-templight:
   extends: .docker-base
+  # Overrides stage in base
   stage: docker-images-derived
   when: manual
   variables:
     IMAGE_KIND: builder
     IMAGE_NAME: ubuntu-templight
+    DOCKER_ARGS: "--build-arg BASE_IMAGE=${PROJECT_REGISTRY}/builder-ubuntu-2204:${IMAGE_TAG}"
 
 
 runtime/ubuntu-2204:
