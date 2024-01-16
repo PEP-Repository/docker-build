@@ -1,4 +1,6 @@
 #!/bin/sh
+set -e -o nounset
+
 contains() {
     string="$1"
     substring="$2"

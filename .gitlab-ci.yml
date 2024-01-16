@@ -1,8 +1,8 @@
 stages:
-  - build
+  - docker-images
   - analyze
   - deploy
-  - build-derived
+  - docker-images-derived
 
 variables:
   DOCKER_DRIVER: overlay2 # faster docker builds, see https://gitlab.com/gitlab-org/gitlab-ce/issues/21374, https://docs.docker.com/storage/storagedriver/overlayfs-driver/
@@ -10,6 +10,7 @@ variables:
   PROJECT_REGISTRY: ${CI_REGISTRY}/${CI_PROJECT_PATH}
   IMAGE_TAG: sha-${CI_COMMIT_SHA}
   IMAGE_TAG_TEST: sha-test-${CI_COMMIT_SHA}
+  # >- is a YAML space-separated string, see https://yaml-multiline.info/
   DEPLOY_IMAGES: >-
     builder-ubuntu-2204
     builder-ubuntu-rolling
@@ -20,8 +21,8 @@ variables:
     stable
     release
 
-.docker-build-base:
-  stage: build
+.docker-base:
+  stage: docker-images
   tags:
     - docker
   image: docker:git
@@ -39,12 +40,12 @@ variables:
           sha="$(git rev-parse "origin/$branch" --)"
           [ -n "$sha" ] || exit 1
           if [ "$sha" = "${CI_COMMIT_SHA}" ]; then
-            SKIP_BUILD=1
+            SKIP=1
           fi
         done
-        echo "SKIP_BUILD=$SKIP_BUILD" >>build.env
-        if [ "$SKIP_BUILD" = 1 ]; then
-          echo "Will skip build, since this will commit will already be built on $branch"
+        echo "SKIP=$SKIP" >>skip.env  # Save, see artifacts
+        if [ "$SKIP" = 1 ]; then
+          echo "Will skip building docker images, since this commit will already be built on $branch"
           exit
         fi
       fi
@@ -59,30 +60,31 @@ variables:
       ./${IMAGE_KIND}/
   artifacts:
     reports:
-      dotenv: build.env
+      # Save $SKIP for jobs below
+      dotenv: skip.env
 
 
 builder/ubuntu-2204:
-  extends: .docker-build-base
+  extends: .docker-base
   variables:
     IMAGE_KIND: builder
     IMAGE_NAME: ubuntu-2204
 
 builder/ubuntu-rolling:
-  extends: .docker-build-base
+  extends: .docker-base
   variables:
     IMAGE_KIND: builder
     IMAGE_NAME: ubuntu-rolling
 
 builder/flatpak:
-  extends: .docker-build-base
+  extends: .docker-base
   variables:
     IMAGE_KIND: builder
     IMAGE_NAME: flatpak
 
 builder/ubuntu-templight:
-  extends: .docker-build-base
-  stage: build-derived
+  extends: .docker-base
+  stage: docker-images-derived
   when: manual
   variables:
     IMAGE_KIND: builder
@@ -90,7 +92,7 @@ builder/ubuntu-templight:
 
 
 runtime/ubuntu-2204:
-  extends: .docker-build-base
+  extends: .docker-base
   variables:
     IMAGE_KIND: runtime
     IMAGE_NAME: ubuntu-2204
@@ -105,24 +107,25 @@ test-images:
   image: endeveit/docker-jq
   script:
     # A better way to skip jobs is not yet available, see https://gitlab.com/gitlab-org/gitlab/-/issues/292816, https://gitlab.com/gitlab-org/gitlab/-/issues/329217
-    - if [ "$SKIP_BUILD" = 1 ]; then exit; fi
+    # $SKIP is retrieved from jobs above via skip.env
+    - if [ "$SKIP" = 1 ]; then exit; fi
     - ./run-pipeline.sh ${IMAGE_TAG_TEST}
 
-# Use crane for efficient remote retagging
 deploy-images:
   stage: deploy
   tags:
     - docker
+  # Use crane for efficient remote retagging
   # See https://github.com/google/go-containerregistry/tree/main/cmd/crane#using-with-gitlab
   image:
     name: gcr.io/go-containerregistry/crane:debug
     entrypoint: ['']
   script:
-    - if [ "$SKIP_BUILD" = 1 ]; then exit; fi
+    - if [ "$SKIP" = 1 ]; then exit; fi
     - crane auth login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - |
       for image in ${DEPLOY_IMAGES}; do
-        echo "Retagging $image:${IMAGE_TAG_TEST} as ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}"
+        echo "Retagging $image:${IMAGE_TAG_TEST} as ${PROJECT_REGISTRY}/$image:${IMAGE_TAG}"
         crane tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST} ${IMAGE_TAG}
         crane delete ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}
       done
