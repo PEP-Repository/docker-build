@@ -32,6 +32,7 @@ variables:
     - docker:dind
   script:
     - |
+      git fetch --depth=1
       if [ -n "${CI_COMMIT_BRANCH}" ]; then
         for branch in ${SCHEDULE_BRANCHES}; do
           if [ "$branch" = "${CI_COMMIT_BRANCH}" ]; then
