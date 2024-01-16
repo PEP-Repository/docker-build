@@ -13,10 +13,11 @@ contains() {
 }
 
 image_tag="$1"
+branch="$2"
 
 echo "Running a core pipeline using a RUNNER_IMAGE_TAG=$image_tag"
 response=$(curl -sS --globoff --request POST --header "PRIVATE-TOKEN:${GITLAB_ACCESS_TOKEN}" \
-    "${CI_API_V4_URL}/projects/pep%2fcore/pipeline?ref=master&variables[][key]=RUNNER_IMAGE_TAG&variables[][value]=$image_tag")
+    "${CI_API_V4_URL}/projects/pep%2fcore/pipeline?ref=$branch&variables[][key]=RUNNER_IMAGE_TAG&variables[][value]=$image_tag")
 echo "Response: ${response}"
 pipelineid=$(echo "${response}" | jq ".id")
 echo "Pipeline ID ${pipelineid}"

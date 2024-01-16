@@ -10,16 +10,21 @@ variables:
   PROJECT_REGISTRY: ${CI_REGISTRY}/${CI_PROJECT_PATH}
   IMAGE_TAG: sha-${CI_COMMIT_SHA}
   IMAGE_TAG_TEST: sha-test-${CI_COMMIT_SHA}
+
   # >- is a YAML space-separated string, see https://yaml-multiline.info/
+  # Images that should be retagged from $IMAGE_TAG_TEST to $IMAGE_TAG
   DEPLOY_IMAGES: >-
     builder-ubuntu-2204
     builder-ubuntu-rolling
     builder-flatpak
     runtime-ubuntu-2204
+  # Branches update pipelines are scheduled on
   SCHEDULE_BRANCHES: >-
     master
     stable
     release
+  # Branches update pipelines are scheduled, in regex form
+  SCHEDULE_BRANCHES_REGEX: ^(master|stable|release)$
 
 .docker-base:
   stage: docker-images
@@ -105,7 +110,10 @@ runtime/ubuntu-2204:
 test-images:
   stage: analyze
   rules:
-    - if: $CI_PIPELINE_SOURCE != 'push' && $CI_PIPELINE_SOURCE != 'merge_request_event'
+    # Do not run on feature branches
+    - if: $CI_COMMIT_BRANCH =~ $SCHEDULE_BRANCHES_REGEX
+    # ...unless requested
+    - when: manual
   tags:
     - docker
   image: endeveit/docker-jq
@@ -113,7 +121,7 @@ test-images:
     # A better way to skip jobs is not yet available, see https://gitlab.com/gitlab-org/gitlab/-/issues/292816, https://gitlab.com/gitlab-org/gitlab/-/issues/329217
     # $SKIP is retrieved from jobs above via skip.env
     - if [ "$SKIP" = 1 ]; then exit; fi
-    - ./run-pipeline.sh ${IMAGE_TAG_TEST}
+    - ./run-pipeline.sh ${IMAGE_TAG_TEST} "${CI_COMMIT_BRANCH}"
 
 deploy-images:
   stage: deploy
