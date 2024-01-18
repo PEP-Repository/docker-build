@@ -2,6 +2,7 @@ stages:
   - docker-images
   - analyze
   - deploy
+  - analyze-manual
   - docker-images-derived
 
 variables:
@@ -10,6 +11,9 @@ variables:
   PROJECT_REGISTRY: ${CI_REGISTRY}/${CI_PROJECT_PATH}
   IMAGE_TAG: sha-${CI_COMMIT_SHA}
   IMAGE_TAG_TEST: sha-test-${CI_COMMIT_SHA}
+
+  # Override to set branch/ref of pep/core to test images on
+  CORE_TEST_REF: ${CI_COMMIT_BRANCH}
 
   # >- is a YAML space-separated string, see https://yaml-multiline.info/
   # Images that should be retagged from $IMAGE_TAG_TEST to $IMAGE_TAG
@@ -109,16 +113,10 @@ runtime/ubuntu-2204:
 
 test-images:
   stage: analyze
-  variables:
-    # Override to set branch/ref of pep/core to test images on
-    CORE_TEST_REF: ${CI_COMMIT_BRANCH}
   rules:
-    # Only enable manual run not run on feature branches, but do not create MR pipelines (see https://docs.gitlab.com/ee/ci/pipelines/merge_request_pipelines.html )
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    # Only enable manual run on schedule branches, and do not create MR pipelines (see https://docs.gitlab.com/ee/ci/pipelines/merge_request_pipelines.html )
+    - if: $CI_COMMIT_BRANCH !~ $SCHEDULE_BRANCHES_REGEX || $CI_PIPELINE_SOURCE == 'merge_request_event'
       when: never
-    - if: $CI_COMMIT_BRANCH !~ $SCHEDULE_BRANCHES_REGEX
-      when: manual
-      allow_failure: true  # Allow deploy-images to run without manual activation
     - when: on_success
   tags:
     - docker
@@ -147,3 +145,13 @@ deploy-images:
         crane tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST} ${IMAGE_TAG}
         crane delete ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}
       done
+
+test-images-manual:
+  stage: analyze-manual
+  when: manual
+  allow_failure: true
+  tags:
+    - docker
+  image: endeveit/docker-jq
+  script:
+    - ./run-pipeline.sh ${IMAGE_TAG} "${CORE_TEST_REF}"
