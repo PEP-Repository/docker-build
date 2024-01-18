@@ -118,6 +118,7 @@ test-images:
       when: never
     - if: $CI_COMMIT_BRANCH !~ $SCHEDULE_BRANCHES_REGEX
       when: manual
+      allow_failure: true  # Allow deploy-images to run without manual activation
     - when: on_success
   tags:
     - docker
