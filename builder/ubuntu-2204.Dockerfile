@@ -6,6 +6,8 @@ COPY ./ubuntu-common.apt ./ubuntu-2204.apt /tmp/
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y $(cat /tmp/ubuntu-common.apt /tmp/ubuntu-2204.apt) && \
     apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
+# Profile is not loaded for docker runners (https://docs.gitlab.com/runner/shells/index.html#shell-profile-loading ),
+# so we put binaries in /usr/local/bin instead of the default ~/.local/bin
 ENV PIPX_BIN_DIR=/usr/local/bin
 RUN pipx install conan~=2.0
 
