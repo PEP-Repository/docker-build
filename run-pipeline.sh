@@ -17,7 +17,9 @@ core_ref="$2"
 
 echo "Running a core pipeline on $core_ref using RUNNER_IMAGE_TAG=$image_tag"
 response=$(curl -sS --globoff --request POST --header "PRIVATE-TOKEN:${GITLAB_ACCESS_TOKEN}" \
-    "${CI_API_V4_URL}/projects/pep%2fcore/pipeline?ref=$core_ref&variables[][key]=RUNNER_IMAGE_TAG&variables[][value]=$image_tag")
+    "${CI_API_V4_URL}/projects/pep%2fcore/pipeline" \
+    --data-urlencode "ref=$core_ref" \
+    --data-urlencode "variables[][key]=RUNNER_IMAGE_TAG" --data-urlencode "variables[][value]=$image_tag")
 echo "Response: ${response}"
 pipelineid=$(echo "${response}" | jq ".id")
 echo "Pipeline ID ${pipelineid}"
