@@ -120,11 +120,12 @@ test-images:
     - when: on_success
   tags:
     - docker
-  image: endeveit/docker-jq
+  image: alpine
   script:
     # A better way to skip jobs is not yet available, see https://gitlab.com/gitlab-org/gitlab/-/issues/292816, https://gitlab.com/gitlab-org/gitlab/-/issues/329217
     # $SKIP is retrieved from jobs above via skip.env
     - if [ "$SKIP" = 1 ]; then exit; fi
+    - apk add --no-cache jq curl
     - ./run-pipeline.sh ${IMAGE_TAG_TEST} "${CORE_TEST_REF}"
 
 deploy-images:
