@@ -5,7 +5,10 @@ COPY ./ubuntu-common.apt ./ubuntu-rolling.apt /tmp/
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y $(cat /tmp/ubuntu-common.apt /tmp/ubuntu-rolling.apt) && \
     apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
-RUN pipx ensurepath && pipx install conan~=2.0
+# Profile is not loaded for docker runners (https://docs.gitlab.com/runner/shells/index.html#shell-profile-loading ),
+# so we put binaries in /usr/local/bin instead of the default ~/.local/bin
+ENV PIPX_BIN_DIR=/usr/local/bin
+RUN pipx install conan~=2.0
 
 # Install Docker: https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
