@@ -153,6 +153,7 @@ test-images-manual:
   allow_failure: true
   tags:
     - docker
-  image: endeveit/docker-jq
+  image: alpine
   script:
+    - apk add --no-cache jq curl
     - ./run-pipeline.sh ${IMAGE_TAG} "${CORE_TEST_REF}"
