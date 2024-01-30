@@ -63,7 +63,7 @@ variables:
     - echo "Pushing image as $CONTAINER_IMAGE"
     - >
       docker buildx build
-      --push
+      --pull --push
       --annotation "org.opencontainers.image.title=${CI_COMMIT_TITLE} [${CI_COMMIT_REF_NAME} ${CI_COMMIT_SHORT_SHA}]"
       --file ./${IMAGE_KIND}/${IMAGE_NAME}.Dockerfile
       --tag ${CONTAINER_IMAGE}
@@ -120,11 +120,12 @@ test-images:
     - when: on_success
   tags:
     - docker
-  image: endeveit/docker-jq
+  image: alpine
   script:
     # A better way to skip jobs is not yet available, see https://gitlab.com/gitlab-org/gitlab/-/issues/292816, https://gitlab.com/gitlab-org/gitlab/-/issues/329217
     # $SKIP is retrieved from jobs above via skip.env
     - if [ "$SKIP" = 1 ]; then exit; fi
+    - apk add --no-cache jq curl
     - ./run-pipeline.sh ${IMAGE_TAG_TEST} "${CORE_TEST_REF}"
 
 deploy-images:
@@ -152,6 +153,7 @@ test-images-manual:
   allow_failure: true
   tags:
     - docker
-  image: endeveit/docker-jq
+  image: alpine
   script:
+    - apk add --no-cache jq curl
     - ./run-pipeline.sh ${IMAGE_TAG} "${CORE_TEST_REF}"
