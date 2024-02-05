@@ -47,7 +47,7 @@ variables:
           if [ "$branch" = "${CI_COMMIT_BRANCH}" ]; then
             break
           fi
-          sha="$(git rev-parse "origin/$branch" --)"
+          sha="$(git rev-parse "origin/$branch")"
           [ -n "$sha" ] || exit 1
           if [ "$sha" = "${CI_COMMIT_SHA}" ]; then
             SKIP=1
@@ -132,19 +132,14 @@ deploy-images:
   stage: deploy
   tags:
     - docker
-  # Use crane for efficient remote retagging
-  # See https://github.com/google/go-containerregistry/tree/main/cmd/crane#using-with-gitlab
-  image:
-    name: gcr.io/go-containerregistry/crane:debug
-    entrypoint: ['']
+  image: docker:git
   script:
     - if [ "$SKIP" = 1 ]; then exit; fi
-    - crane auth login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - |
       for image in ${DEPLOY_IMAGES}; do
         echo "Retagging $image:${IMAGE_TAG_TEST} as ${PROJECT_REGISTRY}/$image:${IMAGE_TAG}"
-        crane tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST} ${IMAGE_TAG}
-        crane delete ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}
+        docker buildx imagetools create --tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG} ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}
       done
 
 test-images-manual:
