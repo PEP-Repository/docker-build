@@ -3,6 +3,7 @@ clang
 cmake
 curl
 distcc
+file
 flex
 git
 gnupg
