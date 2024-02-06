@@ -41,7 +41,7 @@ variables:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - |
       prev_created=$(docker buildx imagetools inspect ${PROJECT_REGISTRY}/${IMAGE_KIND}-${IMAGE_NAME}:${IMAGE_TAG} --format '{{json .Image}}' | jq --raw-output .created || true)
-      if [ -z prev_created ]; then
+      if [ -n "$prev_created" ]; then
         diff_secs=$(($(date +%s) - $(date -d "$prev_created" +%s)))
         diff_days=$((diff_secs / 60 / 60 / 24))
         echo "Previous image created at $prev_created, $diff_days days ($diff_secs s) ago"
