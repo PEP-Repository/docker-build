@@ -45,7 +45,7 @@ variables:
         diff_secs=$(($(date +%s) - $(date -d "$prev_created" +%s)))
         diff_days=$((diff_secs / 60 / 60 / 24))
         echo "Previous image created at $prev_created, $diff_days days ($diff_secs s) ago"
-        if $((diff_days < ${IMAGE_MAX_AGE_DAYS})); then
+        if [ "$diff_days" -lt "${IMAGE_MAX_AGE_DAYS}" ]; then
           echo "Recent enough, won't rebuild"
           exit
         else
