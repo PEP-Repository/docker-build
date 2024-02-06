@@ -42,6 +42,9 @@ variables:
     - |
       prev_created=$(docker buildx imagetools inspect ${PROJECT_REGISTRY}/${IMAGE_KIND}-${IMAGE_NAME}:${IMAGE_TAG} --format '{{json .Image}}' | jq --raw-output .created || true)
       if [ -n "$prev_created" ]; then
+        # Transform e.g. 2024-02-06T11:36:59.952427421Z -> 2024-02-06T11:36:59Z
+        #  because of `date` used in Alpine Linux
+        prev_created=$(echo "$prev_created" | sed -e 's/\.[0-9]*//')
         diff_secs=$(($(date +%s) - $(date -d "$prev_created" +%s)))
         diff_days=$((diff_secs / 60 / 60 / 24))
         echo "Previous image created at $prev_created, $diff_days days ($diff_secs s) ago"
