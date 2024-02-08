@@ -2,7 +2,7 @@ FROM ubuntu:rolling
 
 COPY ./ubuntu-common.apt ./ubuntu-rolling.apt /tmp/
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y $(cat /tmp/ubuntu-common.apt /tmp/ubuntu-rolling.apt) && \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y $(cat /tmp/ubuntu-common.apt /tmp/ubuntu-rolling.apt | cut -d'#' -f1) && \
     apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
 # Profile is not loaded for docker runners (https://docs.gitlab.com/runner/shells/index.html#shell-profile-loading ),

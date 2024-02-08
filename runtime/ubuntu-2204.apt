@@ -1,15 +1,12 @@
-bash-completion
+# APT dependencies for ubuntu-2204 runtime
+
 ca-certificates
-libqt6core6
-libqt6gui6
-libqt6network6
-libqt6networkauth6
-libqt6printsupport6
-libqt6svg6
-libqt6widgets6
 logrotate
-pkg-config
 rsyslog
 rsyslog-gnutls
 xxd
+
+# For autocompletion
+bash-completion
+pkg-config
 zsh

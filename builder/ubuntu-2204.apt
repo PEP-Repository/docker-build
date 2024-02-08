@@ -1,3 +1,1 @@
-libqt6networkauth6-dev
-libqt6svg6-dev
-qt6-l10n-tools
+# Additional APT dependencies for ubuntu-2204 builder

@@ -1,2 +1,1 @@
-qt6-networkauth-dev
-qt6-svg-dev
+# Additional APT dependencies for ubuntu-rolling builder

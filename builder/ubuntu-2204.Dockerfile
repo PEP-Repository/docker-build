@@ -3,7 +3,7 @@ FROM ubuntu:22.04
 COPY ./ubuntu-common.apt ./ubuntu-2204.apt /tmp/
 
 # should be in one RUN command, to avoid huge caches between steps
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y $(cat /tmp/ubuntu-common.apt /tmp/ubuntu-2204.apt) && \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y $(cat /tmp/ubuntu-common.apt /tmp/ubuntu-2204.apt | cut -d'#' -f1) && \
     apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
 # Profile is not loaded for docker runners (https://docs.gitlab.com/runner/shells/index.html#shell-profile-loading ),
