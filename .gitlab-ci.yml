@@ -22,13 +22,10 @@ variables:
     builder-ubuntu-rolling
     builder-flatpak
     runtime-ubuntu-2204
-  # Branches update pipelines are scheduled on
-  SCHEDULE_BRANCHES: >-
-    master
-    stable
-    release
-  # Branches update pipelines are scheduled, in regex form
+  # Branches update pipelines are scheduled on, in regex form
   SCHEDULE_BRANCHES_REGEX: ^(master|stable|release)$
+  # If the previous image for a commit is at least this old, it will be rebuilt
+  IMAGE_MAX_AGE_DAYS: 6
 
 .docker-base:
   stage: docker-images
@@ -40,26 +37,25 @@ variables:
   services:
     - docker:dind
   script:
-    - |
-      git fetch --depth=1
-      if [ -n "${CI_COMMIT_BRANCH}" ]; then
-        for branch in ${SCHEDULE_BRANCHES}; do
-          if [ "$branch" = "${CI_COMMIT_BRANCH}" ]; then
-            break
-          fi
-          sha="$(git rev-parse "origin/$branch" --)"
-          [ -n "$sha" ] || exit 1
-          if [ "$sha" = "${CI_COMMIT_SHA}" ]; then
-            SKIP=1
-          fi
-        done
-        echo "SKIP=$SKIP" >>skip.env  # Save, see artifacts
-        if [ "$SKIP" = 1 ]; then
-          echo "Will skip building docker images, since this commit will already be built on $branch"
-          exit
-        fi
-      fi
+    - apk add --no-cache jq coreutils  # Also add coreutils for `date` (Alpine/busybox date doesn't parse ISO-8601 well)
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - touch env.env
+    - |
+      prev_created=$(docker buildx imagetools inspect ${PROJECT_REGISTRY}/${IMAGE_KIND}-${IMAGE_NAME}:${IMAGE_TAG} --format '{{json .Image}}' | jq --raw-output .created || true)
+      if [ -n "$prev_created" ]; then
+        diff_secs=$(($(date +%s) - $(date -d "$prev_created" +%s)))
+        diff_days=$((diff_secs / 60 / 60 / 24))
+        echo "Previous image created at $prev_created, $diff_days days ($diff_secs s) ago"
+        if [ "$diff_days" -lt "${IMAGE_MAX_AGE_DAYS}" ]; then
+          echo "Recent enough, won't rebuild"
+          exit
+        else
+          echo 'Not recent enough, will rebuild'
+        fi
+      else
+        echo 'No existing image for this commit'
+      fi
+      echo 'NEW_IMAGE=1' >>env.env  # Save, see artifacts
     - echo "Pushing image as $CONTAINER_IMAGE"
     - >
       docker buildx build
@@ -71,8 +67,8 @@ variables:
       ./${IMAGE_KIND}/
   artifacts:
     reports:
-      # Save $SKIP for jobs below
-      dotenv: skip.env
+      # Save $NEW_IMAGE for jobs below
+      dotenv: env.env
 
 
 builder/ubuntu-2204:
@@ -123,8 +119,8 @@ test-images:
   image: alpine
   script:
     # A better way to skip jobs is not yet available, see https://gitlab.com/gitlab-org/gitlab/-/issues/292816, https://gitlab.com/gitlab-org/gitlab/-/issues/329217
-    # $SKIP is retrieved from jobs above via skip.env
-    - if [ "$SKIP" = 1 ]; then exit; fi
+    # $NEW_IMAGE is retrieved from jobs above via env.env
+    - if [ "$NEW_IMAGE" != 1 ]; then exit; fi
     - apk add --no-cache jq curl
     - ./run-pipeline.sh ${IMAGE_TAG_TEST} "${CORE_TEST_REF}"
 
@@ -132,19 +128,17 @@ deploy-images:
   stage: deploy
   tags:
     - docker
-  # Use crane for efficient remote retagging
-  # See https://github.com/google/go-containerregistry/tree/main/cmd/crane#using-with-gitlab
-  image:
-    name: gcr.io/go-containerregistry/crane:debug
-    entrypoint: ['']
+  image: docker:git
+  services:
+    - docker:dind
   script:
-    - if [ "$SKIP" = 1 ]; then exit; fi
-    - crane auth login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - if [ "$NEW_IMAGE" != 1 ]; then exit; fi
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - |
       for image in ${DEPLOY_IMAGES}; do
         echo "Retagging $image:${IMAGE_TAG_TEST} as ${PROJECT_REGISTRY}/$image:${IMAGE_TAG}"
-        crane tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST} ${IMAGE_TAG}
-        crane delete ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}
+        # This assumes sha-test tags will not be cleaned up while a previous image is still valid
+        docker buildx imagetools create --tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG} ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}
       done
 
 test-images-manual:
