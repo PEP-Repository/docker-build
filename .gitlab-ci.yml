@@ -27,6 +27,16 @@ variables:
   # If the previous image for a commit is at least this old, it will be rebuilt
   IMAGE_MAX_AGE_DAYS: 6
 
+# You can set a tag `limit_concurrency:<VALUE>` on a gitlab runner if it runs out of memory.
+# Jobs can invoke this anchor to retrieve the configured <VALUE> (if any) into the "concurrency_limit" variable.
+.set_concurrency_limit: &set_concurrency_limit |
+  concurrency_limit=$(echo "$CI_RUNNER_TAGS" | jq -r '.[]' | sed -n 's/^limit_concurrency:\([0-9]\+\)$/\1/p')
+  if [ -z "$concurrency_limit" ]; then
+    >&2 echo "No concurrency limit specified"
+  else
+    >&2 echo "Concurrency limit is $concurrency_limit"
+  fi
+
 .docker-base:
   stage: docker-images
   tags:
@@ -57,12 +67,14 @@ variables:
       fi
       echo 'NEW_IMAGE=1' >>env.env  # Save, see artifacts
     - echo "Pushing image as $CONTAINER_IMAGE"
+    - *set_concurrency_limit
     - >
       docker buildx build
       --pull --push
       --annotation "org.opencontainers.image.title=${CI_COMMIT_TITLE} [${CI_COMMIT_REF_NAME} ${CI_COMMIT_SHORT_SHA}]"
       --file ./${IMAGE_KIND}/${IMAGE_NAME}.Dockerfile
       --tag ${CONTAINER_IMAGE}
+      --build-arg "CONCURRENCY_LIMIT=$concurrency_limit"
       ${DOCKER_ARGS}
       ./${IMAGE_KIND}/
   artifacts:

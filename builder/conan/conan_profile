@@ -1,0 +1,36 @@
+# Generic Conan profile (default Release)
+# See https://docs.conan.io/2/reference/config_files/profiles.html
+# Example: CC=clang CXX=clang++ conan install ./ --profile:all=./ci_cd/conan_profile
+
+{% set os = detect_api.detect_os() %}
+{% set compiler, version, compiler_exe = detect_api.detect_default_compiler() %}
+{% set runtime, _ = detect_api.default_msvc_runtime(compiler) %}
+{% set libcxx = detect_api.detect_libcxx(compiler, version, compiler_exe) %}
+
+[settings]
+build_type=Release
+
+os={{os}}
+arch={{detect_api.detect_arch()}}
+compiler={{compiler}}
+compiler.version={{detect_api.default_compiler_version(compiler, version)}}
+{% if libcxx %} compiler.libcxx={{libcxx}} {% endif %}
+compiler.cppstd=20
+
+{% if runtime -%}
+# MSVC
+compiler.runtime={{runtime}}
+{%- endif %}
+
+[conf]
+{% if os != 'Windows' %} tools.cmake.cmaketoolchain:generator=Ninja {% endif %}
+{% if os == 'Windows' -%}
+# Set Windows version for headers to _WIN32_WINNT_WIN7,
+#  see https://learn.microsoft.com/en-us/windows/win32/winprog/using-the-windows-headers#macros-for-conditional-declarations
+tools.build:defines=['_WIN32_WINNT=0x0601']
+{%- endif %}
+
+[options]
+# windeployqt needs shared libraries
+# (and also wants to be shared itself, see https://github.com/conan-io/conan-center-index/issues/22693 )
+qt/*:shared=True

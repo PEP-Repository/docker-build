@@ -1,3 +1,5 @@
+ARG CONCURRENCY_LIMIT
+
 FROM ubuntu:22.04
 
 COPY ./ubuntu-common.apt ./ubuntu-2204.apt /tmp/
@@ -9,7 +11,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y $(cat /t
 # Profile is not loaded for docker runners (https://docs.gitlab.com/runner/shells/index.html#shell-profile-loading ),
 # so we put binaries in /usr/local/bin instead of the default ~/.local/bin
 ENV PIPX_BIN_DIR=/usr/local/bin
-RUN pipx install conan~=2.0
+RUN pipx install 'conan>=2.1,==2.*'
 
 # Install Docker: https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository
 # Install apptainer: adapted from https://apptainer.org/docs/admin/main/installation.html#install-ubuntu-packages
@@ -23,3 +25,7 @@ RUN add-apt-repository -y ppa:apptainer/ppa \
 
 ENV CC=clang
 ENV CXX=clang++
+
+# Install dependencies with Conan
+COPY ./conan/conan_install.sh /tmp/
+RUN /tmp/conan_install.sh "${CONCURRENCY_LIMIT}" && rm -rf /tmp/*
