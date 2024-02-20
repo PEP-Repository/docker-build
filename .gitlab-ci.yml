@@ -46,7 +46,7 @@ variables:
     CONTAINER_IMAGE: ${PROJECT_REGISTRY}/${IMAGE_KIND}-${IMAGE_NAME}:${IMAGE_TAG_TEST}
   services:
     - docker:dind
-  script:
+  before_script:
     - apk add --no-cache jq coreutils  # Also add coreutils for `date` (Alpine/busybox date doesn't parse ISO-8601 well)
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - touch env.env
@@ -68,9 +68,12 @@ variables:
       echo 'NEW_IMAGE=1' >>env.env  # Save, see artifacts
     - echo "Pushing image as $CONTAINER_IMAGE"
     - *set_concurrency_limit
+  script:
+    - 'true'  # before & after script may handle everything
+  after_script:
     - >
       docker buildx build
-      --pull --push
+      --push
       --annotation "org.opencontainers.image.title=${CI_COMMIT_TITLE} [${CI_COMMIT_REF_NAME} ${CI_COMMIT_SHORT_SHA}]"
       --file ./${IMAGE_KIND}/${IMAGE_NAME}.Dockerfile
       --tag ${CONTAINER_IMAGE}
@@ -82,17 +85,32 @@ variables:
       # Save $NEW_IMAGE for jobs below
       dotenv: env.env
 
-
-builder/ubuntu-2204:
+.cached-builder-base:
   extends: .docker-base
   variables:
     IMAGE_KIND: builder
+  script:
+    - mkdir -p ./${IMAGE_KIND}/cache/
+    - >
+      docker build
+      --file ./${IMAGE_KIND}/${IMAGE_NAME}.Dockerfile
+      --build-arg "CONCURRENCY_LIMIT=$concurrency_limit"
+      --output type=local,dest=./${IMAGE_KIND}/cache/
+      ${DOCKER_ARGS}
+      ./${IMAGE_KIND}/
+  cache:
+    key: docker-builder-cache
+    paths:
+      - ./${IMAGE_KIND}/cache/
+
+builder/ubuntu-2204:
+  extends: .cached-builder-base
+  variables:
     IMAGE_NAME: ubuntu-2204
 
 builder/ubuntu-rolling:
-  extends: .docker-base
+  extends: .cached-builder-base
   variables:
-    IMAGE_KIND: builder
     IMAGE_NAME: ubuntu-rolling
 
 builder/flatpak:

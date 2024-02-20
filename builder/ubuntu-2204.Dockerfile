@@ -1,6 +1,6 @@
 ARG CONCURRENCY_LIMIT
 
-FROM ubuntu:22.04
+FROM ubuntu:22.04 as build
 
 COPY ./ubuntu-common.apt ./ubuntu-2204.apt /tmp/
 
@@ -28,4 +28,11 @@ ENV CXX=clang++
 
 # Install dependencies with Conan
 COPY ./conan /tmp/conan/
-RUN /tmp/conan/conan_install.sh "${CONCURRENCY_LIMIT}" && rm -rf /tmp/*
+RUN --mount='source=./cache/,target=./cache/' \
+    (cp -a ./cache/conan-home/ ~/.conan2/ || true) && \
+    /tmp/conan/conan_install.sh "${CONCURRENCY_LIMIT}" && rm -rf /tmp/*
+
+FROM scratch as cache
+COPY --from=build /root/.conan2/ ./conan-home/
+
+FROM build as release
