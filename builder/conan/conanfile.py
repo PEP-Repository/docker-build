@@ -66,7 +66,7 @@ class CompressorRecipe(ConanFile):
         def custom_opts(opts: dict) -> dict:
             return opts if self.options.custom_dependency_opts else {}
 
-        if self.options.with_unwinder and self.settings.os != 'Windows':
+        if self.options.with_unwinder and self.settings.os == 'Linux':
             self.requires('libunwind/[^1.7]', options=custom_opts({
                 'coredump': False,
                 'ptrace': False,
