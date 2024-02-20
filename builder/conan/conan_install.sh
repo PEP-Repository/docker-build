@@ -3,14 +3,20 @@
 set -eu
 concurrency_limit=${1:-}
 
+# cd to script directory
+cd "${0%/*}"
+
 if [ -n "$concurrency_limit" ]; then
   concurrency_option_conan="-c:a tools.build:jobs=$concurrency_limit"
+else
+  concurrency_option_conan=''
 fi
 
 # Install dependencies with Conan for configurations used in pep/core/.gitlab-ci.yml
 
->>"${0%/*}/conan_profile" "${0%/*}/conan_platform_tool_requires.sh"
-cp "${0%/*}/conan_profile" "$(conan config home)/profiles/default"
+>>"./conan_profile" "./conan_platform_tool_requires.sh"
+mkdir -p "$(conan config home)/profiles/"
+cp "./conan_profile" "$(conan config home)/profiles/default"
 
 conan install ./ --build=missing --update \
   -s build_type=Release \

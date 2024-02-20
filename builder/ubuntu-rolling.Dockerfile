@@ -25,5 +25,5 @@ ENV CC=clang
 ENV CXX=clang++
 
 # Install dependencies with Conan
-COPY ./conan /tmp/
+COPY ./conan /tmp/conan/
 RUN /tmp/conan/conan_install.sh "${CONCURRENCY_LIMIT}" && rm -rf /tmp/*
