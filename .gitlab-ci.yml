@@ -97,6 +97,7 @@ variables:
       docker build
       --file ./${IMAGE_KIND}/${IMAGE_NAME}.Dockerfile
       --build-arg "CONCURRENCY_LIMIT=$concurrency_limit"
+      --target cache
       --output type=local,dest=./${IMAGE_KIND}/cache/
       ${DOCKER_ARGS}
       ./${IMAGE_KIND}/
