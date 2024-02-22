@@ -23,6 +23,8 @@ compiler.runtime={{runtime}}
 {%- endif %}
 
 [conf]
+tools.build:verbosity=quiet
+tools.compilation:verbosity=quiet
 {% if os != 'Windows' %} tools.cmake.cmaketoolchain:generator=Ninja {% endif %}
 {% if os == 'Windows' -%}
 # Set Windows version for headers to _WIN32_WINNT_WIN7,
