@@ -71,6 +71,7 @@ variables:
   script:
     - 'true'  # before & after script may handle everything
   after_script:
+    - echo '==== Building & pushing image ===='
     - >
       docker buildx build
       --push
@@ -90,6 +91,7 @@ variables:
   variables:
     IMAGE_KIND: builder
   script:
+    - echo '==== Building image with cache ===='
     - mkdir -p ./${IMAGE_KIND}/cache/
     - >
       docker build

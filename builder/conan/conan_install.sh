@@ -18,16 +18,21 @@ fi
 mkdir -p "$(conan config home)/profiles/"
 cp "./conan_profile" "$(conan config home)/profiles/default"
 
+echo '==== Installing Release packages ===='
 conan install ./ --build=missing --update \
   -s build_type=Release \
   $concurrency_option_conan \
   -o with_tests=True \
   -o with_benchmark=True \
   -o custom_dependency_opts=True
+
+echo '==== Installing Debug packages ===='
 conan install ./ --build=missing \
   -s build_type=Debug \
   $concurrency_option_conan \
   -o with_tests=True \
   -o custom_dependency_opts=True
+
+echo 'Cleaning cache'
 # Remove download, source, build, temp; except binaries
 conan cache clean

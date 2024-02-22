@@ -29,7 +29,7 @@ ENV CXX=clang++
 # Install dependencies with Conan
 COPY ./conan /tmp/conan/
 RUN --mount='source=./cache/,target=./cache/' \
-    (cp -a ./cache/conan-home/ ~/.conan2/ || true) && \
+    (echo 'Copying cache'; cp -a ./cache/conan-home/ ~/.conan2/ || true) && \
     /tmp/conan/conan_install.sh "${CONCURRENCY_LIMIT}" && rm -rf /tmp/*
 
 FROM scratch as cache
