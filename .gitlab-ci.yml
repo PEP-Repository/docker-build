@@ -9,6 +9,9 @@ variables:
   DOCKER_DRIVER: overlay2 # faster docker builds, see https://gitlab.com/gitlab-org/gitlab-ce/issues/21374, https://docs.docker.com/storage/storagedriver/overlayfs-driver/
   DOCKER_TLS_CERTDIR: "" # Work around failing CI jobs: see https://gitlab.com/gitlab-org/gitlab-ce/issues/64959#note_194582424
 
+  # Override to set branch/ref of pep/core to test images on
+  CORE_TEST_REF: ${CI_COMMIT_BRANCH}
+
 .docker-build-base: &docker-build-base
   stage: build
   tags:
@@ -59,7 +62,7 @@ test-images:
   - docker
   image: endeveit/docker-jq
   script:
-  - ./run-pipeline.sh
+  - ./run-pipeline.sh "${CORE_TEST_REF}"
 
 deploy-images:
   stage: deploy
