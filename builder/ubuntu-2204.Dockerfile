@@ -1,5 +1,3 @@
-# docker build -f build-ubuntu-2204 -t gitlabregistry.pep.cs.ru.nl/pep/docker-build/build-ubuntu-2204 .
-# docker push gitlabregistry.pep.cs.ru.nl/pep/docker-build/build-ubuntu-2204
 FROM ubuntu:22.04
 
 RUN apt-get update \

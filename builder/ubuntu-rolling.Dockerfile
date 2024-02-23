@@ -1,5 +1,3 @@
-# docker build -f build-ubuntu-rolling -t gitlabregistry.pep.cs.ru.nl/pep/docker-build/build-ubuntu-rolling .
-# docker push gitlabregistry.pep.cs.ru.nl/pep/docker-build/build-ubuntu-rolling
 FROM ubuntu:rolling
 
 RUN apt-get update \
