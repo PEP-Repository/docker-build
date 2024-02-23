@@ -107,9 +107,6 @@ test-images:
     - docker
   image: alpine
   script:
-    # A better way to skip jobs is not yet available, see https://gitlab.com/gitlab-org/gitlab/-/issues/292816, https://gitlab.com/gitlab-org/gitlab/-/issues/329217
-    # $NEW_IMAGE is retrieved from jobs above via env.env
-    - if [ "$NEW_IMAGE" != 1 ]; then exit; fi
     - apk add --no-cache jq curl
     - ./run-pipeline.sh ${IMAGE_TAG_TEST} "${CORE_TEST_REF}"
 
@@ -132,6 +129,8 @@ deploy-images:
   services:
     - docker:dind
   script:
+    # A better way to skip jobs is not yet available, see https://gitlab.com/gitlab-org/gitlab/-/issues/292816, https://gitlab.com/gitlab-org/gitlab/-/issues/329217
+    # $NEW_IMAGE is retrieved from jobs above via env.env
     - if [ "$NEW_IMAGE" != 1 ]; then exit; fi
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - |
