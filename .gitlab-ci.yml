@@ -65,6 +65,8 @@ deploy-images:
   stage: deploy
   only:
   - master
+  - stable
+  - release
   - old-not-sha-based
   tags:
   - docker
