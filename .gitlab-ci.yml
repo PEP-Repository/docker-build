@@ -148,6 +148,6 @@ deploy-images:
     - |
       for image in ${DEPLOY_IMAGES}; do
         echo "Retagging $image:${IMAGE_TAG_TEST} as ${PROJECT_REGISTRY}/$image:${IMAGE_TAG}"
-        # This assumes sha-test tags will not be cleaned up while a previous image is still valid
+        # This assumes sha-test tags of an image will not be cleaned up if it is still recent and thus reused
         docker buildx imagetools create --tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG} ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}
       done
