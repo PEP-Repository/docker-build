@@ -3,7 +3,6 @@ stages:
   - analyze
   - deploy
   - analyze-manual
-  - docker-images-derived
 
 variables:
   DOCKER_DRIVER: overlay2 # faster docker builds, see https://gitlab.com/gitlab-org/gitlab-ce/issues/21374, https://docs.docker.com/storage/storagedriver/overlayfs-driver/
@@ -88,16 +87,6 @@ builder/flatpak:
   variables:
     IMAGE_KIND: builder
     IMAGE_NAME: flatpak
-
-builder/ubuntu-templight:
-  extends: .docker-base
-  # Overrides stage in base
-  stage: docker-images-derived
-  when: manual
-  variables:
-    IMAGE_KIND: builder
-    IMAGE_NAME: ubuntu-templight
-    DOCKER_ARGS: "--build-arg BASE_IMAGE=${PROJECT_REGISTRY}/builder-ubuntu-2204:${IMAGE_TAG}"
 
 
 runtime/ubuntu-2204:
