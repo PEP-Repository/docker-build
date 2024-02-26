@@ -19,7 +19,7 @@ echo "Running a core pipeline on $core_ref using RUNNER_IMAGE_TAG=$image_tag"
 response=$(curl -sS --globoff --request POST "${CI_API_V4_URL}/projects/pep%2fcore/trigger/pipeline" \
     --data-urlencode "token=${CI_JOB_TOKEN}" \
     --data-urlencode "ref=$core_ref" \
-    --data-urlencode "variables[][key]=RUNNER_IMAGE_TAG" --data-urlencode "variables[][value]=$image_tag")
+    --data-urlencode "variables[RUNNER_IMAGE_TAG]=$image_tag")
 echo "Response: ${response}"
 pipelineid=$(echo "${response}" | jq ".id")
 echo "Pipeline ID ${pipelineid}"
