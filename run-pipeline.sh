@@ -13,11 +13,13 @@ contains() {
 }
 
 image_tag="$1"
-branch="$2"
+core_ref="$2"
 
-echo "Running a core pipeline using a RUNNER_IMAGE_TAG=$image_tag"
-response=$(curl -sS --globoff --request POST --header "PRIVATE-TOKEN:${GITLAB_ACCESS_TOKEN}" \
-    "${CI_API_V4_URL}/projects/pep%2fcore/pipeline?ref=$branch&variables[][key]=RUNNER_IMAGE_TAG&variables[][value]=$image_tag")
+echo "Running a core pipeline on $core_ref using RUNNER_IMAGE_TAG=$image_tag"
+response=$(curl -sS --globoff --request POST "${CI_API_V4_URL}/projects/pep%2fcore/trigger/pipeline" \
+    --data-urlencode "token=${CI_JOB_TOKEN}" \
+    --data-urlencode "ref=$core_ref" \
+    --data-urlencode "variables[RUNNER_IMAGE_TAG]=$image_tag")
 echo "Response: ${response}"
 pipelineid=$(echo "${response}" | jq ".id")
 echo "Pipeline ID ${pipelineid}"
@@ -26,9 +28,12 @@ then
   exit 1
 fi
 
+# Wait for pipeline to complete, see https://gitlab.com/gitlab-org/gitlab/-/issues/201882
+# Alternative would be to use https://docs.gitlab.com/ee/ci/yaml/#trigger, but then one cannot override CORE_TEST_REF manually
+
 # All possible statuses are documented on https://docs.gitlab.com/ee/api/pipelines.html. I cannot fine any documentation on what these statuses mean.
 # Not all statuses are listed below. I don't expect we will encounter the missing statuses, but if we do we must investigate in which category they should fall.
-running_statuses="\"pending\" \"running\" \"created\" \"preparing\" \"waiting_for_resource\""
+running_statuses="null \"pending\" \"running\" \"created\" \"preparing\" \"waiting_for_resource\""
 success_statuses="\"success\" \"skipped\""
 failure_statuses="\"failed\" \"canceled\""
 
@@ -36,7 +41,7 @@ failure_statuses="\"failed\" \"canceled\""
 status="\"pending\""
 while true
 do
-  status=$(curl -sS --header "PRIVATE-TOKEN:${GITLAB_ACCESS_TOKEN}" "${CI_API_V4_URL}/projects/pep%2fcore/pipelines/${pipelineid}" | jq ".status")
+  status=$(curl -sS --header "PRIVATE-TOKEN:${CI_JOB_TOKEN}" "${CI_API_V4_URL}/projects/pep%2fcore/pipelines/${pipelineid}" | jq ".status")
 
   if contains "$success_statuses" "$status"
   then
