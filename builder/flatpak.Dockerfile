@@ -1,4 +1,5 @@
 FROM ubuntu:22.04
+ENV CLICOLOR_FORCE=1
 
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y flatpak flatpak-builder bzip2 jq \

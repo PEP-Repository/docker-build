@@ -1,6 +1,7 @@
 ARG CONCURRENCY_LIMIT
 
 FROM ubuntu:22.04 as build
+ENV CLICOLOR_FORCE=1
 
 COPY ./ubuntu-common.apt ./ubuntu-2204.apt /tmp/
 

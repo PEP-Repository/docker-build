@@ -1,6 +1,7 @@
 ARG CONCURRENCY_LIMIT
 
 FROM ubuntu:rolling as build
+ENV CLICOLOR_FORCE=1
 
 COPY ./ubuntu-common.apt ./ubuntu-rolling.apt /tmp/
 
