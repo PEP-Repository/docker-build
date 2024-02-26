@@ -28,9 +28,12 @@ then
   exit 1
 fi
 
+# Wait for pipeline to complete, see https://gitlab.com/gitlab-org/gitlab/-/issues/201882
+# Alternative would be to use https://docs.gitlab.com/ee/ci/yaml/#trigger, but then one cannot override CORE_TEST_REF manually
+
 # All possible statuses are documented on https://docs.gitlab.com/ee/api/pipelines.html. I cannot fine any documentation on what these statuses mean.
 # Not all statuses are listed below. I don't expect we will encounter the missing statuses, but if we do we must investigate in which category they should fall.
-running_statuses="\"pending\" \"running\" \"created\" \"preparing\" \"waiting_for_resource\""
+running_statuses="null \"pending\" \"running\" \"created\" \"preparing\" \"waiting_for_resource\""
 success_statuses="\"success\" \"skipped\""
 failure_statuses="\"failed\" \"canceled\""
 
