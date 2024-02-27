@@ -113,7 +113,6 @@ test-images:
 test-images-manual:
   stage: analyze-manual
   when: manual
-  allow_failure: true
   tags:
     - docker
   image: alpine
