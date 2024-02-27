@@ -37,8 +37,9 @@ running_statuses="null \"pending\" \"running\" \"created\" \"preparing\" \"waiti
 success_statuses="\"success\" \"skipped\""
 failure_statuses="\"failed\" \"canceled\""
 
+echo 'Polling status'
 
-status="\"pending\""
+last_status=''
 while true
 do
   status=$(curl -sS --header "PRIVATE-TOKEN:${CI_JOB_TOKEN}" "${CI_API_V4_URL}/projects/pep%2fcore/pipelines/${pipelineid}" | jq ".status")
@@ -57,5 +58,11 @@ do
     exit 1
   fi
 
+  if [ "$status" != "$last_status" ]; then
+    echo "$status"
+    last_status="$status"
+  fi
+
+  printf '.'
   sleep 30
 done
