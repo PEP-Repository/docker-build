@@ -136,7 +136,7 @@ class CompressorRecipe(ConanFile):
             'with_zlib': False,
         }))
         self.requires('openssl/[^3.2]', options=custom_opts({
-            'no_deprecated': True,
+            # 'no_deprecated': True,  # Needed by Qt (otherwise linker error _SSL_CTX_use_RSAPrivateKey)
             'no_legacy': True,
             'no_md4': True,
             'no_rc2': True,
