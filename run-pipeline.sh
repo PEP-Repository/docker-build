@@ -42,7 +42,7 @@ echo 'Polling status'
 last_status=''
 while true
 do
-  status=$(curl -sS --header "PRIVATE-TOKEN:${CI_JOB_TOKEN}" "${CI_API_V4_URL}/projects/pep%2fcore/pipelines/${pipelineid}" | jq ".status")
+  status=$(curl -sS --header "PRIVATE-TOKEN:${CI_JOB_TOKEN}" "${CI_API_V4_URL}/projects/pep%2fcore/pipelines/${pipelineid}" | tee /dev/fd/2 | jq ".status")
 
   if contains "$success_statuses" "$status"
   then
