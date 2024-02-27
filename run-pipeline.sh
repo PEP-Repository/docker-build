@@ -42,7 +42,13 @@ echo 'Polling status'
 last_status=''
 while true
 do
-  status=$(curl -sS --header "PRIVATE-TOKEN:${GITLAB_ACCESS_TOKEN_SUPPORT}" "${CI_API_V4_URL}/projects/pep%2fcore/pipelines/${pipelineid}" | jq ".status")
+  status=$(curl -sS --header "PRIVATE-TOKEN:${GITLAB_ACCESS_TOKEN}" "${CI_API_V4_URL}/projects/pep%2fcore/pipelines/${pipelineid}" | jq ".status")
+
+  if [ "$status" != "$last_status" ]; then
+    printf '\n%s' "$status"
+    last_status="$status"
+  fi
+  printf '.'
 
   if contains "$success_statuses" "$status"
   then
@@ -58,11 +64,5 @@ do
     exit 1
   fi
 
-  if [ "$status" != "$last_status" ]; then
-    printf '\n%s' "$status"
-    last_status="$status"
-  fi
-
-  printf '.'
   sleep 30
 done
