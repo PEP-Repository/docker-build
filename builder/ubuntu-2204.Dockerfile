@@ -1,6 +1,4 @@
-ARG CONCURRENCY_LIMIT
-
-FROM ubuntu:22.04 as build
+FROM ubuntu:22.04
 ENV CLICOLOR_FORCE=1
 
 COPY ./ubuntu-common.apt ./ubuntu-2204.apt /tmp/
@@ -26,14 +24,3 @@ RUN add-apt-repository -y ppa:apptainer/ppa \
 
 ENV CC=clang
 ENV CXX=clang++
-
-# Install dependencies with Conan
-COPY ./conan /tmp/conan/
-RUN --mount='source=./cache/,target=./cache/' \
-    (echo 'Copying cache'; cp -a ./cache/conan-home/ ~/.conan2/ || true) && \
-    /tmp/conan/conan_install.sh "${CONCURRENCY_LIMIT}" && rm -rf /tmp/*
-
-FROM scratch as cache
-COPY --from=build /root/.conan2/ ./conan-home/
-
-FROM build as release

@@ -1,6 +1,4 @@
-ARG CONCURRENCY_LIMIT
-
-FROM ubuntu:rolling as build
+FROM ubuntu:rolling
 ENV CLICOLOR_FORCE=1
 
 COPY ./ubuntu-common.apt ./ubuntu-rolling.apt /tmp/
@@ -24,14 +22,3 @@ RUN apt-get update \
 
 ENV CC=clang
 ENV CXX=clang++
-
-# Install dependencies with Conan
-COPY ./conan /tmp/conan/
-RUN --mount='source=./cache/,target=./cache/' \
-    (echo 'Copying cache'; cp -a ./cache/conan-home/ ~/.conan2/ || true) && \
-    /tmp/conan/conan_install.sh "${CONCURRENCY_LIMIT}" && rm -rf /tmp/*
-
-FROM scratch as cache
-COPY --from=build /root/.conan2/ ./conan-home/
-
-FROM build as release

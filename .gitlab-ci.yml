@@ -68,16 +68,14 @@ variables:
     - echo "Pushing image as $CONTAINER_IMAGE"
     - *set_concurrency_limit
   script:
-    - 'true'  # before & after script may handle everything
-  after_script:
     - echo '==== Building & pushing image ===='
     - >
       docker buildx build
+      --pull
       --push
       --annotation "org.opencontainers.image.title=${CI_COMMIT_TITLE} [${CI_COMMIT_REF_NAME} ${CI_COMMIT_SHORT_SHA}]"
       --file ./${IMAGE_KIND}/${IMAGE_NAME}.Dockerfile
       --tag ${CONTAINER_IMAGE}
-      --build-arg "CONCURRENCY_LIMIT=$concurrency_limit"
       ${DOCKER_ARGS}
       ./${IMAGE_KIND}/
   artifacts:
@@ -85,33 +83,52 @@ variables:
       # Save $NEW_IMAGE for jobs below
       dotenv: env.env
 
-.cached-builder-base:
+.conan-builder-base:
   extends: .docker-base
   variables:
     IMAGE_KIND: builder
-  script:
-    - echo '==== Building image with cache ===='
-    - mkdir -p ./${IMAGE_KIND}/cache/
+  script:  # Override
+    - echo '==== Building image ===='
     - >
       docker build
       --file ./${IMAGE_KIND}/${IMAGE_NAME}.Dockerfile
-      --build-arg "CONCURRENCY_LIMIT=$concurrency_limit"
-      --target cache
-      --output type=local,dest=./${IMAGE_KIND}/cache/
+      --tag ${CONTAINER_IMAGE}
       ${DOCKER_ARGS}
       ./${IMAGE_KIND}/
+
+    - echo "==== Executing Conan in container ===="
+    - container="$(docker container run --interactive --detach ${CONTAINER_IMAGE})"
+    - |
+      if [ -d ./${IMAGE_KIND}/cache/conan-home/ ]; then
+        docker cp ./${IMAGE_KIND}/cache/conan-home/ "$container:/root/.conan2/"
+      fi
+    - docker container cp ./${IMAGE_KIND}/conan/ "$container:/tmp/conan"
+    - docker container exec "$container" /tmp/conan/conan_install.sh "$concurrency_limit"
+    - docker container exec "$container" rm -rf '/tmp/*'
+    - rm -rf ./${IMAGE_KIND}/cache/conan-home/
+    - mkdir -p ./${IMAGE_KIND}/cache/
+    - docker container cp "$container:/root/.conan2/" ./${IMAGE_KIND}/cache/conan-home
+    - docker container stop "$container"
+    - docker container commit --message 'Add Conan packages' "$container" ${CONTAINER_IMAGE}
+
+    - echo "==== Pushing image ===="
+    - >
+      docker buildx build
+      --push
+      --annotation "org.opencontainers.image.title=${CI_COMMIT_TITLE} [${CI_COMMIT_REF_NAME} ${CI_COMMIT_SHORT_SHA}]"
+      --tag ${CONTAINER_IMAGE}
   cache:
     key: docker-builder-cache
     paths:
       - ./${IMAGE_KIND}/cache/
 
 builder/ubuntu-2204:
-  extends: .cached-builder-base
+  extends: .conan-builder-base
   variables:
     IMAGE_NAME: ubuntu-2204
 
 builder/ubuntu-rolling:
-  extends: .cached-builder-base
+  extends: .conan-builder-base
   variables:
     IMAGE_NAME: ubuntu-rolling
 
