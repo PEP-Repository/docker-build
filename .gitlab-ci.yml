@@ -73,7 +73,6 @@ variables:
       docker buildx build
       --pull
       --push
-      --annotation "org.opencontainers.image.title=${CI_COMMIT_TITLE} [${CI_COMMIT_REF_NAME} ${CI_COMMIT_SHORT_SHA}]"
       --file ./${IMAGE_KIND}/${IMAGE_NAME}.Dockerfile
       --tag ${CONTAINER_IMAGE}
       ${DOCKER_ARGS}
@@ -100,6 +99,7 @@ variables:
     - container="$(docker container run --interactive --detach ${CONTAINER_IMAGE})"
     - |
       if [ -d ./${IMAGE_KIND}/cache/conan-home/ ]; then
+        echo 'Copying cached .conan2 folder'
         docker cp ./${IMAGE_KIND}/cache/conan-home/ "$container:/root/.conan2/"
       fi
     - docker container cp ./${IMAGE_KIND}/conan/ "$container:/tmp/conan"
@@ -112,11 +112,7 @@ variables:
     - docker container commit --message 'Add Conan packages' "$container" ${CONTAINER_IMAGE}
 
     - echo "==== Pushing image ===="
-    - >
-      docker buildx build
-      --push
-      --annotation "org.opencontainers.image.title=${CI_COMMIT_TITLE} [${CI_COMMIT_REF_NAME} ${CI_COMMIT_SHORT_SHA}]"
-      --tag ${CONTAINER_IMAGE}
+    - docker push ${CONTAINER_IMAGE}
   cache:
     key: docker-builder-cache
     paths:
