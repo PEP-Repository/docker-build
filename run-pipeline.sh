@@ -33,7 +33,7 @@ fi
 
 # All possible statuses are documented on https://docs.gitlab.com/ee/api/pipelines.html. I cannot fine any documentation on what these statuses mean.
 # Not all statuses are listed below. I don't expect we will encounter the missing statuses, but if we do we must investigate in which category they should fall.
-running_statuses="null \"pending\" \"running\" \"created\" \"preparing\" \"waiting_for_resource\""
+running_statuses="\"pending\" \"running\" \"created\" \"preparing\" \"waiting_for_resource\""
 success_statuses="\"success\" \"skipped\""
 failure_statuses="\"failed\" \"canceled\""
 
@@ -59,7 +59,7 @@ do
   fi
 
   if [ "$status" != "$last_status" ]; then
-    echo "$status"
+    printf '\n%s' "$status"
     last_status="$status"
   fi
 
