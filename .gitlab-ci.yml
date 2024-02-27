@@ -3,7 +3,6 @@ stages:
   - analyze
   - deploy
   - analyze-manual
-  - docker-images-derived
 
 variables:
   DOCKER_DRIVER: overlay2 # faster docker builds, see https://gitlab.com/gitlab-org/gitlab-ce/issues/21374, https://docs.docker.com/storage/storagedriver/overlayfs-driver/
@@ -122,16 +121,6 @@ builder/flatpak:
     IMAGE_KIND: builder
     IMAGE_NAME: flatpak
 
-builder/ubuntu-templight:
-  extends: .docker-base
-  # Overrides stage in base
-  stage: docker-images-derived
-  when: manual
-  variables:
-    IMAGE_KIND: builder
-    IMAGE_NAME: ubuntu-templight
-    DOCKER_ARGS: "--build-arg BASE_IMAGE=${PROJECT_REGISTRY}/builder-ubuntu-2204:${IMAGE_TAG}"
-
 
 runtime/ubuntu-2204:
   extends: .docker-base
@@ -151,16 +140,12 @@ test-images:
     - docker
   image: alpine
   script:
-    # A better way to skip jobs is not yet available, see https://gitlab.com/gitlab-org/gitlab/-/issues/292816, https://gitlab.com/gitlab-org/gitlab/-/issues/329217
-    # $NEW_IMAGE is retrieved from jobs above via env.env
-    - if [ "$NEW_IMAGE" != 1 ]; then exit; fi
     - apk add --no-cache jq curl
     - ./run-pipeline.sh ${IMAGE_TAG_TEST} "${CORE_TEST_REF}"
 
 test-images-manual:
   stage: analyze-manual
   when: manual
-  allow_failure: true
   tags:
     - docker
   image: alpine
@@ -176,11 +161,13 @@ deploy-images:
   services:
     - docker:dind
   script:
+    # A better way to skip jobs is not yet available, see https://gitlab.com/gitlab-org/gitlab/-/issues/292816, https://gitlab.com/gitlab-org/gitlab/-/issues/329217
+    # $NEW_IMAGE is retrieved from jobs above via env.env
     - if [ "$NEW_IMAGE" != 1 ]; then exit; fi
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - |
       for image in ${DEPLOY_IMAGES}; do
         echo "Retagging $image:${IMAGE_TAG_TEST} as ${PROJECT_REGISTRY}/$image:${IMAGE_TAG}"
-        # This assumes sha-test tags will not be cleaned up while a previous image is still valid
+        # This assumes sha-test tags of an image will not be cleaned up if it is still recent and thus reused
         docker buildx imagetools create --tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG} ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}
       done
