@@ -32,7 +32,7 @@ class CompressorRecipe(ConanFile):
         if self.settings.os not in ['Linux', 'FreeBSD']:
             del self.options.with_unwinder
 
-        if self.settings.os not in ['Windows', 'Darwin']:
+        if self.settings.os not in ['Windows', 'Macos']:
             self.options.with_client = False
         if self.settings.os == 'Linux':
             self.options.use_system_qt = True
