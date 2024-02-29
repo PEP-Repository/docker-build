@@ -29,8 +29,12 @@ class CompressorRecipe(ConanFile):
     }
 
     def config_options(self):
-        if self.settings.os == 'Linux':
+        if self.settings.os not in ['Linux', 'FreeBSD']:
+            del self.options.with_unwinder
+
+        if self.settings.os not in ['Windows', 'Darwin']:
             self.options.with_client = False
+        if self.settings.os == 'Linux':
             self.options.use_system_qt = True
 
     def configure(self):
@@ -53,7 +57,7 @@ class CompressorRecipe(ConanFile):
         tc.variables['CMAKE_POLICY_DEFAULT_CMP0057'] = 'NEW'  # XXX Workaround for issue with Boost via apt
         tc.cache_variables['WITH_TESTS'] = self.options.with_tests
         tc.cache_variables['WITH_BENCHMARK'] = self.options.with_benchmark
-        tc.cache_variables['WITH_UNWINDER'] = self.options.with_unwinder
+        tc.cache_variables['WITH_UNWINDER'] = self.options.get_safe('with_unwinder', False)
         tc.cache_variables['BUILD_CLIENT'] = self.options.with_client
         tc.generate()
 
@@ -66,7 +70,7 @@ class CompressorRecipe(ConanFile):
         def custom_opts(opts: dict) -> dict:
             return opts if self.options.custom_dependency_opts else {}
 
-        if self.options.with_unwinder and self.settings.os == 'Linux':
+        if self.options.get_safe('with_unwinder', False) and self.settings.os != 'Windows':
             self.requires('libunwind/[^1.7]', options=custom_opts({
                 'coredump': False,
                 'ptrace': False,
