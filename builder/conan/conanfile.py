@@ -87,16 +87,9 @@ class CompressorRecipe(ConanFile):
             # Workaround for https://github.com/conan-io/conan-center-index/issues/22619
             'extra_b2_flags': ' '.join(f'define={d}' for d in self.conf.get('tools.build:defines', [])) or None,
 
-            #TODO
-            # 'asio_no_deprecated': True,
-            # 'filesystem_no_deprecated': True,
-            # 'system_no_deprecated': True,
-
             'numa': False,
             'zlib': False,
             'bzip2': False,
-            #TODO? (Unsupported on Windows)
-            # 'with_stacktrace_backtrace': False,
 
             # 'without_atomic': True,  # Transitive (required by other Boost components)
             # 'without_chrono': True,  # Transitive
