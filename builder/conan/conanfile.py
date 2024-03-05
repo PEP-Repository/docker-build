@@ -1,6 +1,6 @@
 from conan import ConanFile
 from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
-from conan.tools.system.package_manager import Apt
+from conan.tools.system.package_manager import Apt, Brew
 
 
 class CompressorRecipe(ConanFile):
@@ -180,8 +180,8 @@ class CompressorRecipe(ConanFile):
         self.tool_requires('protobuf/<host_version>')  # protoc
         if self.options.with_client and not self.options.use_system_qt:
             self.tool_requires('qt/<host_version>', options={
-                #XXX I feel like windeployqt is referencing the wrong DLLs;
-                #  why would I need to list them here?
+                # XXX windeployqt is referencing the wrong DLLs (build instead of runtime),
+                #  so we list them here as well.
                 #  See https://github.com/conan-io/conan-center-index/issues/22693
                 'qtnetworkauth': True,
                 'qtsvg': True,
@@ -191,11 +191,23 @@ class CompressorRecipe(ConanFile):
 
     def system_requirements(self):
         apt = Apt(self)
-        # if self.options.with_client and self.options.use_system_qt:
-        #     apt.install([
-        #         'qt6-base-dev',
-        #         'qt6-tools-dev',
-        #         'qt6-tools-dev-tools',
-        #         'qt6-networkauth-dev',
-        #         'qt6-svg-dev',
-        #     ])
+        brew = Brew(self)
+
+        if self.options.with_client and self.options.use_system_qt:
+            apt.install([
+                'qt6-base-dev',
+                'qt6-tools-dev',
+                'qt6-tools-dev-tools',
+            ])
+            apt.install_substitutes([
+                # New
+                'qt6-networkauth-dev',
+                'qt6-svg-dev',
+            ], [
+                # e.g. Ubuntu <23
+                'libqt6networkauth6-dev',
+                'libqt6svg6-dev',
+                'qt6-l10n-tools',
+            ])
+
+            brew.install(['qt@6'])
