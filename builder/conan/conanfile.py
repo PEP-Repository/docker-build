@@ -67,11 +67,8 @@ class CompressorRecipe(ConanFile):
         cmake.build()
 
     def requirements(self):
-        def custom_opts(opts: dict) -> dict:
-            return opts if self.options.custom_dependency_opts else {}
-
         if self.options.get_safe('with_unwinder', False) and self.settings.os != 'Windows':
-            self.requires('libunwind/[^1.7]', options=custom_opts({
+            self.requires('libunwind/[^1.7]', options=self._custom_opts({
                 'coredump': False,
                 'ptrace': False,
                 'setjmp': False,
@@ -79,11 +76,11 @@ class CompressorRecipe(ConanFile):
                 'zlibdebuginfo': False,
             }))
 
-        self.requires('libarchive/[^3.7]', options=custom_opts({
+        self.requires('libarchive/[^3.7]', options=self._custom_opts({
             'with_zlib': False,
             'with_iconv': False,
         }))
-        self.requires('boost/[^1.83]', options=custom_opts({
+        self.requires('boost/[^1.83]', options=self._custom_opts({
             'numa': False,
             'zlib': False,
             'bzip2': False,
@@ -118,7 +115,7 @@ class CompressorRecipe(ConanFile):
             'without_url': True,
             'without_wave': True,
         }))
-        self.requires('civetweb/[^1.16]', options=custom_opts({
+        self.requires('civetweb/[^1.16]', options=self._custom_opts({
             'with_caching': False,
             'with_cgi': False,
             'with_ssl': False,
@@ -126,10 +123,10 @@ class CompressorRecipe(ConanFile):
             'with_websockets': False,
         }))
         self.requires('date/[^3.0]')
-        self.requires('mbedtls/[^2.28]', options=custom_opts({
+        self.requires('mbedtls/[^2.28]', options=self._custom_opts({
             'with_zlib': False,
         }))
-        self.requires('openssl/[^3.2]', options=custom_opts({
+        self.requires('openssl/[^3.2]', options=self._custom_opts({
             # 'no_deprecated': True,  # Needed by Qt (otherwise linker error _SSL_CTX_use_RSAPrivateKey)
             'no_legacy': True,
             'no_md4': True,
@@ -137,12 +134,12 @@ class CompressorRecipe(ConanFile):
             'no_rc4': True,
             'no_ssl3': True,
         }))
-        self.requires('prometheus-cpp/[^1.1]', options=custom_opts({
+        self.requires('prometheus-cpp/[^1.1]', options=self._custom_opts({
             'with_pull': False,
         }))
         self.requires('protobuf/[^3.21]')
         self.requires('sqlite_orm/[^1.8]')
-        self.requires('xxhash/[^0.8.2]', options=custom_opts({
+        self.requires('xxhash/[^0.8.2]', options=self._custom_opts({
             'utility': False,
         }))
 
@@ -151,7 +148,7 @@ class CompressorRecipe(ConanFile):
                 'qtnetworkauth': True,
                 'qtsvg': True,
                 'qttranslations': True,
-            }, **custom_opts({
+            }, **self._custom_opts({
                 'with_sqlite3': False,
                 'with_pq': False,
                 'with_odbc': False,
@@ -171,15 +168,23 @@ class CompressorRecipe(ConanFile):
         # Add these to PATH
         self.tool_requires('protobuf/<host_version>')  # protoc
         if self.options.with_client and not self.options.use_system_qt:
-            self.tool_requires('qt/<host_version>', options={
-                # XXX windeployqt is referencing the wrong DLLs (build instead of runtime),
-                #  so we list them here as well.
-                #  See https://github.com/conan-io/conan-center-index/issues/22693
+            # XXX windeployqt is referencing the wrong DLLs (build instead of runtime),
+            #  so we list them here as well.
+            #  See https://github.com/conan-io/conan-center-index/issues/22693
+            self.tool_requires('qt/<host_version>', options={**{
+                'qttools': True,  # e.g. windeployqt
+
                 'qtnetworkauth': True,
                 'qtsvg': True,
                 'qttranslations': True,
-                'qttools': True,
-            })  # e.g. windeployqt
+            }, **self._custom_opts({
+                'with_sqlite3': False,
+                'with_pq': False,
+                'with_odbc': False,
+                'with_brotli': False,
+                'with_openal': False,
+                'with_md4c': False,
+            }), **({'with_harfbuzz': False} if self.settings.os == 'Macos' else {})})
 
     def system_requirements(self):
         apt = Apt(self)
@@ -203,3 +208,6 @@ class CompressorRecipe(ConanFile):
             ])
 
             brew.install(['qt@6'])
+
+    def _custom_opts(self, opts: dict) -> dict:
+        return opts if self.options.custom_dependency_opts else {}
