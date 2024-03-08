@@ -7,6 +7,8 @@ stages:
 variables:
   DOCKER_DRIVER: overlay2 # faster docker builds, see https://gitlab.com/gitlab-org/gitlab-ce/issues/21374, https://docs.docker.com/storage/storagedriver/overlayfs-driver/
   DOCKER_TLS_CERTDIR: "" # Work around failing CI jobs: see https://gitlab.com/gitlab-org/gitlab-ce/issues/64959#note_194582424
+  FF_SCRIPT_SECTIONS: 'true'  # Enable collapsible sections per script line, with timings
+
   PROJECT_REGISTRY: ${CI_REGISTRY}/${CI_PROJECT_PATH}
   IMAGE_TAG: sha-${CI_COMMIT_SHA}
   IMAGE_TAG_TEST: sha-test-${CI_COMMIT_SHA}
