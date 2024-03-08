@@ -84,9 +84,6 @@ class CompressorRecipe(ConanFile):
             'with_iconv': False,
         }))
         self.requires('boost/[^1.83]', options=custom_opts({
-            # Workaround for https://github.com/conan-io/conan-center-index/issues/22619
-            'extra_b2_flags': ' '.join(f'define={d}' for d in self.conf.get('tools.build:defines', [])) or None,
-
             'numa': False,
             'zlib': False,
             'bzip2': False,
