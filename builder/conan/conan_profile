@@ -25,9 +25,9 @@ compiler.runtime={{runtime}}
 [conf]
 {% if os != 'Windows' %} tools.cmake.cmaketoolchain:generator=Ninja {% endif %}
 {% if os == 'Windows' -%}
-# Set Windows version for headers to _WIN32_WINNT_WIN7 / NTDDI_WIN7,
+# Set Windows version for headers to _WIN32_WINNT_WIN10 / NTDDI_WIN10,
 #  see https://learn.microsoft.com/en-us/windows/win32/winprog/using-the-windows-headers#macros-for-conditional-declarations
-tools.build:defines=['_WIN32_WINNT=0x0601', 'NTDDI_VERSION=0x06010000']
+tools.build:defines=['_WIN32_WINNT=0x0A00', 'NTDDI_VERSION=0x0A000000']
 {%- endif %}
 
 [options]
