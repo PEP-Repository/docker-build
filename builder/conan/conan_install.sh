@@ -35,6 +35,6 @@ conan install ./ --build=missing \
 
 echo 'Cleaning cache'
 # Remove old packages
-conan remove '*' --lru 4w
+conan remove '*' --lru 4w --confirm
 # Remove download, source, build, temp; except binaries
 conan cache clean
