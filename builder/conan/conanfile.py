@@ -155,9 +155,7 @@ class CompressorRecipe(ConanFile):
                 'with_brotli': False,
                 'with_openal': False,
                 'with_md4c': False,
-            }), **({  # Workaround for https://github.com/conan-io/conan-center-index/issues/23029
-                       'with_harfbuzz': False
-                   } if self.settings.os == 'Macos' else {})})
+            })})
 
         if self.options.with_tests:
             self.requires('gtest/[^1.14]')
@@ -184,7 +182,7 @@ class CompressorRecipe(ConanFile):
                 'with_brotli': False,
                 'with_openal': False,
                 'with_md4c': False,
-            }), **({'with_harfbuzz': False} if self.settings.os == 'Macos' else {})})
+            })})
 
     def system_requirements(self):
         apt = Apt(self)
