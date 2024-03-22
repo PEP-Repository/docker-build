@@ -1,3 +1,5 @@
+import os.path
+
 from conan import ConanFile
 from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
 from conan.tools.system.package_manager import Apt, Brew
@@ -16,6 +18,8 @@ class CompressorRecipe(ConanFile):
         'custom_dependency_opts': [True, False],
         'custom_build_folder': [True, False],
         'use_system_qt': [True, False],
+        # e.g. use `-o subbuild_name=ppp` for separate ./build/ppp folder and ppp-debug presets and such
+        'subbuild_name': ['ANY'],
     }
     default_options = {
         'with_client': True,
@@ -26,6 +30,7 @@ class CompressorRecipe(ConanFile):
         'custom_dependency_opts': False,
         'custom_build_folder': False,
         'use_system_qt': False,
+        'subbuild_name': '',
     }
 
     def config_options(self):
@@ -42,12 +47,15 @@ class CompressorRecipe(ConanFile):
             self.options['*'].shared = True
 
     def layout(self):
+        subbuild = str(self.options.subbuild_name) or '.'
+
         if self.options.custom_build_folder:
-            self.folders.build = './'
-            self.folders.generators = './generators/'
+            self.folders.build = subbuild
+            self.folders.generators = os.path.join(self.folders.build, 'generators')
         else:
-            cmake_layout(self)
-        self.cpp.source.includedirs = ['./cpp/']
+            cmake_layout(self, build_folder=os.path.join('build', subbuild))
+
+        self.cpp.source.includedirs = ['cpp']
 
     def generate(self):
         tc = CMakeDeps(self)
@@ -59,6 +67,8 @@ class CompressorRecipe(ConanFile):
         tc.cache_variables['WITH_BENCHMARK'] = self.options.with_benchmark
         tc.cache_variables['WITH_UNWINDER'] = self.options.get_safe('with_unwinder', False)
         tc.cache_variables['BUILD_CLIENT'] = self.options.with_client
+        if str(self.options.subbuild_name):
+            tc.presets_prefix = str(self.options.subbuild_name)
         tc.generate()
 
     def build(self):
