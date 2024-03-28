@@ -28,7 +28,9 @@ compiler.runtime={{runtime}}
 # Set Windows version for headers to _WIN32_WINNT_WIN10 / NTDDI_WIN10_RS5,
 #  see https://learn.microsoft.com/en-us/windows/win32/winprog/using-the-windows-headers#macros-for-conditional-declarations
 # This is based mostly on what Qt6 needs, see https://doc.qt.io/qt-6/supported-platforms.html#windows
-tools.build:defines=['_WIN32_WINNT=0x0A00', 'NTDDI_VERSION=0x0A000006']
+#tools.build:defines=['_WIN32_WINNT=0x0A00', 'NTDDI_VERSION=0x0A000006']
+#XXX Workaround for https://github.com/conan-io/conan/issues/15921
+tools.build:defines=['_WIN32_WINNT=0x0A00;NTDDI_VERSION=0x0A000006']
 {%- endif %}
 
 [options]
