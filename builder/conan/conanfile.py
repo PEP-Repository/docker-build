@@ -175,7 +175,9 @@ class CompressorRecipe(ConanFile):
                 'with_brotli': False,
                 'with_openal': False,
                 'with_md4c': False,
-            })})
+            }), **({  # Workaround for https://github.com/conan-io/conan-center-index/pull/21535
+                       'with_harfbuzz': False
+                   } if self.settings.os == 'Macos' else {})})
 
         # XXX Remove when std timezones are widely supported
         if self.options.with_castor:
@@ -207,7 +209,7 @@ class CompressorRecipe(ConanFile):
                 'with_brotli': False,
                 'with_openal': False,
                 'with_md4c': False,
-            })})
+            }), **({'with_harfbuzz': False} if self.settings.os == 'Macos' else {})})
 
     def system_requirements(self):
         apt = Apt(self)
