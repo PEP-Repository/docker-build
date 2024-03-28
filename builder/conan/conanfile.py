@@ -11,6 +11,8 @@ class CompressorRecipe(ConanFile):
 
     options = {
         'with_client': [True, False],
+        'with_servers': [True, False],
+        'with_castor': [True, False],
         'with_tests': [True, False],
         'with_benchmark': [True, False],
         'with_unwinder': [True, False],
@@ -23,6 +25,8 @@ class CompressorRecipe(ConanFile):
     }
     default_options = {
         'with_client': True,
+        'with_servers': True,
+        'with_castor': True,
         'with_tests': False,
         'with_benchmark': False,
         'with_unwinder': True,
@@ -63,6 +67,9 @@ class CompressorRecipe(ConanFile):
 
         tc = CMakeToolchain(self)
         tc.variables['CMAKE_POLICY_DEFAULT_CMP0057'] = 'NEW'  # XXX Workaround for issue with Boost via apt
+        tc.cache_variables['BUILD_CLIENT'] = self.options.with_client
+        tc.cache_variables['BUILD_SERVERS'] = self.options.with_servers
+        tc.cache_variables['WITH_CASTOR'] = self.options.with_castor
         tc.cache_variables['WITH_TESTS'] = self.options.with_tests
         tc.cache_variables['WITH_BENCHMARK'] = self.options.with_benchmark
         tc.cache_variables['WITH_UNWINDER'] = self.options.get_safe('with_unwinder', False)
@@ -132,7 +139,6 @@ class CompressorRecipe(ConanFile):
             'with_static_files': False,
             'with_websockets': False,
         }))
-        self.requires('date/[^3.0]')
         self.requires('mbedtls/[^2.28]', options=self._custom_opts({
             'with_zlib': False,
         }))
@@ -166,6 +172,11 @@ class CompressorRecipe(ConanFile):
                 'with_openal': False,
                 'with_md4c': False,
             })})
+
+        # XXX Remove when std timezones are widely supported
+        if self.options.with_castor:
+            # Use system timezone database where possible, auto-download to ~/Downloads on Windows
+            self.requires('date/[^3.0]', options={} if self.settings.os == 'Windows' else {'use_system_tz_db': True})
 
         if self.options.with_tests:
             self.requires('gtest/[^1.14]')
