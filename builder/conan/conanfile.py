@@ -75,7 +75,7 @@ class CompressorRecipe(ConanFile):
         tc.cache_variables['WITH_TESTS'] = self.options.with_tests
         tc.cache_variables['WITH_BENCHMARK'] = self.options.with_benchmark
         tc.cache_variables['WITH_UNWINDER'] = self.options.get_safe('with_unwinder', False)
-        for var_def in str(self.options.cmake_variables).split(';'):
+        for var_def in str(self.options.cmake_variables).split(';') if str(self.options.cmake_variables) else []:
             name, value = var_def.split('=')
             tc.cache_variables[name] = value
         if str(self.options.subbuild_name):
