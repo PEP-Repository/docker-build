@@ -22,6 +22,7 @@ class CompressorRecipe(ConanFile):
         'use_system_qt': [True, False],
         # e.g. use `-o subbuild_name=ppp` for separate ./build/ppp folder and ppp-debug presets and such
         'subbuild_name': ['ANY'],
+        'cmake_variables': ['ANY'],
     }
     default_options = {
         'with_client': True,
@@ -35,6 +36,7 @@ class CompressorRecipe(ConanFile):
         'custom_build_folder': False,
         'use_system_qt': False,
         'subbuild_name': '',
+        'cmake_variables': '',
     }
 
     def config_options(self):
@@ -73,7 +75,9 @@ class CompressorRecipe(ConanFile):
         tc.cache_variables['WITH_TESTS'] = self.options.with_tests
         tc.cache_variables['WITH_BENCHMARK'] = self.options.with_benchmark
         tc.cache_variables['WITH_UNWINDER'] = self.options.get_safe('with_unwinder', False)
-        tc.cache_variables['BUILD_CLIENT'] = self.options.with_client
+        for var_def in str(self.options.cmake_variables).split(';'):
+            name, value = var_def.split('=')
+            tc.cache_variables[name] = value
         if str(self.options.subbuild_name):
             tc.presets_prefix = str(self.options.subbuild_name)
         tc.generate()
