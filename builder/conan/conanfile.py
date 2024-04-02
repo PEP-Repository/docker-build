@@ -108,6 +108,7 @@ class CompressorRecipe(ConanFile):
 
             # 'without_atomic': True,  # Transitive (required by other Boost components)
             # 'without_chrono': True,  # Transitive
+            'without_cobalt': True,
             # 'without_container': True,  # Transitive
             'without_context': True,
             'without_contract': True,
@@ -117,13 +118,16 @@ class CompressorRecipe(ConanFile):
             'without_fiber': True,
             # 'without_filesystem': True,
             'without_graph': True,
+            'without_graph_parallel': True,
             # 'without_iostreams': True,
             'without_json': True,
             'without_locale': True,
             # 'without_log': True,
             'without_math': True,
+            'without_mpi': True,
             'without_nowide': True,
             'without_program_options': True,
+            'without_python': True,
             # 'without_random': True,
             # 'without_regex': True,  # Transitive
             'without_serialization': True,
