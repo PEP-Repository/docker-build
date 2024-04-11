@@ -135,7 +135,34 @@ builder/flatpak:
   variables:
     IMAGE_KIND: builder
     IMAGE_NAME: flatpak
+  script:  # Override
+    - echo '==== Building image ===='
+    - >
+      docker build
+      --file ./${IMAGE_KIND}/${IMAGE_NAME}.Dockerfile
+      --tag ${CONTAINER_IMAGE}
+      ${DOCKER_ARGS}
+      ./${IMAGE_KIND}/
 
+    - echo "==== Executing Flatpak Builder with Conan in container ===="
+    # --privileged is necessary for flatpak-builder, see https://github.com/flatpak/flatpak-builder/issues/237
+    - container="$(docker container run --privileged --interactive --detach ${CONTAINER_IMAGE})"
+    #TODO Cache ~/.conan2 like above?
+    - docker container cp ./${IMAGE_KIND}/flatpak/ "$container:/tmp/flatpak"
+    - docker container cp ./${IMAGE_KIND}/conan/ "$container:/tmp/conan"
+    - |
+      if [ -n "$concurrency_limit" ]; then
+        concurrency_option="--jobs=$concurrency_limit"
+      fi
+    # Generate base image for nl.ru.cs.pep.client.yml and save as /pep-base.flatpak
+    - docker container exec "$container" flatpak-builder $concurrency_option --repo /tmp/flatpak/repo /tmp/flatpak/build /tmp/flatpak/nl.ru.cs.pep.base.yml
+    - docker container exec "$container" flatpak build-bundle /tmp/flatpak/repo /pep-base.flatpak nl.ru.cs.pep.base --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo
+    - docker container exec "$container" rm -rf '/tmp/*'
+    - docker container stop "$container"
+    - docker container commit --message 'Build base flatpak with Conan packages' "$container" ${CONTAINER_IMAGE}
+
+    - echo "==== Pushing image ===="
+    - docker push ${CONTAINER_IMAGE}
 
 runtime/ubuntu-2204:
   extends: .docker-base
