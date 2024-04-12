@@ -18,6 +18,7 @@ class CompressorRecipe(ConanFile):
         'with_tests': [True, False],
         'with_benchmark': [True, False],
         'with_unwinder': [True, False],
+
         # Build dependencies as shared libraries
         'shared_libs': [True, False],
         # Setting this to False may increase the chance that prebuilt binaries are available
