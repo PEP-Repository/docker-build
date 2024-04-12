@@ -209,7 +209,7 @@ class CompressorRecipe(ConanFile):
             # XXX windeployqt is referencing the wrong DLLs (build instead of runtime),
             #  so we list them here as well.
             #  See https://github.com/conan-io/conan-center-index/issues/22693
-            # Also, for windeployqt we to build shared
+            # Also, for windeployqt we build shared via our conan_profile file
             self.tool_requires('qt/<host_version>', options={**{
                 'qttools': True,  # e.g. windeployqt
 
