@@ -10,29 +10,37 @@ class CompressorRecipe(ConanFile):
     settings = 'os', 'compiler', 'build_type', 'arch'
 
     options = {
+        # Build GUI (with Qt)
         'with_client': [True, False],
         'with_servers': [True, False],
+        # Build pepPullCastor
         'with_castor': [True, False],
         'with_tests': [True, False],
         'with_benchmark': [True, False],
         'with_unwinder': [True, False],
+        # Build dependencies as shared libraries
         'shared_libs': [True, False],
+        # Setting this to False may increase the chance that prebuilt binaries are available
         'custom_dependency_opts': [True, False],
+        # Setting this forces the built to be directly under --output-folder, instead of e.g. ./<output>/Debug
         'custom_build_folder': [True, False],
         'use_system_qt': [True, False],
         # e.g. use `-o subbuild_name=ppp` for separate ./build/ppp folder and ppp-debug presets and such
         'subbuild_name': ['ANY'],
+        # Pass custom CMake cache variables to be put into the preset, separated with `;`
         'cmake_variables': ['ANY'],
     }
     default_options = {
+        # Enable most functionality by default for a complete devbox
         'with_client': True,
         'with_servers': True,
         'with_castor': True,
-        'with_tests': False,
-        'with_benchmark': False,
+        'with_tests': True,
+        'with_benchmark': True,
         'with_unwinder': True,
+
         'shared_libs': False,
-        'custom_dependency_opts': False,
+        'custom_dependency_opts': True,
         'custom_build_folder': False,
         'use_system_qt': False,
         'subbuild_name': '',
@@ -41,11 +49,11 @@ class CompressorRecipe(ConanFile):
 
     def config_options(self):
         if self.settings.os not in ['Linux', 'FreeBSD']:
+            # See `validate` in https://github.com/conan-io/conan-center-index/blob/master/recipes/libunwind/all/conanfile.py
             del self.options.with_unwinder
 
-        if self.settings.os not in ['Windows', 'Macos']:
-            self.options.with_client = False
         if self.settings.os == 'Linux':
+            # Using Qt from Conan on Linux may give problems and is generally unnecessary
             self.options.use_system_qt = True
 
     def configure(self):
@@ -200,6 +208,7 @@ class CompressorRecipe(ConanFile):
             # XXX windeployqt is referencing the wrong DLLs (build instead of runtime),
             #  so we list them here as well.
             #  See https://github.com/conan-io/conan-center-index/issues/22693
+            # Also, for windeployqt we to build shared
             self.tool_requires('qt/<host_version>', options={**{
                 'qttools': True,  # e.g. windeployqt
 

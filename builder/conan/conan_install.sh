@@ -22,6 +22,7 @@ echo '==== Installing Release packages ===='
 conan install ./ --build=missing --update \
   -s build_type=Release \
   $concurrency_option_conan \
+  -o with_client=False \
   -o with_tests=True \
   -o with_benchmark=True \
   -o custom_dependency_opts=True
@@ -30,6 +31,7 @@ echo '==== Installing Debug packages ===='
 conan install ./ --build=missing \
   -s build_type=Debug \
   $concurrency_option_conan \
+  -o with_client=False \
   -o with_tests=True \
   -o custom_dependency_opts=True
 

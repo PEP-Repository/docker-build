@@ -27,6 +27,9 @@ modules:
           -c:a tools.build:sharedlinkflags='["-fuse-ld=gold"]' \
           -c:a tools.build:jobs=${FLATPAK_BUILDER_N_JOBS} \
           -o with_client=True \
+          -o with_castor=False \
+          -o with_tests=False \
+          -o with_benchmark=False \
           -o use_system_qt=True \
           -o custom_dependency_opts=True \
           -o custom_build_folder=True \
