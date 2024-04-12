@@ -6,6 +6,9 @@ rsyslog
 rsyslog-gnutls
 xxd
 
+# PEP dependencies
+libstdc++6
+
 # For autocompletion
 bash-completion
 pkg-config
