@@ -33,6 +33,7 @@ conan install ./ --build=missing \
   $concurrency_option_conan \
   -o with_client=False \
   -o with_tests=True \
+  -o with_benchmark=False \
   -o custom_dependency_opts=True
 
 echo 'Cleaning cache'
