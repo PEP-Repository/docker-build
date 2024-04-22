@@ -31,7 +31,6 @@ modules:
           -o with_tests=False \
           -o with_benchmark=False \
           -o use_system_qt=True \
-          -o custom_dependency_opts=True \
           -o custom_build_folder=True \
           --output-folder="${FLATPAK_DEST}/tmp/build/"
         # Clean temporary files
