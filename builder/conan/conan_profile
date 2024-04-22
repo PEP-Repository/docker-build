@@ -4,7 +4,9 @@
 
 {% set os = detect_api.detect_os() %}
 {% set compiler, version, compiler_exe = detect_api.detect_default_compiler() %}
-{% set runtime, _ = detect_api.default_msvc_runtime(compiler) %}
+{% if compiler == 'msvc' %}
+    {% set runtime, _ = detect_api.default_msvc_runtime(compiler) %}
+{% endif %}
 {% set libcxx = detect_api.detect_libcxx(compiler, version, compiler_exe) %}
 
 [settings]
@@ -23,7 +25,7 @@ compiler.runtime={{runtime}}
 {%- endif %}
 
 [conf]
-{% if os != 'Windows' %} tools.cmake.cmaketoolchain:generator=Ninja {% endif %}
+{% if compiler != 'msvc' %} tools.cmake.cmaketoolchain:generator=Ninja {% endif %}
 {% if os == 'Windows' -%}
 # Set Windows version for headers to _WIN32_WINNT_WIN10 / NTDDI_WIN10_RS5,
 #  see https://learn.microsoft.com/en-us/windows/win32/winprog/using-the-windows-headers#macros-for-conditional-declarations
