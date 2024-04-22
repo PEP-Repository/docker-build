@@ -67,7 +67,7 @@ variables:
         echo 'No existing image for this commit'
       fi
       echo 'NEW_IMAGE=1' >>env.env  # Save, see artifacts
-    - echo "Pushing image as $CONTAINER_IMAGE"
+    - echo "Tagging image as $CONTAINER_IMAGE"
     - *set_concurrency_limit
   script:
     - echo '==== Building & pushing image ===='

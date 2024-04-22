@@ -5,7 +5,7 @@ from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
 from conan.tools.system.package_manager import Apt, Brew
 
 
-class CompressorRecipe(ConanFile):
+class PepRecipe(ConanFile):
     name = 'pep'
     settings = 'os', 'compiler', 'build_type', 'arch'
 
@@ -160,7 +160,8 @@ class CompressorRecipe(ConanFile):
             'with_zlib': False,
         }))
         self.requires('openssl/[^3.2]', options=self._custom_opts({
-            # 'no_deprecated': True,  # Needed by Qt (otherwise linker error _SSL_CTX_use_RSAPrivateKey)
+            # Deprecated features are needed by Qt (otherwise linker error _SSL_CTX_use_RSAPrivateKey)
+            # 'no_deprecated': True,
             'no_legacy': True,
             'no_md4': True,
             'no_rc2': True,
@@ -236,7 +237,7 @@ class CompressorRecipe(ConanFile):
                 'qt6-tools-dev-tools',
             ])
             apt.install_substitutes([
-                # New
+                # e.g. Ubuntu >=23
                 'qt6-networkauth-dev',
                 'qt6-svg-dev',
             ], [
