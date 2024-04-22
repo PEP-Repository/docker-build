@@ -49,7 +49,7 @@ class CompressorRecipe(ConanFile):
     }
 
     def config_options(self):
-        if self.settings.os not in ['Linux', 'FreeBSD']:
+        if self.settings.os not in ['Linux', 'FreeBSD', 'Windows']:
             # See `validate` in https://github.com/conan-io/conan-center-index/blob/master/recipes/libunwind/all/conanfile.py
             del self.options.with_unwinder
 
