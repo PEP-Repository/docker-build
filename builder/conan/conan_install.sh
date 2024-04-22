@@ -28,7 +28,7 @@ conan install ./ --build=missing --update \
   -o custom_dependency_opts=True
 
 echo '==== Installing Debug packages ===='
-conan install ./ --build=missing \
+conan install ./ --build=missing --update \
   -s build_type=Debug \
   $concurrency_option_conan \
   -o with_client=False \
