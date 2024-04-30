@@ -1,4 +1,5 @@
 import os.path
+from pathlib import Path
 
 from conan import ConanFile
 from conan.errors import ConanInvalidConfiguration
@@ -70,6 +71,20 @@ class PepRecipe(ConanFile):
                 'please explicitly specify -s build_type=<...> to force consistent builds.')
 
     def layout(self):
+        # If CMakeLists.txt is not besides conanfile.py, so we are called (without symlinks) in docker-build,
+        # we use the parent directory of docker-build as project root, if a CMakeLists.txt is found there
+        conanfile_dir = Path(__file__).parent
+        if not conanfile_dir.joinpath('CMakeLists.txt').is_file():
+            parts = conanfile_dir.parts
+            if 'docker-build' in parts:
+                docker_build_parent = Path(*parts[:len(parts) - list(reversed(parts)).index('docker-build') - 1])
+                if docker_build_parent.joinpath('CMakeLists.txt').is_file():
+                    self.folders.root = str(docker_build_parent)
+                else:
+                    self.output.warning("Didn't find CMakeLists.txt beside conanfile.py or in docker-build's parent dir")
+            else:
+                self.output.warning("Didn't find CMakeLists.txt beside conanfile.py, nor were we called in docker-build")
+
         subbuild = str(self.options.subbuild_name) or '.'
 
         if self.options.custom_build_folder:
