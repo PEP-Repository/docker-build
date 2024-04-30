@@ -1,6 +1,7 @@
 import os.path
 
 from conan import ConanFile
+from conan.errors import ConanInvalidConfiguration
 from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
 from conan.tools.system.package_manager import Apt, Brew
 
@@ -61,6 +62,13 @@ class PepRecipe(ConanFile):
         if self.options.shared_libs:
             self.options['*'].shared = True
 
+    def validate(self):
+        if not self.settings.build_type:
+            # See ./pep/core/CMakeLists.txt for context
+            raise ConanInvalidConfiguration(
+                'We do not support multiconfig builds yet (see pep/core#499), '
+                'please explicitly specify -s build_type=<...> to force consistent builds.')
+
     def layout(self):
         subbuild = str(self.options.subbuild_name) or '.'
 
@@ -78,6 +86,9 @@ class PepRecipe(ConanFile):
 
         tc = CMakeToolchain(self)
         tc.variables['CMAKE_POLICY_DEFAULT_CMP0057'] = 'NEW'  # XXX Workaround for issue with Boost via apt
+        # Force passing build type also in multiconfig case,
+        #  see https://gitlab.pep.cs.ru.nl/pep/core/issues/499
+        tc.cache_variables['CMAKE_BUILD_TYPE'] = str(self.settings.build_type)
         tc.cache_variables['BUILD_CLIENT'] = self.options.with_client
         tc.cache_variables['BUILD_SERVERS'] = self.options.with_servers
         tc.cache_variables['WITH_CASTOR'] = self.options.with_castor
