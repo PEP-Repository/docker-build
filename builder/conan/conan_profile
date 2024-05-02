@@ -1,6 +1,6 @@
 # Generic Conan profile (default Release)
 # See https://docs.conan.io/2/reference/config_files/profiles.html
-# Example: CC=clang CXX=clang++ conan install ./ --profile:all=./ci_cd/conan/conan_profile
+# Example: CC=clang CXX=clang++ conan install ./ --profile:all=./docker-build/builder/conan/conan_profile
 
 {% set os = detect_api.detect_os() %}
 {% set compiler, version, compiler_exe = detect_api.detect_default_compiler() %}
