@@ -1,0 +1,22 @@
+# APT dependencies for Ubuntu builders
+
+# For installation
+pipx  # To install Python tools (i.e. Conan)
+software-properties-common  # add-apt-repository
+
+# Build tools
+ccache
+clang
+cmake
+golang
+golang-goprotobuf-dev
+ninja-build
+
+# Used by scripts
+curl
+file
+git
+gnupg
+jq
+python3
+valgrind  # For tests

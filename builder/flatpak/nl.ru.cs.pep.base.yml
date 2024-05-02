@@ -1,0 +1,47 @@
+id: nl.ru.cs.pep.base
+runtime: org.kde.Platform
+runtime-version: '6.6'
+sdk: org.kde.Sdk
+build-options:
+  env:
+    CLICOLOR_FORCE: '1'  # Colored output for e.g. Conan
+modules:
+  - name: conan
+    buildsystem: simple
+    build-commands:
+      # We have to build in $FLATPAK_DEST (/app), because most other directories get deleted,
+      #  including /run/build/conan/ and ~/.conan2/ (this one even between steps in build-commands)
+      - |
+        set -eu
+        # Put python scripts in path
+        PATH="$PATH:$(python3 -c 'import os,sysconfig;print(sysconfig.get_path("scripts",f"{os.name}_user"))')"
+        pip3 install 'conan>=2.1,==2.*'
+
+        export CONAN_HOME="${FLATPAK_DEST}/tmp/conan/"
+
+        >>./conan_profile ./conan_platform_tool_requires.sh
+
+        # Use faster and less memory-intensive GNU gold linker
+        conan install ./ --profile:all=./conan_profile --build=missing --update \
+          -c:a tools.build:exelinkflags='["-fuse-ld=gold"]' \
+          -c:a tools.build:sharedlinkflags='["-fuse-ld=gold"]' \
+          -c:a tools.build:jobs=${FLATPAK_BUILDER_N_JOBS} \
+          -o with_client=True \
+          -o with_castor=False \
+          -o with_tests=False \
+          -o with_benchmark=False \
+          -o use_system_qt=True \
+          -o custom_build_folder=True \
+          --output-folder="${FLATPAK_DEST}/tmp/build/"
+        # Clean temporary files
+        conan cache clean
+    sources:
+      - type: file
+        path: ../conan/conan_profile
+      - type: file
+        path: ../conan/conan_platform_tool_requires.sh
+      - type: file
+        path: ../conan/conanfile.py
+    build-options:
+      build-args:
+        - --share=network

@@ -1,0 +1,15 @@
+# APT dependencies for ubuntu-2204 runtime
+
+ca-certificates
+logrotate
+rsyslog
+rsyslog-gnutls
+xxd
+
+# PEP dependencies
+libstdc++6
+
+# For autocompletion
+bash-completion
+pkg-config
+zsh
