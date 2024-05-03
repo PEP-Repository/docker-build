@@ -39,7 +39,7 @@ class PepRecipe(ConanFile):
         'with_servers': True,
         'with_castor': True,
         'with_tests': True,
-        'with_benchmark': True,
+        'with_benchmark': False,
         'with_unwinder': True,
 
         'shared_libs': False,
