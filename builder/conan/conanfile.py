@@ -205,6 +205,8 @@ class PepRecipe(ConanFile):
 
         if self.options.with_client and not self.options.use_system_qt:
             self.requires('qt/[^6.6]', options={**{
+                'essential_modules': False,
+                'qtbase': True,
                 'qtnetworkauth': True,
                 'qtsvg': True,
                 'qttranslations': True,
@@ -238,11 +240,13 @@ class PepRecipe(ConanFile):
             #  See https://github.com/conan-io/conan-center-index/issues/22693
             # Also, for windeployqt we build shared via our conan_profile file
             self.tool_requires('qt/<host_version>', options={**{
-                'qttools': True,  # e.g. windeployqt
-
+                'essential_modules': False,
+                'qtbase': True,
                 'qtnetworkauth': True,
                 'qtsvg': True,
                 'qttranslations': True,
+
+                'qttools': True,  # e.g. windeployqt
             }, **self._custom_opts({
                 'with_sqlite3': False,
                 'with_pq': False,
