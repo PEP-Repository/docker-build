@@ -206,7 +206,6 @@ class PepRecipe(ConanFile):
         if self.options.with_client and not self.options.use_system_qt:
             self.requires('qt/[^6.6]', options={**{
                 'essential_modules': False,
-                'qtbase': True,
                 'qtnetworkauth': True,
                 'qtsvg': True,
                 'qttranslations': True,
@@ -241,7 +240,6 @@ class PepRecipe(ConanFile):
             # Also, for windeployqt we build shared via our conan_profile file
             self.tool_requires('qt/<host_version>', options={**{
                 'essential_modules': False,
-                'qtbase': True,
                 'qtnetworkauth': True,
                 'qtsvg': True,
                 'qttranslations': True,
