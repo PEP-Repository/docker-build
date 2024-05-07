@@ -192,6 +192,8 @@ test-images-manual:
     - docker
   image: alpine
   script:
+    # We don't check $NEW_IMAGE here, because we want to make sure that when a commit is added to a different branch,
+    #  we run a pipeline in PEP core in the corresponding branch
     - apk add --no-cache jq curl
     - ./run-pipeline.sh ${IMAGE_TAG} "${CORE_TEST_REF}"
 
