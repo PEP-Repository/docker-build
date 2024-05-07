@@ -2,8 +2,12 @@
 # See https://docs.conan.io/2/reference/config_files/profiles.html
 # Example: CC=clang CXX=clang++ conan install ./ --profile:all=./docker-build/builder/conan/conan_profile
 
-{% set os = detect_api.detect_os() %}
+{% set operating_system = detect_api.detect_os() %}
 {% set compiler, version, compiler_exe = detect_api.detect_default_compiler() %}
+## Unfortunately, at this time we are just given one compiler_exe by Conan
+{% set c_compiler_exe = compiler_exe %}
+{% set cxx_compiler_exe = os.getenv("CXX") or {'cc':'c++', 'clang':'clang++', 'gcc':'g++'}[compiler_exe] or compiler_exe %}
+
 {% if compiler == 'msvc' %}
     {% set runtime, _ = detect_api.default_msvc_runtime(compiler) %}
 {% endif %}
@@ -12,7 +16,7 @@
 [settings]
 build_type=Release
 
-os={{os}}
+os={{operating_system}}
 arch={{detect_api.detect_arch()}}
 compiler={{compiler}}
 compiler.version={{detect_api.default_compiler_version(compiler, version)}}
@@ -25,8 +29,10 @@ compiler.runtime={{runtime}}
 {%- endif %}
 
 [conf]
+# Specify executables consistent with compiler in settings above
+tools.build:compiler_executables={ 'c':'{{c_compiler_exe}}', 'c++':'{{cxx_compiler_exe}}' }
 {% if compiler != 'msvc' %} tools.cmake.cmaketoolchain:generator=Ninja {% endif %}
-{% if os == 'Windows' -%}
+{% if operating_system == 'Windows' -%}
 # Set Windows version for headers to _WIN32_WINNT_WIN10 / NTDDI_WIN10_RS5,
 #  see https://learn.microsoft.com/en-us/windows/win32/winprog/using-the-windows-headers#macros-for-conditional-declarations
 # This is based mostly on what Qt6 needs, see https://doc.qt.io/qt-6/supported-platforms.html#windows
