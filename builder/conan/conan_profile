@@ -29,9 +29,13 @@ compiler.runtime={{runtime}}
 {%- endif %}
 
 [conf]
+{% if compiler_exe -%}
 # Specify executables consistent with compiler in settings above
 tools.build:compiler_executables={ 'c':'{{c_compiler_exe}}', 'c++':'{{cxx_compiler_exe}}' }
+{%- endif %}
+
 {% if compiler != 'msvc' %} tools.cmake.cmaketoolchain:generator=Ninja {% endif %}
+
 {% if operating_system == 'Windows' -%}
 # Set Windows version for headers to _WIN32_WINNT_WIN10 / NTDDI_WIN10_RS5,
 #  see https://learn.microsoft.com/en-us/windows/win32/winprog/using-the-windows-headers#macros-for-conditional-declarations
