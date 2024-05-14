@@ -68,7 +68,7 @@ class PepRecipe(ConanFile):
             # See ./pep/core/CMakeLists.txt for context
             raise ConanInvalidConfiguration(
                 'We do not support multiconfig builds yet (see pep/core#499), '
-                'please explicitly specify -s build_type=<...> to force consistent builds.')
+                'please explicitly specify -s:a build_type=<...> to force consistent builds.')
 
     def layout(self):
         # If CMakeLists.txt is not besides conanfile.py, so we are called (without symlinks) in docker-build,
