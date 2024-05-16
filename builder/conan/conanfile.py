@@ -206,7 +206,6 @@ class PepRecipe(ConanFile):
         if self.options.with_client and not self.options.use_system_qt:
             self.requires('qt/[^6.6]', options={**{
                 'essential_modules': False,
-                'qtnetworkauth': True,
                 'qtsvg': True,
                 'qttranslations': True,
             }, **self._custom_opts({
@@ -240,7 +239,6 @@ class PepRecipe(ConanFile):
             # Also, for windeployqt we build shared via our conan_profile file
             self.tool_requires('qt/<host_version>', options={**{
                 'essential_modules': False,
-                'qtnetworkauth': True,
                 'qtsvg': True,
                 'qttranslations': True,
 
@@ -266,11 +264,9 @@ class PepRecipe(ConanFile):
             ])
             apt.install_substitutes([
                 # e.g. Ubuntu >=23
-                'qt6-networkauth-dev',
                 'qt6-svg-dev',
             ], [
                 # e.g. Ubuntu <23
-                'libqt6networkauth6-dev',
                 'libqt6svg6-dev',
                 'qt6-l10n-tools',
             ])
