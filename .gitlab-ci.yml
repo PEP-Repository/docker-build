@@ -42,7 +42,7 @@ variables:
   stage: docker-images
   tags:
     - docker
-  image: docker:git
+  image: docker
   variables:
     CONTAINER_IMAGE: ${PROJECT_REGISTRY}/${IMAGE_KIND}-${IMAGE_NAME}:${IMAGE_TAG_TEST}
   services:
@@ -201,7 +201,7 @@ deploy-images:
   stage: deploy
   tags:
     - docker
-  image: docker:git
+  image: docker
   services:
     - docker:dind
   script:
