@@ -179,7 +179,7 @@ test-images:
       when: never
     - when: on_success
   tags:
-    - docker
+    - docker-small
   image: alpine
   script:
     - apk add --no-cache jq curl
@@ -189,7 +189,7 @@ test-images-manual:
   stage: analyze-manual
   when: manual
   tags:
-    - docker
+    - docker-small
   image: alpine
   script:
     # We don't check $NEW_IMAGE here, because we want to make sure that when a commit is added to a different branch,
@@ -200,7 +200,7 @@ test-images-manual:
 deploy-images:
   stage: deploy
   tags:
-    - docker
+    - docker-small
   image: docker
   services:
     - docker:dind
