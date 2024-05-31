@@ -12,14 +12,14 @@ else
   concurrency_option_conan=''
 fi
 
+mkdir -p "$(conan config home)/profiles/"
+./conan_platform_tool_requires.sh >>./conan_profile
+cp ./conan_profile "$(conan config home)/profiles/default"
+
 # Install dependencies with Conan for configurations used in pep/core/.gitlab-ci.yml
 
->>"./conan_profile" "./conan_platform_tool_requires.sh"
-mkdir -p "$(conan config home)/profiles/"
-cp "./conan_profile" "$(conan config home)/profiles/default"
-
 echo '==== Installing Release packages ===='
-conan install ./ --build=missing --update \
+conan install ./ --build=missing \
   -s build_type=Release \
   $concurrency_option_conan \
   -o with_client=False \
@@ -27,7 +27,7 @@ conan install ./ --build=missing --update \
   -o with_benchmark=True
 
 echo '==== Installing Debug packages ===='
-conan install ./ --build=missing --update \
+conan install ./ --build=missing \
   -s build_type=Debug \
   $concurrency_option_conan \
   -o with_client=False \

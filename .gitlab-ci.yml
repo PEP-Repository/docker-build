@@ -1,5 +1,7 @@
 stages:
-  - docker-images
+  - docker-image
+  - generate-lockfile
+  - conan-install
   - analyze
   - deploy
   - analyze-manual
@@ -38,10 +40,12 @@ variables:
     >&2 echo "Concurrency limit is $concurrency_limit"
   fi
 
-.docker-base:
-  stage: docker-images
+
+# Build & push Docker image
+.docker-image:
+  stage: docker-image
   tags:
-    - docker
+    - docker-small
   image: docker
   variables:
     CONTAINER_IMAGE: ${PROJECT_REGISTRY}/${IMAGE_KIND}-${IMAGE_NAME}:${IMAGE_TAG_TEST}
@@ -68,7 +72,6 @@ variables:
       fi
       echo 'NEW_IMAGE=1' >>env.env  # Save, see artifacts
     - echo "Tagging image as $CONTAINER_IMAGE"
-    - *set_concurrency_limit
   script:
     - echo '==== Building & pushing image ===='
     - >
@@ -84,20 +87,153 @@ variables:
       # Save $NEW_IMAGE for jobs below
       dotenv: env.env
 
-.conan-builder-base:
-  extends: .docker-base
+builder/base/ubuntu-2204:
+  extends: .docker-image
   variables:
     IMAGE_KIND: builder
-  script:  # Override
-    - echo '==== Building image ===='
-    - >
-      docker build
-      --file ./${IMAGE_KIND}/${IMAGE_NAME}.Dockerfile
-      --tag ${CONTAINER_IMAGE}
-      ${DOCKER_ARGS}
-      ./${IMAGE_KIND}/
+    IMAGE_NAME: ubuntu-2204
 
-    - echo "==== Executing Conan in container ===="
+builder/base/ubuntu-rolling:
+  extends: .docker-image
+  variables:
+    IMAGE_KIND: builder
+    IMAGE_NAME: ubuntu-rolling
+
+builder/base/flatpak:
+  extends: .docker-image
+  variables:
+    IMAGE_KIND: builder
+    IMAGE_NAME: flatpak
+
+runtime/ubuntu-2204:
+  extends: .docker-image
+  variables:
+    IMAGE_KIND: runtime
+    IMAGE_NAME: ubuntu-2204
+
+####
+.generate-lockfile:
+  stage: generate-lockfile
+  variables:
+    IMAGE_KIND: builder
+  script:
+    - cd ./${IMAGE_KIND}/conan/
+    - >
+      conan_everything_options=
+      -o with_client=True
+      -o with_tests=True
+      -o with_benchmark=True
+    - rm -f ./conan.lock
+    - >
+      conan lockfile create ./ --update
+      --lockfile-out=./conan-rel.lock
+      -s build_type=Release
+      $conan_everything_options
+    - >
+      conan lockfile create ./ --update
+      --lockfile-out=./conan-dbg.lock
+      -s build_type=Debug
+      $conan_everything_options
+    - >
+      conan lock merge
+      --lockfile=./conan-rel.lock
+      --lockfile=./conan-dbg.lock
+      --lockfile-out=./conan.${name}.lock
+  artifacts:
+    paths:
+      - ./${IMAGE_KIND}/conan/conan.${name}.lock
+
+.generate-lockfile-docker:
+  extends: .generate-lockfile
+  tags:
+    - docker-small
+  image: ${PROJECT_REGISTRY}/${IMAGE_KIND}-${IMAGE_NAME}:${IMAGE_TAG_TEST}
+
+builder/lockfile/ubuntu-2204:
+  extends: .generate-lockfile-docker
+  dependencies:
+    - builder/base/ubuntu-2204
+  variables:
+    IMAGE_NAME: ubuntu-2204
+
+builder/lockfile/ubuntu-rolling:
+  extends: .generate-lockfile-docker
+  dependencies:
+    - builder/base/ubuntu-rolling
+  variables:
+    IMAGE_NAME: ubuntu-rolling
+
+builder/lockfile/windows:
+  extends: .generate-lockfile
+  tags:
+    - windows-vcpkg
+  variables:
+    name: windows
+
+builder/lockfile/macos-arm:
+  extends: .generate-lockfile
+  tags:
+    - macos-arm
+  variables:
+    name: macos-arm
+
+builder/lockfile/macos-x86:
+  extends: .generate-lockfile
+  tags:
+    - macos-x86
+  variables:
+    name: macos-x86
+
+merge-lockfiles:
+  stage: generate-lockfile
+  dependencies:
+    - builder/lockfile/ubuntu-2204
+    - builder/lockfile/ubuntu-rolling
+    - builder/lockfile/windows
+    - builder/lockfile/macos-arm
+    - builder/lockfile/macos-x86
+  variables:
+    IMAGE_KIND: builder
+  tags:
+    - docker-small
+  # Any Conan image
+  image: ${PROJECT_REGISTRY}/builder-ubuntu-rolling:${IMAGE_TAG_TEST}
+  script:
+    - cd ./${IMAGE_KIND}/conan/
+    - |
+      merge_flags=''
+      for name in
+        ubuntu-2204
+        ubuntu-rolling
+        windows
+        macos-arm
+        macos-x86
+      do
+        merge_flags+='--lockfile=./conan.$name.lock '
+      done
+    # Generate conan.lock
+    - conan lockfile merge $merge_flags
+  artifacts:
+    paths:
+      - ./${IMAGE_KIND}/conan/conan.lock
+
+####
+.conan-builder:
+  stage: conan-install
+  dependencies:
+    - merge-lockfiles
+  tags:
+    - docker
+  image: docker
+  variables:
+    IMAGE_KIND: builder
+    CONTAINER_IMAGE: ${PROJECT_REGISTRY}/${IMAGE_KIND}-${IMAGE_NAME}:${IMAGE_TAG_TEST}
+  services:
+    - docker:dind
+  script:
+    - *set_concurrency_limit
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - echo '==== Executing Conan in container ===='
     - container="$(docker container run --interactive --detach ${CONTAINER_IMAGE})"
     - |
       if [ -d ./${IMAGE_KIND}/cache/conan-home/ ]; then
@@ -121,30 +257,32 @@ variables:
       - ./${IMAGE_KIND}/cache/
 
 builder/ubuntu-2204:
-  extends: .conan-builder-base
+  extends: .conan-builder
   variables:
     IMAGE_NAME: ubuntu-2204
 
 builder/ubuntu-rolling:
-  extends: .conan-builder-base
+  extends: .conan-builder
   variables:
     IMAGE_NAME: ubuntu-rolling
 
 builder/flatpak:
-  extends: .docker-base
+  stage: conan-install
+  dependencies:
+    - merge-lockfiles
+  tags:
+    - docker
+  image: docker
   variables:
     IMAGE_KIND: builder
     IMAGE_NAME: flatpak
-  script:  # Override
-    - echo '==== Building image ===='
-    - >
-      docker build
-      --file ./${IMAGE_KIND}/${IMAGE_NAME}.Dockerfile
-      --tag ${CONTAINER_IMAGE}
-      ${DOCKER_ARGS}
-      ./${IMAGE_KIND}/
-
-    - echo "==== Executing Flatpak Builder with Conan in container ===="
+    CONTAINER_IMAGE: ${PROJECT_REGISTRY}/${IMAGE_KIND}-${IMAGE_NAME}:${IMAGE_TAG_TEST}
+  services:
+    - docker:dind
+  script:
+    - *set_concurrency_limit
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - echo '==== Executing Flatpak Builder with Conan in container ===='
     # --privileged is necessary for flatpak-builder, see https://github.com/flatpak/flatpak-builder/issues/237
     - container="$(docker container run --privileged --interactive --detach ${CONTAINER_IMAGE})"
     #TODO Cache ~/.conan2 like above?
@@ -161,16 +299,10 @@ builder/flatpak:
     - docker container stop "$container"
     - docker container commit --message 'Build base flatpak with Conan packages' "$container" ${CONTAINER_IMAGE}
 
-    - echo "==== Pushing image ===="
+    - echo '==== Pushing image ===='
     - docker push ${CONTAINER_IMAGE}
 
-runtime/ubuntu-2204:
-  extends: .docker-base
-  variables:
-    IMAGE_KIND: runtime
-    IMAGE_NAME: ubuntu-2204
-
-
+###
 test-images:
   stage: analyze
   rules:
@@ -197,6 +329,7 @@ test-images-manual:
     - apk add --no-cache jq curl
     - ./run-pipeline.sh ${IMAGE_TAG} "${CORE_TEST_REF}"
 
+###
 deploy-images:
   stage: deploy
   tags:
