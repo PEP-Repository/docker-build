@@ -218,7 +218,7 @@ merge-lockfiles:
     - |
       merge_flags=()
       for name in $jobs; do
-        merge_flags+='--lockfile=./conan.$name.lock'
+        merge_flags+="--lockfile=./conan.$name.lock"
       done
     # Generate conan.lock
     - conan lock merge "${merge_flags[@]}"
