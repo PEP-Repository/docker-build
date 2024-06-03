@@ -172,7 +172,7 @@ builder/lockfile/windows:
   extends: .generate-lockfile
   needs: []
   tags:
-    - windows-vcpkg
+    - windows
   variables:
     name: windows
 
