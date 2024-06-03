@@ -116,6 +116,7 @@ runtime/ubuntu-2204:
   stage: generate-lockfile
   variables:
     IMAGE_KIND: builder
+    CLICOLOR_FORCE: '1'  # Colored output for Conan
   # This script must work with both bash and powershell
   script:
     - cd ./${IMAGE_KIND}/conan/
@@ -215,12 +216,12 @@ merge-lockfiles:
         macos-x86
       )
     - |
-      merge_flags=''
+      merge_flags=()
       for name in $jobs do
-        merge_flags+='--lockfile=./conan.$name.lock '
+        merge_flags+='--lockfile=./conan.$name.lock'
       done
     # Generate conan.lock
-    - conan lockfile merge $merge_flags
+    - conan lockfile merge "${merge_flags[@]}"
     - cp ./conan.lock ../../
   artifacts:
     paths:
