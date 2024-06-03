@@ -20,8 +20,7 @@ response=$(curl -sS --globoff --request POST "${CI_API_V4_URL}/projects/pep%2fco
     --data-urlencode "token=${CI_JOB_TOKEN}" \
     --data-urlencode "ref=$core_ref" \
     --data-urlencode "variables[RUNNER_IMAGE_TAG]=$image_tag" \
-    --data-urlencode "variables[OVERRIDE_DOCKER_BUILD_REF]=${CI_COMMIT_SHA}" \
-    --data-urlencode "variables[UPDATE_CONAN_RECIPES]=1"
+    --data-urlencode "variables[OVERRIDE_DOCKER_BUILD_REF]=${CI_COMMIT_SHA}"
 )
 echo "Response: ${response}"
 pipelineid=$(echo "${response}" | jq ".id")
