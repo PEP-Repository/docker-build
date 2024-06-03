@@ -33,6 +33,7 @@ variables:
 # You can set a tag `limit_concurrency:<VALUE>` on a gitlab runner if it runs out of memory.
 # Jobs can invoke this anchor to retrieve the configured <VALUE> (if any) into the "concurrency_limit" variable.
 .set_concurrency_limit: &set_concurrency_limit |
+  apk add --no-cache jq
   concurrency_limit=$(echo "$CI_RUNNER_TAGS" | jq -r '.[]' | sed -n 's/^limit_concurrency:\([0-9]\+\)$/\1/p')
   if [ -z "$concurrency_limit" ]; then
     >&2 echo "No concurrency limit specified"
