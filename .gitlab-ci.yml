@@ -116,10 +116,7 @@ runtime/ubuntu-2204:
   stage: generate-lockfile
   variables:
     IMAGE_KIND: builder
-    conan_everything_options: >
-      -o with_client=True
-      -o with_tests=True
-      -o with_benchmark=True
+  # This script must work with both bash and powershell
   script:
     - cd ./${IMAGE_KIND}/conan/
     - >
@@ -128,14 +125,18 @@ runtime/ubuntu-2204:
       --lockfile=''
       --lockfile-out=./conan-rel.lock
       -s build_type=Release
-      $conan_everything_options
+      -o with_client=True
+      -o with_tests=True
+      -o with_benchmark=True
     - >
       conan lock create ./ --update
       --profile:all=./conan_profile
       --lockfile=''
       --lockfile-out=./conan-dbg.lock
       -s build_type=Debug
-      $conan_everything_options
+      -o with_client=True
+      -o with_tests=True
+      -o with_benchmark=True
     - >
       conan lock merge
       --lockfile=./conan-rel.lock
