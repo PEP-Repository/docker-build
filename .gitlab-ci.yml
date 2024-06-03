@@ -122,16 +122,17 @@ runtime/ubuntu-2204:
       -o with_benchmark=True
   script:
     - cd ./${IMAGE_KIND}/conan/
-    - rm -f ./conan.lock
     - >
       conan lock create ./ --update
       --profile:all=./conan_profile
+      --lockfile=''
       --lockfile-out=./conan-rel.lock
       -s build_type=Release
       $conan_everything_options
     - >
       conan lock create ./ --update
       --profile:all=./conan_profile
+      --lockfile=''
       --lockfile-out=./conan-dbg.lock
       -s build_type=Debug
       $conan_everything_options
@@ -146,27 +147,23 @@ runtime/ubuntu-2204:
 
 .generate-lockfile-docker:
   extends: .generate-lockfile
-  variables:
-    - name: ${IMAGE_NAME}
   tags:
     - docker-small
-  image: ${PROJECT_REGISTRY}/${IMAGE_KIND}-${IMAGE_NAME}:${IMAGE_TAG_TEST}
+  image: ${PROJECT_REGISTRY}/builder-${name}:${IMAGE_TAG_TEST}
 
 builder/lockfile/ubuntu-2204:
   extends: .generate-lockfile-docker
   needs:
     - builder/base/ubuntu-2204
   variables:
-    IMAGE_KIND: builder
-    IMAGE_NAME: ubuntu-2204
+    name: ubuntu-2204
 
 builder/lockfile/ubuntu-rolling:
   extends: .generate-lockfile-docker
   needs:
     - builder/base/ubuntu-rolling
   variables:
-    IMAGE_KIND: builder
-    IMAGE_NAME: ubuntu-rolling
+    name: ubuntu-rolling
 
 builder/lockfile/windows:
   extends: .generate-lockfile
@@ -192,6 +189,7 @@ builder/lockfile/macos-x86:
   variables:
     name: macos-x86
 
+#TODO flatpak?
 merge-lockfiles:
   stage: generate-lockfile
   needs:
