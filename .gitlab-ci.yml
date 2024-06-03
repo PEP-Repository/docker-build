@@ -219,9 +219,11 @@ merge-lockfiles:
       done
     # Generate conan.lock
     - conan lockfile merge $merge_flags
+    - cp ./conan.lock ../../
   artifacts:
     paths:
       - ./${IMAGE_KIND}/conan/conan.lock
+      - ./conan.lock
 
 ####
 .conan-builder:
