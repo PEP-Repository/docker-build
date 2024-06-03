@@ -38,6 +38,8 @@ modules:
         path: ../conan/conan_profile
       - type: file
         path: ../conan/conanfile.py
+      - type: file
+        path: ../conan/conan.lock
     build-options:
       build-args:
         - --share=network
