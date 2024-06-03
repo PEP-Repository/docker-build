@@ -11,11 +11,11 @@ conan_everything_options='
 '
 rm -f ./conan.lock
 
-conan lockfile create ./ --update \
+conan lock create ./ --update \
   --lockfile-out=./conan-rel.lock \
   -s build_type=Release \
   $conan_everything_options
-conan lockfile create ./ --update \
+conan lock create ./ --update \
   --lockfile-out=./conan-dbg.lock \
   -s build_type=Debug \
   $conan_everything_options
