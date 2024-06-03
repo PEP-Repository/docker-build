@@ -221,7 +221,7 @@ merge-lockfiles:
         merge_flags+='--lockfile=./conan.$name.lock'
       done
     # Generate conan.lock
-    - conan lockfile merge "${merge_flags[@]}"
+    - conan lock merge "${merge_flags[@]}"
     - cp ./conan.lock ../../
   artifacts:
     paths:
