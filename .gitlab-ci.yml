@@ -207,15 +207,16 @@ merge-lockfiles:
   image: ${PROJECT_REGISTRY}/builder-ubuntu-rolling:${IMAGE_TAG_TEST}
   script:
     - cd ./${IMAGE_KIND}/conan/
+    - jobs=(
+        ubuntu-2204
+        ubuntu-rolling
+        windows
+        macos-arm
+        macos-x86
+      )
     - |
       merge_flags=''
-      for name in \
-        ubuntu-2204 \
-        ubuntu-rolling \
-        windows \
-        macos-arm \
-        macos-x86 \
-      do
+      for name in $jobs do
         merge_flags+='--lockfile=./conan.$name.lock '
       done
     # Generate conan.lock
