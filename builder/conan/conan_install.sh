@@ -13,7 +13,6 @@ else
 fi
 
 mkdir -p "$(conan config home)/profiles/"
-./conan_platform_tool_requires.sh >>./conan_profile
 cp ./conan_profile "$(conan config home)/profiles/default"
 
 # Install dependencies with Conan for configurations used in pep/core/.gitlab-ci.yml
