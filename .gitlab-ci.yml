@@ -208,7 +208,7 @@ merge-lockfiles:
   # Any Conan image
   image: ${PROJECT_REGISTRY}/builder-ubuntu-rolling:${IMAGE_TAG_TEST}
   script:
-    - echo 'MERGE_LOCKFILES_JOB=${CI_JOB_ID}' >>env.env  # Save, see artifacts
+    - echo "MERGE_LOCKFILES_JOB=${CI_JOB_ID}" >>env.env  # Save, see artifacts
     - cd ./${IMAGE_KIND}/conan/
     - jobs=(
         ubuntu-2204
