@@ -208,6 +208,7 @@ merge-lockfiles:
   # Any Conan image
   image: ${PROJECT_REGISTRY}/builder-ubuntu-rolling:${IMAGE_TAG_TEST}
   script:
+    - echo 'MERGE_LOCKFILES_JOB=${CI_JOB_ID}' >>env.env  # Save, see artifacts
     - cd ./${IMAGE_KIND}/conan/
     - jobs=(
         ubuntu-2204
@@ -228,6 +229,9 @@ merge-lockfiles:
     paths:
       - ./${IMAGE_KIND}/conan/conan.lock
       - ./conan.lock
+    reports:
+      # Save $MERGE_LOCKFILES_JOB for jobs below
+      dotenv: env.env
 
 ####
 .conan-builder:
@@ -327,7 +331,7 @@ test-images:
   image: alpine
   script:
     - apk add --no-cache jq curl
-    - ./run-pipeline.sh ${IMAGE_TAG_TEST} "${CORE_TEST_REF}"
+    - ./run-pipeline.sh ${IMAGE_TAG_TEST} "${CORE_TEST_REF}" "${MERGE_LOCKFILES_JOB}"
 
 test-images-manual:
   stage: analyze-manual
