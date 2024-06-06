@@ -24,12 +24,12 @@ modules:
           -c:a tools.build:exelinkflags='["-fuse-ld=gold"]' \
           -c:a tools.build:sharedlinkflags='["-fuse-ld=gold"]' \
           -c:a tools.build:jobs=${FLATPAK_BUILDER_N_JOBS} \
-          -o with_client=True \
-          -o with_castor=False \
-          -o with_tests=False \
-          -o with_benchmark=False \
-          -o use_system_qt=True \
-          -o custom_build_folder=True \
+          -o "&:with_client=True" \
+          -o "&:with_castor=False" \
+          -o "&:with_tests=False" \
+          -o "&:with_benchmark=False" \
+          -o "&:use_system_qt=True" \
+          -o "&:custom_build_folder=True" \
           --output-folder="${FLATPAK_DEST}/tmp/build/"
         # Clean temporary files
         conan cache clean

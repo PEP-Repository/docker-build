@@ -21,17 +21,17 @@ echo '==== Installing Release packages ===='
 conan install ./ --build=missing \
   -s build_type=Release \
   $concurrency_option_conan \
-  -o with_client=False \
-  -o with_tests=True \
-  -o with_benchmark=True
+  -o "&:with_client=False" \
+  -o "&:with_tests=True" \
+  -o "&:with_benchmark=True"
 
 echo '==== Installing Debug packages ===='
 conan install ./ --build=missing \
   -s build_type=Debug \
   $concurrency_option_conan \
-  -o with_client=False \
-  -o with_tests=True \
-  -o with_benchmark=False
+  -o "&:with_client=False" \
+  -o "&:with_tests=True" \
+  -o "&:with_benchmark=False"
 
 echo 'Cleaning cache'
 # Remove old packages
