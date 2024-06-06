@@ -130,6 +130,7 @@ runtime/ubuntu-2204:
       -o "&:with_client=True"
       -o "&:with_tests=True"
       -o "&:with_benchmark=True"
+      -o "&:use_system_qt=False"
     - >
       conan lock create ./ --update
       --profile:all=./conan_profile
@@ -139,6 +140,7 @@ runtime/ubuntu-2204:
       -o "&:with_client=True"
       -o "&:with_tests=True"
       -o "&:with_benchmark=True"
+      -o "&:use_system_qt=False"
     - >
       conan lock merge
       --lockfile=./conan-rel.lock
