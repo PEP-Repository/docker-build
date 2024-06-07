@@ -14,6 +14,7 @@ variables:
   PROJECT_REGISTRY: ${CI_REGISTRY}/${CI_PROJECT_PATH}
   IMAGE_TAG: sha-${CI_COMMIT_SHA}
   IMAGE_TAG_TEST: sha-test-${CI_COMMIT_SHA}
+  PARENT_IMAGE_TAG: sha-test-${CI_COMMIT_BEFORE_SHA}
 
   CORE_PROJECT: pep/core
   # Override to set branch/ref of pep/core to test images on
@@ -23,8 +24,20 @@ variables:
     value: ''
     options:
       - ''
-      - '1'
+      - 'yes'
     description: Always run test-images
+  FORCE_UPDATE_CORE:
+    value: ''
+    options:
+      - ''
+      - 'yes'
+    description: Always update core repository
+  RETAG_PARENT_COMMIT_IMAGES:
+    value: ''
+    options:
+      - ''
+      - 'yes'
+    description: Do not build new images, re-tag the ones from our parent commit instead
 
   # >- is a YAML space-separated string, see https://yaml-multiline.info/
   # Images that should be retagged from $IMAGE_TAG_TEST to $IMAGE_TAG
@@ -37,6 +50,21 @@ variables:
   SCHEDULE_BRANCHES_REGEX: ^(master|stable|release)$
   # If the previous image for a commit is at least this old, it will be rebuilt
   IMAGE_MAX_AGE_DAYS: 6
+
+.no_mr_pipelines: &no_mr_pipelines
+  # Do not create MR pipelines (see https://docs.gitlab.com/ee/ci/pipelines/merge_request_pipelines.html )
+  if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  when: never
+
+.not_if_retagging_parent: &not_if_retagging_parent
+  if: $RETAG_PARENT_COMMIT_IMAGES
+  when: never
+
+.rules_only_when_building: &rules_only_when_building
+  rules:
+    - *no_mr_pipelines
+    - *not_if_retagging_parent
+    - when: on_success
 
 # You can set a tag `limit_concurrency:<VALUE>` on a gitlab runner if it runs out of memory.
 # Jobs can invoke this anchor to retrieve the configured <VALUE> (if any) into the "concurrency_limit" variable.
@@ -60,6 +88,7 @@ variables:
     CONTAINER_IMAGE: ${PROJECT_REGISTRY}/${IMAGE_KIND}-${IMAGE_NAME}:${IMAGE_TAG_TEST}
   services:
     - docker:dind
+  <<: *rules_only_when_building
   before_script:
     - apk add --no-cache jq coreutils  # Also add coreutils for `date` (Alpine/busybox date doesn't parse ISO-8601 well)
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
@@ -79,7 +108,7 @@ variables:
       else
         echo 'No existing image for this commit'
       fi
-      echo 'NEW_IMAGE=1' >>env.env  # Save, see artifacts
+      echo 'NEW_IMAGE=yes' >>env.env  # Save, see artifacts
     - echo "Tagging image as $CONTAINER_IMAGE"
   script:
     - echo '==== Building & pushing image ===='
@@ -126,6 +155,7 @@ runtime/ubuntu-2204:
   variables:
     IMAGE_KIND: builder
     CLICOLOR_FORCE: '1'  # Colored output for Conan
+  <<: *rules_only_when_building
   # This script must work with both bash and powershell
   script:
     - cd ./${IMAGE_KIND}/conan/
@@ -215,8 +245,8 @@ merge-lockfiles:
     IMAGE_KIND: builder
   tags:
     - docker-small
-  # Any Conan image
-  image: ${PROJECT_REGISTRY}/builder-ubuntu-rolling:${IMAGE_TAG_TEST}
+  image: ${PROJECT_REGISTRY}/builder-ubuntu-2204:${IMAGE_TAG_TEST}
+  <<: *rules_only_when_building
   script:
     - echo "MERGE_LOCKFILES_JOB=${CI_JOB_ID}" >>env.env  # Save, see artifacts
     - cd ./${IMAGE_KIND}/conan/
@@ -234,13 +264,14 @@ merge-lockfiles:
       done
     # Generate conan.lock
     - conan lock merge "${merge_flags[@]}"
+    - git diff --exit-code ./conan.lock ||  echo 'LOCKFILE_CHANGED=yes' >>env.env  # Save, see artifacts
     - cp ./conan.lock ../../
   artifacts:
     paths:
       - ./${IMAGE_KIND}/conan/conan.lock
       - ./conan.lock
     reports:
-      # Save $MERGE_LOCKFILES_JOB for jobs below
+      # Save $MERGE_LOCKFILES_JOB, $LOCKFILE_CHANGED for jobs below
       dotenv: env.env
 
 ####
@@ -251,6 +282,7 @@ merge-lockfiles:
   tags:
     - docker
   image: docker
+  <<: *rules_only_when_building
   variables:
     IMAGE_KIND: builder
     CONTAINER_IMAGE: ${PROJECT_REGISTRY}/${IMAGE_KIND}-${IMAGE_NAME}:${IMAGE_TAG_TEST}
@@ -299,6 +331,7 @@ builder/flatpak:
   tags:
     - docker
   image: docker
+  <<: *rules_only_when_building
   variables:
     IMAGE_KIND: builder
     IMAGE_NAME: flatpak
@@ -329,12 +362,12 @@ builder/flatpak:
     - docker push ${CONTAINER_IMAGE}
 
 ###
+#TODO This doesn't actually test if images work for stable/release, where no full build is performed in the initial pipeline
 test-images:
   stage: analyze
   rules:
-    # Do not create MR pipelines (see https://docs.gitlab.com/ee/ci/pipelines/merge_request_pipelines.html )
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-      when: never
+    - *no_mr_pipelines
+    - *not_if_retagging_parent
     # Enable if we force it to
     - if: $FORCE_TEST
       when: on_success
@@ -361,17 +394,17 @@ test-images-manual:
     - ./run-pipeline.sh ${IMAGE_TAG} "${CORE_TEST_REF}" "${MERGE_LOCKFILES_JOB}"
 
 ###
-deploy-images:
+retag-images:
   stage: deploy
   tags:
     - docker-small
   image: docker
-  services:
-    - docker:dind
+  <<: *rules_only_when_building
   script:
     # A better way to skip jobs is not yet available, see https://gitlab.com/gitlab-org/gitlab/-/issues/292816, https://gitlab.com/gitlab-org/gitlab/-/issues/329217
-    # $NEW_IMAGE is retrieved from jobs above via env.env
-    - if [ "$NEW_IMAGE" != 1 ]; then exit; fi
+    # $NEW_IMAGE, $LOCKFILE_CHANGED are retrieved from jobs above via env.env
+    - if [ -z "$NEW_IMAGE" ]; then exit; fi
+    - if [ -n "$LOCKFILE_CHANGED" ]; then exit; fi
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - |
       for image in ${DEPLOY_IMAGES}; do
@@ -379,3 +412,88 @@ deploy-images:
         # This assumes sha-test tags of an image will not be cleaned up if it is still recent and thus reused
         docker buildx imagetools create --tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG} ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}
       done
+
+retag-parent-images:
+  stage: deploy
+  tags:
+    - docker-small
+  image: docker
+  rules:
+    - *no_mr_pipelines
+    - if: $RETAG_PARENT_COMMIT_IMAGES
+      when: on_success
+  script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - |
+      for image in ${DEPLOY_IMAGES}; do
+        echo "Retagging $image:${PARENT_IMAGE_TAG} as ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}"
+        docker buildx imagetools create --tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST} ${PROJECT_REGISTRY}/$image:${PARENT_IMAGE_TAG}
+        echo "Retagging $image:${PARENT_IMAGE_TAG} as ${PROJECT_REGISTRY}/$image:${IMAGE_TAG}"
+        docker buildx imagetools create --tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG} ${PROJECT_REGISTRY}/$image:${PARENT_IMAGE_TAG}
+      done
+
+update-core:
+  stage: deploy
+  needs:
+    - retag-images
+    - merge-lockfiles
+  rules:
+    - *no_mr_pipelines
+    - *not_if_retagging_parent
+    # Enable on schedule branches
+    - if: $CI_COMMIT_BRANCH =~ $SCHEDULE_BRANCHES_REGEX
+      when: on_success
+  tags:
+    - docker-small
+  image: alpine
+  variables:
+    GIT_STRATEGY: none  # Do not fetch nor clean working tree
+  before_script:
+    - apk add --no-cache git openssh jq curl
+  script:
+    - if [ -z "$LOCKFILE_CHANGED" ]; then exit; fi
+    - |
+      mkdir -p ~/.ssh
+      >>~/.ssh/known_hosts echo "${CI_SERVER_HOST},131.174.138.131 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBDd/zrrJ+9MjUvHBq55u3sdP6Tu+lqA+zCwFDeHtLSl40sOGZvDQ1AE/R6bnQQTSQ+GKUFdwHAar7ePVCBXeDhw="
+      eval $(ssh-agent -s)
+      echo "${SSH_KEY_GITLAB}" | tr -d '\r' | ssh-add -
+      git config --global user.email support@pep.cs.ru.nl
+      git config --global user.name 'Gitlab CI script from docker-build'
+      rm -rf ./pep
+    - >
+      git clone --branch="${CI_COMMIT_REF_NAME}"
+      --sparse
+      --no-tags
+      --depth=1
+      --shallow-submodules
+      --recurse-submodules=docker-build
+      "git@${CI_SERVER_HOST}:${CORE_PROJECT}.git" ./pep
+    - |
+      echo 'Updating docker-build'
+      (
+      cd ./pep/docker-build/
+      if [ "$(git rev-parse "${CI_COMMIT_REF}")" != "${CI_COMMIT_SHA}" ]; then
+        >&2 echo "This (${CI_COMMIT_SHA}) is not the newest docker-build commit"
+        exit 1
+      fi
+      git checkout "${CI_COMMIT_REF}"
+      mv -f ../../conan.lock ./builder/conan/
+      git add .
+      git commit -m "Update conan.lock for pipeline ${CI_PIPELINE_ID}
+      ${CI_JOB_URL}"
+      git push -o ci.variable='RETAG_PARENT_COMMIT_IMAGES=yes'
+      echo "Made commit at: ${CI_PROJECT_URL}/-/commit/$(git rev-parse HEAD)"
+      )
+    - |
+      echo 'Updating core'
+      sed --in-place "/s/(RUNNER_IMAGE_TAG:\s*)\S*/\1${IMAGE_TAG}/" ./ci_cd/docker-common.yml
+      if git diff --no-patch --exit-code ./ci_cd/docker-common.yml; then
+        # No differences
+        >&2 echo "Failed to update /ci_cd/docker-common.yml in ${CORE_PROJECT}"
+        exit 1
+      fi
+      git add .
+      git commit -m "Update docker-build for pipeline ${CI_PIPELINE_ID}
+      ${CI_JOB_URL}"
+      git push
+      echo "Made commit at: ${CI_SERVER_URL}/${CORE_PROJECT}/-/commit/$(git rev-parse HEAD)"
