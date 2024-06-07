@@ -20,7 +20,8 @@ modules:
         export CONAN_HOME="${FLATPAK_DEST}/tmp/conan/"
 
         # Use faster and less memory-intensive GNU gold linker
-        conan install ./ --profile:all=./conan_profile --build=missing --update \
+        conan install ./ --profile:all=./conan_profile --build=missing \
+          --lockfile=./conan.lock
           -c:a tools.build:exelinkflags='["-fuse-ld=gold"]' \
           -c:a tools.build:sharedlinkflags='["-fuse-ld=gold"]' \
           -c:a tools.build:jobs=${FLATPAK_BUILDER_N_JOBS} \

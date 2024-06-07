@@ -194,7 +194,7 @@ builder/lockfile/macos-x86:
   variables:
     name: macos-x86
 
-#TODO flatpak?
+# Currently we don't incorporate the Flatpak here because it should generally be identical to Ubuntu LTS
 merge-lockfiles:
   stage: generate-lockfile
   needs:
