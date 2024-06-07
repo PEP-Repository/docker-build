@@ -16,8 +16,10 @@ image_tag="$1"
 core_ref="$2"
 lockfile_job="$3"
 
+core_project_urlencode="$(printf %s "${CORE_PROJECT}" | jq --slurp --raw-input --raw-output @uri)"
+
 echo "Running a core pipeline on $core_ref using RUNNER_IMAGE_TAG=$image_tag"
-response=$(curl --no-progress-meter --fail --globoff --request POST "${CI_API_V4_URL}/projects/pep%2fcore/trigger/pipeline" \
+response=$(curl --no-progress-meter --fail --globoff --request POST "${CI_API_V4_URL}/projects/${core_project_urlencode}/trigger/pipeline" \
     --data-urlencode "token=${CI_JOB_TOKEN}" \
     --data-urlencode "ref=$core_ref" \
     --data-urlencode "variables[RUNNER_IMAGE_TAG]=$image_tag" \
@@ -46,7 +48,7 @@ echo 'Polling status'
 last_status=''
 while true
 do
-  status=$(curl --no-progress-meter --fail --header "PRIVATE-TOKEN:${GITLAB_ACCESS_TOKEN}" "${CI_API_V4_URL}/projects/pep%2fcore/pipelines/${pipelineid}" | jq ".status")
+  status=$(curl --no-progress-meter --fail --header "PRIVATE-TOKEN:${GITLAB_ACCESS_TOKEN}" "${CI_API_V4_URL}/projects/${core_project_urlencode}/pipelines/${pipelineid}" | jq ".status")
 
   if [ "$status" != "$last_status" ]; then
     printf '\n%s' "$status"

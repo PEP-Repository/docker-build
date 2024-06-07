@@ -15,6 +15,7 @@ variables:
   IMAGE_TAG: sha-${CI_COMMIT_SHA}
   IMAGE_TAG_TEST: sha-test-${CI_COMMIT_SHA}
 
+  CORE_PROJECT: pep/core
   # Override to set branch/ref of pep/core to test images on
   CORE_TEST_REF: ${CI_COMMIT_BRANCH}
 
