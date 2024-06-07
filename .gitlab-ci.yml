@@ -18,6 +18,13 @@ variables:
   # Override to set branch/ref of pep/core to test images on
   CORE_TEST_REF: ${CI_COMMIT_BRANCH}
 
+  FORCE_TEST:
+    value: ''
+    options:
+      - ''
+      - '1'
+    description: Always run test-images
+
   # >- is a YAML space-separated string, see https://yaml-multiline.info/
   # Images that should be retagged from $IMAGE_TAG_TEST to $IMAGE_TAG
   DEPLOY_IMAGES: >-
@@ -324,10 +331,15 @@ builder/flatpak:
 test-images:
   stage: analyze
   rules:
-    # Only enable on schedule branches, and do not create MR pipelines (see https://docs.gitlab.com/ee/ci/pipelines/merge_request_pipelines.html )
-    - if: $CI_COMMIT_BRANCH !~ $SCHEDULE_BRANCHES_REGEX || $CI_PIPELINE_SOURCE == 'merge_request_event'
+    # Do not create MR pipelines (see https://docs.gitlab.com/ee/ci/pipelines/merge_request_pipelines.html )
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       when: never
-    - when: on_success
+    # Enable if we force it to
+    - if: $FORCE_TEST
+      when: on_success
+    # Enable on schedule branches
+    - if: $CI_COMMIT_BRANCH =~ $SCHEDULE_BRANCHES_REGEX
+      when: on_success
   tags:
     - docker-small
   image: alpine
