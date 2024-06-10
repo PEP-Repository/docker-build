@@ -1,6 +1,5 @@
 FROM ubuntu:22.04
-ENV CLICOLOR_FORCE=1
-ENV DEBIAN_FRONTEND=noninteractive
+ENV CLICOLOR_FORCE=1 DEBIAN_FRONTEND=noninteractive
 
 COPY ./ubuntu-common.apt ./ubuntu-2204.apt /tmp/
 
@@ -25,6 +24,4 @@ RUN add-apt-repository -y ppa:apptainer/ppa \
     && apt-get clean \
     && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
-ENV DEBIAN_FRONTEND=''
-ENV CC=clang
-ENV CXX=clang++
+ENV DEBIAN_FRONTEND='' CC=clang CXX=clang++

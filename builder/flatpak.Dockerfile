@@ -1,6 +1,5 @@
 FROM ubuntu:22.04
-ENV CLICOLOR_FORCE=1
-ENV DEBIAN_FRONTEND=noninteractive
+ENV CLICOLOR_FORCE=1 DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update \
     && apt-get upgrade -y --autoremove --purge \
@@ -8,8 +7,8 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
-RUN flatpak --user remote-add flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-RUN flatpak --user install -y org.kde.Platform//6.6
-RUN flatpak --user install -y org.kde.Sdk//6.6
+RUN flatpak --user remote-add flathub https://dl.flathub.org/repo/flathub.flatpakrepo \
+    && flatpak --user install -y org.kde.Platform//6.6 \
+    && flatpak --user install -y org.kde.Sdk//6.6
 
 ENV DEBIAN_FRONTEND=''
