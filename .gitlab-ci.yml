@@ -26,12 +26,6 @@ variables:
       - ''
       - 'yes'
     description: Always run test-images
-  FORCE_UPDATE_CORE:
-    value: ''
-    options:
-      - ''
-      - 'yes'
-    description: Always update core repository
   RETAG_PARENT_COMMIT_IMAGES:
     value: ''
     options:
