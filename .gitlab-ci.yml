@@ -365,7 +365,6 @@ builder/flatpak:
     - docker push ${CONTAINER_IMAGE}
 
 ###
-#TODO This doesn't actually test if images work for stable/release, where no full build is performed in the initial pipeline
 test-images:
   stage: analyze
   rules:
@@ -373,10 +372,8 @@ test-images:
     - *not_if_retagging_parent
     # Enable if we force it to
     - if: $FORCE_TEST
-      when: on_success
     # Enable on schedule branches
     - if: $CI_COMMIT_BRANCH =~ $SCHEDULE_BRANCHES_REGEX
-      when: on_success
   tags:
     - docker-small
   image: alpine
@@ -424,7 +421,6 @@ retag-parent-images:
   rules:
     - *no_mr_pipelines
     - if: $RETAG_PARENT_COMMIT_IMAGES
-      when: on_success
   script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - |
@@ -445,7 +441,6 @@ update-core:
     - *not_if_retagging_parent
     # Enable on schedule branches
     - if: $CI_COMMIT_BRANCH =~ $SCHEDULE_BRANCHES_REGEX
-      when: on_success
   tags:
     - docker-small
   image: alpine

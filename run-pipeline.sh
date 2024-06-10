@@ -22,6 +22,7 @@ echo "Running a core pipeline on $core_ref using RUNNER_IMAGE_TAG=$image_tag"
 response=$(curl --no-progress-meter --fail --globoff --request POST "${CI_API_V4_URL}/projects/${core_project_urlencode}/trigger/pipeline" \
     --data-urlencode "token=${CI_JOB_TOKEN}" \
     --data-urlencode "ref=$core_ref" \
+    --data-urlencode "variables[FORCE_BUILD_STABLE_RELEASE]=yes" \
     --data-urlencode "variables[RUNNER_IMAGE_TAG]=$image_tag" \
     --data-urlencode "variables[OVERRIDE_DOCKER_BUILD_REF]=${CI_COMMIT_SHA}" \
     --data-urlencode "variables[DOCKER_BUILD_LOCKFILE_JOB]=$lockfile_job"
