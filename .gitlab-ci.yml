@@ -291,7 +291,7 @@ merge-lockfiles:
     - *set_concurrency_limit
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - echo '==== Executing Conan in container ===='
-    - container="$(docker container run --interactive --detach ${CONTAINER_IMAGE})"
+    - container="$(docker container run --pull=always --interactive --detach ${CONTAINER_IMAGE})"
     - |
       if [ -d ./${IMAGE_KIND}/cache/conan-home/ ]; then
         echo 'Copying cached .conan2 folder'
@@ -342,7 +342,7 @@ builder/flatpak:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - echo '==== Executing Flatpak Builder with Conan in container ===='
     # --privileged is necessary for flatpak-builder, see https://github.com/flatpak/flatpak-builder/issues/237
-    - container="$(docker container run --privileged --interactive --detach ${CONTAINER_IMAGE})"
+    - container="$(docker container run --pull=always --privileged --interactive --detach ${CONTAINER_IMAGE})"
     #TODO Cache ~/.conan2 like above?
     - docker container cp ./${IMAGE_KIND}/flatpak/ "$container:/tmp/flatpak"
     - docker container cp ./${IMAGE_KIND}/conan/ "$container:/tmp/conan"
