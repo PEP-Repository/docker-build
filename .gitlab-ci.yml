@@ -33,6 +33,12 @@ variables:
       - ''
       - 'yes'
     description: Run test-images not only on branches with scheduled pipelines
+  FORCE_COMMIT:
+    value: ''
+    options:
+      - ''
+      - 'yes'
+    description: Commit update lockfile not only on branches with scheduled pipelines
   RETAG_PARENT_COMMIT_IMAGES:
     value: ''
     options:
@@ -451,6 +457,8 @@ update-core:
     - merge-lockfiles
   rules:
     - *not_if_retagging_parent
+    # Enable if we force it to
+    - if: $FORCE_COMMIT
     # Enable on schedule branches
     - if: $CI_COMMIT_BRANCH =~ $SCHEDULE_BRANCHES_REGEX
   tags:
