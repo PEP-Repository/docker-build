@@ -17,15 +17,22 @@ variables:
   PARENT_IMAGE_TAG: sha-test-$CI_COMMIT_BEFORE_SHA
 
   CORE_PROJECT: pep/core
-  # Override to set branch/ref of pep/core to test images on
-  CORE_TEST_REF: $CI_COMMIT_BRANCH
+  CORE_TEST_REF:
+    value: $CI_COMMIT_BRANCH
+    description: Override to set branch/ref of pep/core to test images on
+
+  IMAGE_MAX_AGE_DAYS:
+    value: '6'
+    description: >
+      If the previous image for a commit is at least this old, it will be rebuilt.
+      Set to 0 to force rebuild
 
   FORCE_TEST:
     value: ''
     options:
       - ''
       - 'yes'
-    description: Always run test-images
+    description: Run test-images not only on branches with scheduled pipelines
   RETAG_PARENT_COMMIT_IMAGES:
     value: ''
     options:
@@ -42,8 +49,6 @@ variables:
     runtime-ubuntu-2204
   # Branches update pipelines are scheduled on, in regex form
   SCHEDULE_BRANCHES_REGEX: ^(master|stable|release)$
-  # If the previous image for a commit is at least this old, it will be rebuilt
-  IMAGE_MAX_AGE_DAYS: 6
 
 # Applies to whole pipeline
 workflow:
