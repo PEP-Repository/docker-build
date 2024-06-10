@@ -66,6 +66,8 @@ variables:
     - *not_if_retagging_parent
     - when: on_success
 
+.git_colors: &git_colors git config --global color.ui always
+
 # You can set a tag `limit_concurrency:<VALUE>` on a gitlab runner if it runs out of memory.
 # Jobs can invoke this anchor to retrieve the configured <VALUE> (if any) into the "concurrency_limit" variable.
 .set_concurrency_limit: &set_concurrency_limit |
@@ -248,6 +250,7 @@ merge-lockfiles:
   image: ${PROJECT_REGISTRY}/builder-ubuntu-2204:${IMAGE_TAG_TEST}
   <<: *rules_only_when_building
   script:
+    - *git_colors
     - echo "MERGE_LOCKFILES_JOB=${CI_JOB_ID}" >>env.env  # Save, see artifacts
     - cd ./${IMAGE_KIND}/conan/
     - jobs=(
@@ -264,7 +267,7 @@ merge-lockfiles:
       done
     # Generate conan.lock
     - conan lock merge "${merge_flags[@]}"
-    - git diff --exit-code ./conan.lock ||  echo 'LOCKFILE_CHANGED=yes' >>env.env  # Save, see artifacts
+    - git diff --exit-code ./conan.lock || echo 'LOCKFILE_CHANGED=yes' >>env.env  # Save, see artifacts
     - cp ./conan.lock ../../
   artifacts:
     paths:
@@ -452,6 +455,7 @@ update-core:
     - apk add --no-cache git openssh jq curl
   script:
     - if [ -z "$LOCKFILE_CHANGED" ]; then exit; fi
+    - *git_colors
     - |
       mkdir -p ~/.ssh
       >>~/.ssh/known_hosts echo "${CI_SERVER_HOST},131.174.138.131 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBDd/zrrJ+9MjUvHBq55u3sdP6Tu+lqA+zCwFDeHtLSl40sOGZvDQ1AE/R6bnQQTSQ+GKUFdwHAar7ePVCBXeDhw="
@@ -472,12 +476,14 @@ update-core:
       echo 'Updating docker-build'
       (
       cd ./pep/docker-build/
+      # Is the commit SHA from this pipeline the head of our branch?
       if [ "$(git rev-parse "${CI_COMMIT_REF}")" != "${CI_COMMIT_SHA}" ]; then
         >&2 echo "This (${CI_COMMIT_SHA}) is not the newest docker-build commit"
         exit 1
       fi
+      # Before committing, make sure we are on a branch
       git checkout "${CI_COMMIT_REF}"
-      mv -f ../../conan.lock ./builder/conan/
+      mv -f "$CI_PROJECT_DIR/conan.lock" ./builder/conan/
       git add .
       git commit -m "Update conan.lock for pipeline ${CI_PIPELINE_ID}
       ${CI_JOB_URL}"
@@ -486,6 +492,7 @@ update-core:
       )
     - |
       echo 'Updating core'
+      # We just updated the submodule, now update the image tag as well
       sed --in-place "/s/(RUNNER_IMAGE_TAG:\s*)\S*/\1${IMAGE_TAG}/" ./ci_cd/docker-common.yml
       if git diff --no-patch --exit-code ./ci_cd/docker-common.yml; then
         # No differences
