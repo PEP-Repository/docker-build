@@ -494,12 +494,12 @@ update-core:
       (
       cd ./pep/docker-build/
       # Is the commit SHA from this pipeline the head of our branch?
-      if [ "$(git rev-parse "$CI_COMMIT_REF")" != "$CI_COMMIT_SHA" ]; then
+      if [ "$(git rev-parse "$CI_COMMIT_REF_NAME")" != "$CI_COMMIT_SHA" ]; then
         >&2 echo "This ($CI_COMMIT_SHA) is not the newest docker-build commit"
         exit 1
       fi
       # Before committing, make sure we are on a branch
-      git checkout "$CI_COMMIT_REF"
+      git checkout "$CI_COMMIT_REF_NAME"
       mv -f "$CI_PROJECT_DIR/conan.lock" ./builder/conan/
       git add .
       git commit -m "Update conan.lock for pipeline $CI_PIPELINE_ID
