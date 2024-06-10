@@ -16,21 +16,21 @@ image_tag="$1"
 core_ref="$2"
 lockfile_job="$3"
 
-core_project_urlencode="$(printf %s "${CORE_PROJECT}" | jq --slurp --raw-input --raw-output @uri)"
+core_project_urlencode="$(printf %s "$CORE_PROJECT" | jq --slurp --raw-input --raw-output @uri)"
 
 echo "Running a core pipeline on $core_ref using RUNNER_IMAGE_TAG=$image_tag"
-response=$(curl --no-progress-meter --fail --globoff --request POST "${CI_API_V4_URL}/projects/${core_project_urlencode}/trigger/pipeline" \
-    --data-urlencode "token=${CI_JOB_TOKEN}" \
+response=$(curl --no-progress-meter --fail --globoff --request POST "$CI_API_V4_URL/projects/$core_project_urlencode/trigger/pipeline" \
+    --data-urlencode "token=$CI_JOB_TOKEN" \
     --data-urlencode "ref=$core_ref" \
     --data-urlencode "variables[FORCE_BUILD_STABLE_RELEASE]=yes" \
     --data-urlencode "variables[RUNNER_IMAGE_TAG]=$image_tag" \
-    --data-urlencode "variables[OVERRIDE_DOCKER_BUILD_REF]=${CI_COMMIT_SHA}" \
+    --data-urlencode "variables[OVERRIDE_DOCKER_BUILD_REF]=$CI_COMMIT_SHA" \
     --data-urlencode "variables[DOCKER_BUILD_LOCKFILE_JOB]=$lockfile_job"
 )
-echo "Response: ${response}"
-pipelineid=$(echo "${response}" | jq ".id")
-echo "Pipeline ID ${pipelineid}"
-if [ "${pipelineid}" = "null" ]
+echo "Response: $response"
+pipelineid=$(echo "$response" | jq ".id")
+echo "Pipeline ID $pipelineid"
+if [ "$pipelineid" = "null" ]
 then
   exit 1
 fi
@@ -49,7 +49,7 @@ echo 'Polling status'
 last_status=''
 while true
 do
-  status=$(curl --no-progress-meter --fail --header "PRIVATE-TOKEN:${GITLAB_ACCESS_TOKEN}" "${CI_API_V4_URL}/projects/${core_project_urlencode}/pipelines/${pipelineid}" | jq ".status")
+  status=$(curl --no-progress-meter --fail --header "PRIVATE-TOKEN:$GITLAB_ACCESS_TOKEN" "$CI_API_V4_URL/projects/$core_project_urlencode/pipelines/$pipelineid" | jq ".status")
 
   if [ "$status" != "$last_status" ]; then
     printf '\n%s' "$status"

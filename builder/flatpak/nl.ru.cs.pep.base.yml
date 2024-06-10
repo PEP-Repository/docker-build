@@ -17,21 +17,21 @@ modules:
         PATH="$PATH:$(python3 -c 'import os,sysconfig;print(sysconfig.get_path("scripts",f"{os.name}_user"))')"
         pip3 install 'conan>=2.1,==2.*'
 
-        export CONAN_HOME="${FLATPAK_DEST}/tmp/conan/"
+        export CONAN_HOME="$FLATPAK_DEST/tmp/conan/"
 
         # Use faster and less memory-intensive GNU gold linker
         conan install ./ --profile:all=./conan_profile --build=missing \
           --lockfile=./conan.lock \
           -c:a tools.build:exelinkflags='["-fuse-ld=gold"]' \
           -c:a tools.build:sharedlinkflags='["-fuse-ld=gold"]' \
-          -c:a tools.build:jobs=${FLATPAK_BUILDER_N_JOBS} \
+          -c:a tools.build:jobs=$FLATPAK_BUILDER_N_JOBS \
           -o "&:with_client=True" \
           -o "&:with_castor=False" \
           -o "&:with_tests=False" \
           -o "&:with_benchmark=False" \
           -o "&:use_system_qt=True" \
           -o "&:custom_build_folder=True" \
-          --output-folder="${FLATPAK_DEST}/tmp/build/"
+          --output-folder="$FLATPAK_DEST/tmp/build/"
         # Clean temporary files
         conan cache clean
     sources:
