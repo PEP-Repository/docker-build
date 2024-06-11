@@ -498,7 +498,7 @@ update-core:
       cd ./pep/docker-build/
       # Is the commit SHA from this pipeline the head of our branch?
       git fetch origin "$CI_COMMIT_REF_NAME"
-      branch_head="$(git rev-parse FETCH_HEAD --)"
+      branch_head="$(git rev-parse FETCH_HEAD)"
       if [ "branch_head" != "$CI_COMMIT_SHA" ]; then
         >&2 echo "This ($CI_COMMIT_SHA) is not the newest docker-build commit, $branch_head is newer"
         exit 1
