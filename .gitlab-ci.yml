@@ -507,6 +507,7 @@ update-core:
       git checkout -b "$CI_COMMIT_REF_NAME" "$branch_head"
       mv -f "$CI_PROJECT_DIR/conan.lock" ./builder/conan/
       git add .
+      git status
       git commit -m "Update conan.lock for pipeline $CI_PIPELINE_ID
       $CI_JOB_URL"
       git push -o ci.variable='RETAG_PARENT_COMMIT_IMAGES=yes'
@@ -525,6 +526,7 @@ update-core:
         *) exit "$diff_exit" ;;
       esac
       git add .
+      git status
       git commit -m "Update docker-build for pipeline $CI_PIPELINE_ID
       $CI_JOB_URL"
       git push
