@@ -503,7 +503,7 @@ update-core:
         exit 1
       fi
       # Before committing, make sure we are on a branch
-      git checkout "$branch_head"
+      git checkout -b "$CI_COMMIT_REF_NAME" "$branch_head"
       mv -f "$CI_PROJECT_DIR/conan.lock" ./builder/conan/
       git add .
       git commit -m "Update conan.lock for pipeline $CI_PIPELINE_ID
