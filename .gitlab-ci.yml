@@ -279,10 +279,13 @@ merge-lockfiles:
       done
     # Generate conan.lock
     - conan lock merge "${merge_flags[@]}"
-    - >
-      git diff --exit-code ./conan.lock
-      && echo 'conan.lock did not change'
-      || echo 'LOCKFILE_CHANGED=yes' >>"$CI_PROJECT_DIR/env.env"  # Save if changed, see artifacts
+    - |
+      diff_exit=0; git diff --exit-code ./conan.lock || diffexit="$?"
+      case "$diff_exit" in
+        0) echo 'conan.lock did not change' ;;
+        1) echo 'LOCKFILE_CHANGED=yes' >>"$CI_PROJECT_DIR/env.env" ;;  # Save if changed, see artifacts
+        *) exit "$diff_exit" ;;
+      esac
     - cp ./conan.lock ../../
   artifacts:
     paths:
@@ -513,13 +516,14 @@ update-core:
       echo 'Updating core'
       # We just updated the submodule, now update the image tag as well
       sed --in-place "/s/(RUNNER_IMAGE_TAG:\s*)\S*/\1$IMAGE_TAG/" ./ci_cd/docker-common.yml
-      diff_exit=0
-      git diff --no-patch --exit-code ./ci_cd/docker-common.yml || diff_exit="$?"
-      if [ "$diff_exit" == 0 ]; then
-        # No differences
-        >&2 echo "Failed to update /ci_cd/docker-common.yml in $CORE_PROJECT"
-        exit 1
-      elif [ "$diff_exit" != 1 ]; then exit "$diff_exit"; fi
+      diff_exit=0; git diff --no-patch --exit-code ./ci_cd/docker-common.yml || diff_exit="$?"
+      case "$diff_exit" in
+        0) # No differences
+          >&2 echo "Failed to update /ci_cd/docker-common.yml in $CORE_PROJECT"
+          exit 1 ;;
+        1) ;;
+        *) exit "$diff_exit" ;;
+      esac
       git add .
       git commit -m "Update docker-build for pipeline $CI_PIPELINE_ID
       $CI_JOB_URL"
