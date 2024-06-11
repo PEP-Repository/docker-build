@@ -23,7 +23,7 @@ variables:
 
   IMAGE_MAX_AGE_DAYS:
     value: '6'
-    description: >
+    description:
       If the previous image for a commit is at least this old, it will be rebuilt.
       Set to 0 to force rebuild
 
@@ -46,9 +46,9 @@ variables:
       - 'yes'
     description: Do not build new images, retag the ones from our parent commit instead
 
-  # >- is a YAML space-separated string, see https://yaml-multiline.info/
+  # This is a YAML space-separated string, equivalent to >-, see https://yaml-multiline.info/
   # Images that should be retagged from $IMAGE_TAG_TEST to $IMAGE_TAG
-  DEPLOY_IMAGES: >-
+  DEPLOY_IMAGES:
     builder-ubuntu-2204
     builder-ubuntu-rolling
     builder-flatpak
@@ -124,8 +124,7 @@ workflow:
   #language=sh
   script:
     - echo '==== Building & pushing image ===='
-    - >
-      docker buildx build
+    - docker buildx build
       --pull
       --push
       --file "./$IMAGE_KIND/$IMAGE_NAME.Dockerfile"
@@ -172,8 +171,7 @@ runtime/ubuntu-2204:
   #language=sh
   script:
     - cd "./$IMAGE_KIND/conan/"
-    - >
-      conan lock create ./ --update
+    - conan lock create ./ --update
       --profile:all=./conan_profile
       --lockfile=''
       --lockfile-out=./conan-rel.lock
@@ -182,8 +180,7 @@ runtime/ubuntu-2204:
       -o "&:with_tests=True"
       -o "&:with_benchmark=True"
       -o "&:use_system_qt=False"
-    - >
-      conan lock create ./ --update
+    - conan lock create ./ --update
       --profile:all=./conan_profile
       --lockfile=''
       --lockfile-out=./conan-dbg.lock
@@ -192,8 +189,7 @@ runtime/ubuntu-2204:
       -o "&:with_tests=True"
       -o "&:with_benchmark=True"
       -o "&:use_system_qt=False"
-    - >
-      conan lock merge
+    - conan lock merge
       --lockfile=./conan-rel.lock
       --lockfile=./conan-dbg.lock
       --lockfile-out="./conan.$name.lock"
@@ -476,7 +472,8 @@ update-core:
     GIT_STRATEGY: none  # Do not fetch nor clean working tree
   #language=sh
   script:
-    - if [ -z "$FORCE_COMMIT" -a -z "$LOCKFILE_CHANGED" ]; then
+    - |
+      if [ -z "$FORCE_COMMIT" -a -z "$LOCKFILE_CHANGED" ]; then
         echo "Lockfile did not change, won't commit"
         exit
       fi
@@ -492,8 +489,7 @@ update-core:
       git config --global user.name 'Gitlab CI script from docker-build'
       git config --global push.autoSetupRemote true
       rm -rf ./pep
-    - >
-      git clone --branch="$CI_COMMIT_REF_NAME"
+    - git clone --branch="$CI_COMMIT_REF_NAME"
       --sparse
       --no-tags
       --depth=1
