@@ -277,20 +277,22 @@ merge-lockfiles:
       for name in "${jobs[@]}"; do
         merge_flags+=("--lockfile=./conan.$name.lock")
       done
-    # Generate conan.lock
-    - conan lock merge "${merge_flags[@]}"
+    # We don't call this file conan.lock, such that it won't be picked up automatically
+    # when running conan with this conanfile (and not a symlink).
+    # We don't necessarily want to always use the lockfile on devboxes
+    - conan lock merge "${merge_flags[@]}" --lockfile-out=./conan-ci.lock
     - |
-      diff_exit=0; git diff --exit-code ./conan.lock || diff_exit="$?"
+      diff_exit=0; git diff --exit-code ./conan-ci.lock || diff_exit="$?"
       case "$diff_exit" in
-        0) echo 'conan.lock did not change' ;;
+        0) echo 'conan-ci.lock did not change' ;;
         1) echo 'LOCKFILE_CHANGED=yes' >>"$CI_PROJECT_DIR/env.env" ;;  # Save if changed, see artifacts
         *) exit "$diff_exit" ;;
       esac
-    - cp ./conan.lock ../../
+    - cp ./conan-ci.lock ../../
   artifacts:
     paths:
-      - ./$IMAGE_KIND/conan/conan.lock
-      - ./conan.lock
+      - ./$IMAGE_KIND/conan/conan-ci.lock
+      - ./conan-ci.lock
     reports:
       # Save $MERGE_LOCKFILES_JOB, $LOCKFILE_CHANGED for jobs below
       dotenv: env.env
@@ -506,10 +508,10 @@ update-core:
       fi
       # Before committing, make sure we are on a branch
       git checkout -b "$CI_COMMIT_REF_NAME" "$branch_head"
-      mv -f "$CI_PROJECT_DIR/conan.lock" ./builder/conan/
+      mv -f "$CI_PROJECT_DIR/conan-ci.lock" ./builder/conan/
       git add .
       git status
-      git commit -m "Update conan.lock for pipeline $CI_PIPELINE_ID
+      git commit -m "Update conan-ci.lock for pipeline $CI_PIPELINE_ID
       $CI_JOB_URL"
       git push -o ci.variable='RETAG_PARENT_COMMIT_IMAGES=yes'
       echo "Made commit at: $CI_PROJECT_URL/-/commit/$(git rev-parse HEAD)"

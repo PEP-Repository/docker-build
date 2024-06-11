@@ -21,7 +21,7 @@ modules:
 
         # Use faster and less memory-intensive GNU gold linker
         conan install ./ --profile:all=./conan_profile --build=missing \
-          --lockfile=./conan.lock \
+          --lockfile=./conan-ci.lock \
           -c:a tools.build:exelinkflags='["-fuse-ld=gold"]' \
           -c:a tools.build:sharedlinkflags='["-fuse-ld=gold"]' \
           -c:a tools.build:jobs=$FLATPAK_BUILDER_N_JOBS \
@@ -40,7 +40,7 @@ modules:
       - type: file
         path: ../conan/conanfile.py
       - type: file
-        path: ../conan/conan.lock
+        path: ../conan/conan-ci.lock
     build-options:
       build-args:
         - --share=network
