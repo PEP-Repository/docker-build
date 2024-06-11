@@ -494,12 +494,14 @@ update-core:
       (
       cd ./pep/docker-build/
       # Is the commit SHA from this pipeline the head of our branch?
-      if [ "$(git rev-parse "$CI_COMMIT_REF_NAME")" != "$CI_COMMIT_SHA" ]; then
-        >&2 echo "This ($CI_COMMIT_SHA) is not the newest docker-build commit"
+      git fetch origin "$CI_COMMIT_REF_NAME"
+      branch_head="$(git rev-parse FETCH_HEAD --)"
+      if [ "branch_head" != "$CI_COMMIT_SHA" ]; then
+        >&2 echo "This ($CI_COMMIT_SHA) is not the newest docker-build commit, $branch_head is newer"
         exit 1
       fi
       # Before committing, make sure we are on a branch
-      git checkout "$CI_COMMIT_REF_NAME"
+      git checkout "$branch_head"
       mv -f "$CI_PROJECT_DIR/conan.lock" ./builder/conan/
       git add .
       git commit -m "Update conan.lock for pipeline $CI_PIPELINE_ID
@@ -511,11 +513,13 @@ update-core:
       echo 'Updating core'
       # We just updated the submodule, now update the image tag as well
       sed --in-place "/s/(RUNNER_IMAGE_TAG:\s*)\S*/\1$IMAGE_TAG/" ./ci_cd/docker-common.yml
-      if git diff --no-patch --exit-code ./ci_cd/docker-common.yml; then
+      diff_exit=0
+      git diff --no-patch --exit-code ./ci_cd/docker-common.yml || diff_exit="$?"
+      if [ "$diff_exit" == 0 ]; then
         # No differences
         >&2 echo "Failed to update /ci_cd/docker-common.yml in $CORE_PROJECT"
         exit 1
-      fi
+      elif [ "$diff_exit" != 1 ]; then exit "$diff_exit"; fi
       git add .
       git commit -m "Update docker-build for pipeline $CI_PIPELINE_ID
       $CI_JOB_URL"
