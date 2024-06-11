@@ -280,7 +280,7 @@ merge-lockfiles:
     # Generate conan.lock
     - conan lock merge "${merge_flags[@]}"
     - |
-      diff_exit=0; git diff --exit-code ./conan.lock || diffexit="$?"
+      diff_exit=0; git diff --exit-code ./conan.lock || diff_exit="$?"
       case "$diff_exit" in
         0) echo 'conan.lock did not change' ;;
         1) echo 'LOCKFILE_CHANGED=yes' >>"$CI_PROJECT_DIR/env.env" ;;  # Save if changed, see artifacts
@@ -469,11 +469,10 @@ update-core:
   image: alpine
   variables:
     GIT_STRATEGY: none  # Do not fetch nor clean working tree
-  before_script:
-    - apk add --no-cache git openssh jq curl
   #language=sh
   script:
     - if [ -z "$LOCKFILE_CHANGED" ]; then exit; fi
+    - apk add --no-cache git openssh
     - *git_colors
     - |
       mkdir -p ~/.ssh
