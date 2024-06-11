@@ -38,13 +38,13 @@ variables:
     options:
       - ''
       - 'yes'
-    description: Commit update lockfile not only on branches with scheduled pipelines
+    description: Commit docker-build submodule & lockfile update not only on branches with scheduled pipelines
   RETAG_PARENT_COMMIT_IMAGES:
     value: ''
     options:
       - ''
       - 'yes'
-    description: Do not build new images, re-tag the ones from our parent commit instead
+    description: Do not build new images, retag the ones from our parent commit instead
 
   # >- is a YAML space-separated string, see https://yaml-multiline.info/
   # Images that should be retagged from $IMAGE_TAG_TEST to $IMAGE_TAG
@@ -428,7 +428,10 @@ retag-images:
     # A better way to skip jobs is not yet available, see https://gitlab.com/gitlab-org/gitlab/-/issues/292816, https://gitlab.com/gitlab-org/gitlab/-/issues/329217
     # $NEW_IMAGE, $LOCKFILE_CHANGED are retrieved from jobs above via env.env
     - if [ -z "$NEW_IMAGE" ]; then exit; fi
-    - if [ -n "$LOCKFILE_CHANGED" ]; then exit; fi
+    - if [ -n "$LOCKFILE_CHANGED" ]; then
+        echo "Lockfile changed, won't retag for this commit"
+        exit;
+      fi
     - docker login -u gitlab-ci-token -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
     - |
       for image in $DEPLOY_IMAGES; do
@@ -473,7 +476,10 @@ update-core:
     GIT_STRATEGY: none  # Do not fetch nor clean working tree
   #language=sh
   script:
-    - if [ -z "$LOCKFILE_CHANGED" ]; then exit; fi
+    - if [ -z "$FORCE_COMMIT" -a -z "$LOCKFILE_CHANGED" ]; then
+        echo "Lockfile did not change, won't commit"
+        exit
+      fi
     - apk add --no-cache git openssh
     - *git_colors
     - |
