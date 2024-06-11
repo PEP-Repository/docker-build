@@ -482,6 +482,7 @@ update-core:
     - |
       git config --global user.email support@pep.cs.ru.nl
       git config --global user.name 'Gitlab CI script from docker-build'
+      git config --global push.autoSetupRemote true
       rm -rf ./pep
     - >
       git clone --branch="$CI_COMMIT_REF_NAME"
