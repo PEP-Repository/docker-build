@@ -492,10 +492,11 @@ update-core:
       --shallow-submodules
       --recurse-submodules=docker-build
       "git@$CI_SERVER_HOST:$CORE_PROJECT.git" ./pep
+    - cd ./pep/
     - |
       echo 'Updating docker-build'
       (
-      cd ./pep/docker-build/
+      cd ./docker-build/
       # Is the commit SHA from this pipeline the head of our branch?
       git fetch origin "$CI_COMMIT_REF_NAME"
       branch_head="$(git rev-parse FETCH_HEAD)"
@@ -516,11 +517,12 @@ update-core:
     - |
       echo 'Updating core'
       # We just updated the submodule, now update the image tag as well
-      sed --in-place "s/\(RUNNER_IMAGE_TAG:\s*\)\S*/\1$IMAGE_TAG/" ./ci_cd/docker-common.yml
-      diff_exit=0; git diff --no-patch --exit-code ./ci_cd/docker-common.yml || diff_exit="$?"
+      runner_image_yml=./ci_cd/docker-common.yml
+      sed --in-place "s/\(RUNNER_IMAGE_TAG:\s*\)\S*/\1$IMAGE_TAG/" "$runner_image_yml"
+      diff_exit=0; git diff --no-patch --exit-code "$runner_image_yml" || diff_exit="$?"
       case "$diff_exit" in
         0) # No differences
-          >&2 echo "Failed to update /ci_cd/docker-common.yml in $CORE_PROJECT"
+          >&2 echo "Failed to update $runner_image_yml in $CORE_PROJECT"
           exit 1 ;;
         1) ;;
         *) exit "$diff_exit" ;;
