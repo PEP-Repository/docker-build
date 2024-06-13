@@ -18,9 +18,9 @@ variables:
   IMAGE_TAG_TEST: $IMAGE_TAG_PREFIX_TEST$CI_COMMIT_SHA
 
   CORE_PROJECT: pep/core
-  CORE_TEST_REF:
+  CORE_REF:
     value: $CI_COMMIT_BRANCH
-    description: Override to set branch/ref of pep/core to test images on
+    description: Override to set branch/ref of pep/core to test images on & commit to (for a branch)
 
   IMAGE_MAX_AGE_DAYS:
     value: '6'
@@ -376,26 +376,36 @@ test-images:
     - if: $FORCE_TEST
     # Enable on schedule branches
     - if: $CI_COMMIT_BRANCH =~ $SCHEDULE_BRANCHES_REGEX
-  tags:
-    - docker-small
-  image: alpine
-  #language=sh
-  script:
-    - apk add --no-cache jq curl
-    - ./run-pipeline.sh "$IMAGE_TAG_TEST" "$CORE_TEST_REF" "$MERGE_LOCKFILES_JOB"
+  # Pass to core pipeline
+  variables:
+    FORCE_BUILD_STABLE_RELEASE: 'yes'
+    RUNNER_IMAGE_TAG: $IMAGE_TAG_TEST
+    OVERRIDE_DOCKER_BUILD_REF: $CI_COMMIT_SHA
+    # Retrieved from jobs above via env.env
+    DOCKER_BUILD_LOCKFILE_JOB: $MERGE_LOCKFILES_JOB
+  trigger:
+    project: $CORE_PROJECT
+    branch: $CORE_REF
+    strategy: depend
 
 test-images-manual:
   stage: analyze-manual
-  when: manual
-  tags:
-    - docker-small
-  image: alpine
-  #language=sh
-  script:
-    # We don't check $NEW_IMAGE here, because we want to make sure that when a commit is added to a different branch,
-    #  we run a pipeline in PEP core in the corresponding branch
-    - apk add --no-cache jq curl
-    - ./run-pipeline.sh "$IMAGE_TAG" "$CORE_TEST_REF" "$MERGE_LOCKFILES_JOB"
+  rules:
+    # Enable if we force it to
+    - if: $FORCE_TEST
+    # Enable on schedule branches
+    - if: $CI_COMMIT_BRANCH =~ $SCHEDULE_BRANCHES_REGEX
+  # Pass to core pipeline
+  variables:
+    FORCE_BUILD_STABLE_RELEASE: 'yes'
+    RUNNER_IMAGE_TAG: $IMAGE_TAG
+    OVERRIDE_DOCKER_BUILD_REF: $CI_COMMIT_SHA
+    # Retrieved from jobs above via env.env
+    DOCKER_BUILD_LOCKFILE_JOB: $MERGE_LOCKFILES_JOB
+  trigger:
+    project: $CORE_PROJECT
+    branch: $CORE_REF
+    strategy: depend
 
 ###
 retag-images:
@@ -461,7 +471,7 @@ update-core:
     - rm -rf ./pep
     # --sparse: Sparse checkout: do not checkout all subdirectories on the disk
     # --depth=1: Shallow clone: do not fetch history
-    - git clone --branch="$CI_COMMIT_REF_NAME"
+    - git clone --branch="$CORE_REF"
       --sparse
       --no-tags
       --depth=1
@@ -531,5 +541,19 @@ update-core:
     - )
 
     - echo "Pushing $CORE_PROJECT"
-    - git push
+    - git push -o ci.skip
     - 'echo "Made commit at: $CI_SERVER_URL/$CORE_PROJECT/-/commit/$(git rev-parse HEAD)"'
+
+trigger-core-pipeline:
+  stage: deploy
+  needs:
+    - update-core
+  rules:
+    # Enable if we force it to
+    - if: $FORCE_COMMIT
+    # Enable on schedule branches
+    - if: $CI_COMMIT_BRANCH =~ $SCHEDULE_BRANCHES_REGEX
+  trigger:
+    project: $CORE_PROJECT
+    branch: $CORE_REF
+    strategy: depend
