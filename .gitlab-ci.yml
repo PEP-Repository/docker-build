@@ -60,9 +60,11 @@ workflow:
     - if: $CI_PIPELINE_SOURCE != 'merge_request_event'
 
 #language=sh
-.docker_login: &docker_login docker login -u gitlab-ci-token -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
+.docker_login: &docker_login
+  docker login -u gitlab-ci-token -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
 #language=sh
-.git_colors: &git_colors git config --global color.ui always
+.git_colors: &git_colors
+  git config --global color.ui always
 
 # You can set a tag `limit_concurrency:<VALUE>` on a gitlab runner if it runs out of memory.
 # Jobs can invoke this anchor to retrieve the configured <VALUE> (if any) into the "concurrency_limit" variable.
@@ -71,9 +73,9 @@ workflow:
   apk add --no-cache jq
   concurrency_limit=$(echo "$CI_RUNNER_TAGS" | jq -r '.[]' | sed -n 's/^limit_concurrency:\([0-9]\+\)$/\1/p')
   if [ -z "$concurrency_limit" ]; then
-    >&2 echo "No concurrency limit specified"
+    echo 'No concurrency limit specified'
   else
-    >&2 echo "Concurrency limit is $concurrency_limit"
+    echo "Concurrency limit is $concurrency_limit"
   fi
 
 
@@ -92,22 +94,21 @@ workflow:
     - apk add --no-cache jq coreutils  # Also add coreutils for `date` (Alpine/busybox date doesn't parse ISO-8601 well)
     - *docker_login
     - touch "$CI_PROJECT_DIR/env.env"
-    - |
-      prev_created="$(docker buildx imagetools inspect "$PROJECT_REGISTRY/$IMAGE_KIND-$IMAGE_NAME:$IMAGE_TAG" --format '{{json .Image}}' | jq --raw-output .created || true)"
-      if [ -n "$prev_created" ]; then
-        diff_secs="$(($(date +%s) - $(date -d "$prev_created" +%s)))"
-        diff_days="$((diff_secs / 60 / 60 / 24))"
-        echo "Previous image created at $prev_created, $diff_days days ($diff_secs s) ago"
-        if [ "$diff_days" -lt "$IMAGE_MAX_AGE_DAYS" ]; then
-          echo "Recent enough, won't rebuild"
-          exit
-        else
-          echo 'Not recent enough, will rebuild'
-        fi
-      else
-        echo 'No existing image for this commit'
-      fi
-      echo 'NEW_IMAGE=yes' >>"$CI_PROJECT_DIR/env.env"  # Save, see artifacts
+    - prev_created="$(docker buildx imagetools inspect "$PROJECT_REGISTRY/$IMAGE_KIND-$IMAGE_NAME:$IMAGE_TAG" --format '{{json .Image}}' | jq --raw-output .created || true)"
+    - if [ -n "$prev_created" ]; then
+    -   diff_secs="$(($(date +%s) - $(date -d "$prev_created" +%s)))"
+    -   diff_days="$((diff_secs / 60 / 60 / 24))"
+    -   echo "Previous image created at $prev_created, $diff_days days ($diff_secs s) ago"
+    -   if [ "$diff_days" -lt "$IMAGE_MAX_AGE_DAYS" ]; then
+    -     echo "Recent enough, won't rebuild"
+    -     exit
+    -   else
+    -     echo 'Not recent enough, will rebuild'
+    -   fi
+    - else
+    -   echo 'No existing image for this commit'
+    - fi
+    - echo 'NEW_IMAGE=yes' >>"$CI_PROJECT_DIR/env.env"  # Save, see artifacts
     - echo "Tagging image as $CONTAINER_IMAGE"
   #language=sh
   script:
@@ -298,11 +299,10 @@ merge-lockfiles:
     - *docker_login
     - echo '==== Executing Conan in container ===='
     - container="$(docker container run --pull=always --interactive --detach "$CONTAINER_IMAGE")"
-    - |
-      if [ -d "./$IMAGE_KIND/cache/conan-home/" ]; then
-        echo 'Copying cached .conan2 folder'
-        docker cp "./$IMAGE_KIND/cache/conan-home/" "$container:/root/.conan2/"
-      fi
+    - if [ -d "./$IMAGE_KIND/cache/conan-home/" ]; then
+    -   echo 'Copying cached .conan2 folder'
+    -   docker cp "./$IMAGE_KIND/cache/conan-home/" "$container:/root/.conan2/"
+    - fi
     - docker container cp ."/$IMAGE_KIND/conan/" "$container:/tmp/conan"
     - docker container exec "$container" /tmp/conan/conan_install.sh "$concurrency_limit"
     - docker container exec "$container" rm -rf '/tmp/*'
@@ -401,6 +401,8 @@ retag-images:
   tags:
     - docker-small
   image: docker
+  variables:
+    GIT_STRATEGY: none  # Do not fetch nor clean working tree
   #language=sh
   script:
     # A better way to skip jobs is not yet available, see https://gitlab.com/gitlab-org/gitlab/-/issues/292816, https://gitlab.com/gitlab-org/gitlab/-/issues/329217
@@ -490,8 +492,8 @@ update-core:
     - git sparse-checkout add ci_cd/
     - runner_image_yml=./ci_cd/docker-common.yml
     - sed --in-place "s/\(RUNNER_IMAGE_TAG:\s*\)\S*/\1$IMAGE_TAG_PREFIX$docker_build_commit/" "$runner_image_yml"
-    - diff_exit=0; git diff --no-patch --exit-code "$runner_image_yml" || diff_exit="$?"
     - |
+      diff_exit=0; git diff --no-patch --exit-code "$runner_image_yml" || diff_exit="$?"
       case "$diff_exit" in
         0) # No differences
           >&2 echo "Failed to update $runner_image_yml in $CORE_PROJECT"
@@ -517,11 +519,11 @@ update-core:
 
     # ==== Push commits ====
     - echo "Pushing $CI_PROJECT_NAME"
-    - |
-      (cd ./docker-build/
-      git push -o ci.skip
-      echo "Made commit at: $CI_PROJECT_URL/-/commit/$(git rev-parse HEAD)"
-      )
+    - (
+    -   cd ./docker-build/
+    -   git push -o ci.skip
+    -   'echo "Made commit at: $CI_PROJECT_URL/-/commit/$(git rev-parse HEAD)"'
+    - )
 
     - echo "Pushing $CORE_PROJECT"
     - git push
