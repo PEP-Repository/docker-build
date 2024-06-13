@@ -455,6 +455,11 @@ update-core:
         echo "Lockfile did not change, won't commit"
         exit
       fi
+    - |
+      if [ -z "$CI_COMMIT_BRANCH" ]; then
+        >&2 echo 'Pipeline is not for a branch, cannot commit'
+        exit 1
+      fi
 
     # ==== Checkout core repo + docker-build submodule ====
     - apk add --no-cache git openssh
@@ -484,7 +489,7 @@ update-core:
     - echo "Updating $CI_PROJECT_NAME"
     - cd ./docker-build/
     # Is the commit SHA from this pipeline the head of our branch?
-    - git fetch origin "$CI_COMMIT_REF_NAME"
+    - git fetch origin "$CI_COMMIT_BRANCH"
     - branch_head="$(git rev-parse FETCH_HEAD)"
     - |
       if [ "$branch_head" != "$CI_COMMIT_SHA" ]; then
@@ -492,7 +497,7 @@ update-core:
         exit 1
       fi
     # Before committing, make sure we are on a branch
-    - git checkout -B "$CI_COMMIT_REF_NAME" "$branch_head"
+    - git checkout -B "$CI_COMMIT_BRANCH" "$branch_head"
     - mv -f "$CI_PROJECT_DIR/conan-ci.lock" ./builder/conan/
     - git add .; git status
     - |
