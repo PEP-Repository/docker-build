@@ -410,7 +410,8 @@ retag-images:
     # A better way to skip jobs is not yet available, see https://gitlab.com/gitlab-org/gitlab/-/issues/292816, https://gitlab.com/gitlab-org/gitlab/-/issues/329217
     # $NEW_IMAGE, $LOCKFILE_CHANGED are retrieved from jobs above via env.env
     - if [ -z "$NEW_IMAGE" ]; then exit; fi
-    - if [ -n "$LOCKFILE_CHANGED" ]; then
+    - |
+      if [ -n "$LOCKFILE_CHANGED" ]; then
         echo "Lockfile changed, won't retag images as ours for this commit"
         exit
       fi
@@ -418,7 +419,7 @@ retag-images:
     - |
       for image in $DEPLOY_IMAGES; do
         echo "Retagging $image:$IMAGE_TAG_TEST as $PROJECT_REGISTRY/$image:$IMAGE_TAG"
-        # This assumes sha-test tags of an image will not be cleaned up if it is still recent and thus reused
+        # This assumes test tags of an image will not be cleaned up if it is still recent and thus reused
         docker buildx imagetools create "$PROJECT_REGISTRY/$image:$IMAGE_TAG_TEST" --tag "$PROJECT_REGISTRY/$image:$IMAGE_TAG"
       done
 
@@ -481,7 +482,7 @@ update-core:
         exit 1
       fi
     # Before committing, make sure we are on a branch
-    - git checkout -b "$CI_COMMIT_REF_NAME" "$branch_head"
+    - git checkout -B "$CI_COMMIT_REF_NAME" "$branch_head"
     - mv -f "$CI_PROJECT_DIR/conan-ci.lock" ./builder/conan/
     - git add .; git status
     - |
