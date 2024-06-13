@@ -264,6 +264,8 @@ merge-lockfiles:
     # when running conan with this conanfile (and not a symlink).
     # We don't necessarily want to always use the lockfile on devboxes
     - conan lock merge "${merge_flags[@]}" --lockfile-out=./conan-ci.lock
+    # Also make git diff work for new files
+    - git add --intent-to-add ./conan-ci.lock
     - |
       diff_exit=0; git diff --exit-code ./conan-ci.lock || diff_exit="$?"
       case "$diff_exit" in
