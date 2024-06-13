@@ -456,10 +456,12 @@ update-core:
       git config --global user.name "Gitlab CI script from $CI_PROJECT_NAME"
       git config --global push.autoSetupRemote true  # Set remote branch when pushing
     - rm -rf ./pep
+    # --sparse: Sparse checkout: do not checkout all subdirectories on the disk
+    # --depth=1: Shallow clone: do not fetch history
     - git clone --branch="$CI_COMMIT_REF_NAME"
-      --sparse   # Sparse checkout: do not checkout all subdirectories on the disk
+      --sparse
       --no-tags
-      --depth=1  # Shallow clone: do not fetch history
+      --depth=1
       --shallow-submodules
       --recurse-submodules=docker-build
       "git@$CI_SERVER_HOST:$CORE_PROJECT.git" ./pep
