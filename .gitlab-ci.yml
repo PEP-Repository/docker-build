@@ -67,8 +67,7 @@ workflow:
 
 #language=sh
 .docker_login: &docker_login
-  # Username can be anything
-  docker login -u - -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
+  docker login -u gitlab-ci-token -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
 #language=sh
 .git_colors: &git_colors
   git config --global color.ui always
@@ -100,9 +99,9 @@ workflow:
     - docker:dind
   #language=sh
   before_script:
+    - touch "$CI_PROJECT_DIR/env.env"
     - apk add --no-cache jq coreutils  # Also add coreutils for `date` (Alpine/busybox date doesn't parse ISO-8601 well)
     - *docker_login
-    - touch "$CI_PROJECT_DIR/env.env"
     - prev_created="$(docker buildx imagetools inspect "$PROJECT_REGISTRY/$IMAGE_KIND-$IMAGE_NAME:$IMAGE_TAG" --format '{{json .Image}}' | jq --raw-output .created || true)"
     - if [ -n "$prev_created" ]; then
     -   diff_secs="$(($(date +%s) - $(date -d "$prev_created" +%s)))"
@@ -260,8 +259,8 @@ merge-lockfiles:
   image: $PROJECT_REGISTRY/builder-ubuntu-2204:$IMAGE_TAG_TEST
   #language=bash
   script:
-    - *git_colors
     - echo "MERGE_LOCKFILES_JOB=$CI_JOB_ID" >>"$CI_PROJECT_DIR/env.env"  # Save, see artifacts
+    - *git_colors
     - cd "./$IMAGE_KIND/conan/"
     - jobs=(
         ubuntu-2204
