@@ -81,9 +81,11 @@ class PepRecipe(ConanFile):
                 if docker_build_parent.joinpath('CMakeLists.txt').is_file():
                     self.folders.root = str(docker_build_parent)
                 else:
-                    self.output.warning("Didn't find CMakeLists.txt beside conanfile.py or in docker-build's parent dir")
+                    self.output.warning(
+                        "Didn't find CMakeLists.txt beside conanfile.py or in docker-build's parent dir")
             else:
-                self.output.warning("Didn't find CMakeLists.txt beside conanfile.py, nor were we called in docker-build")
+                self.output.warning(
+                    "Didn't find CMakeLists.txt beside conanfile.py, nor were we called in docker-build")
 
         subbuild = str(self.options.subbuild_name) or '.'
 
@@ -124,7 +126,7 @@ class PepRecipe(ConanFile):
 
     def requirements(self):
         if self.options.get_safe('with_unwinder', False) and self.settings.os != 'Windows':
-            self.requires('libunwind/[^1.7]', options=self._custom_opts({
+            self.requires('libunwind/[^1.7]', options=self._optional_opts({
                 'coredump': False,
                 'ptrace': False,
                 'setjmp': False,
@@ -132,63 +134,67 @@ class PepRecipe(ConanFile):
                 'zlibdebuginfo': False,
             }))
 
-        self.requires('libarchive/[^3.7]', options=self._custom_opts({
+        self.requires('libarchive/[^3.7]', options=self._optional_opts({
             'with_zlib': False,
             'with_iconv': False,
         }))
-        self.requires('boost/[^1.83]', options=self._custom_opts({
-            'numa': False,
-            'zlib': False,
-            'bzip2': False,
-
-            # 'without_atomic': True,  # Transitive (required by other Boost components)
-            # 'without_chrono': True,  # Transitive
-            'without_cobalt': True,
-            # 'without_container': True,  # Transitive
-            'without_context': True,
-            'without_contract': True,
-            'without_coroutine': True,
-            # 'without_date_time': True,
-            # 'without_exception': True,  # Transitive
-            'without_fiber': True,
-            # 'without_filesystem': True,
-            'without_graph': True,
-            'without_graph_parallel': True,
-            # 'without_iostreams': True,
-            'without_json': True,
-            'without_locale': True,
-            # 'without_log': True,
-            'without_math': True,
-            'without_mpi': True,
-            'without_nowide': True,
-            'without_program_options': True,
-            'without_python': True,
-            # 'without_random': True,
-            # 'without_regex': True,  # Transitive
-            'without_serialization': True,
-            'without_stacktrace': True,
-            # 'without_system': True,
-            'without_test': True,
-            # 'without_thread': True,  # Transitive
-            'without_timer': True,
-            'without_type_erasure': True,
-            'without_url': True,
-            'without_wave': True,
-
+        self.requires('boost/[^1.83]', options={
             # Instruct Boost that it can use std::filesystem
             'filesystem_use_std_fs': True,
-        }))
-        self.requires('civetweb/[^1.16]', options=self._custom_opts({
-            'with_caching': False,
-            'with_cgi': False,
+
+            **self._optional_opts({
+                'numa': False,
+                'zlib': False,
+                'bzip2': False,
+
+                # 'without_atomic': True,  # Transitive (required by other Boost components)
+                'without_charconv': True,
+                # 'without_chrono': True,  # Transitive
+                'without_cobalt': True,
+                # 'without_container': True,  # Transitive
+                'without_context': True,
+                'without_contract': True,
+                'without_coroutine': True,
+                # 'without_date_time': True,
+                # 'without_exception': True,  # Transitive
+                'without_fiber': True,
+                # 'without_filesystem': True,  # Transitive
+                'without_graph': True,
+                'without_graph_parallel': True,
+                # 'without_iostreams': True,
+                'without_json': True,
+                'without_locale': True,
+                # 'without_log': True,
+                'without_math': True,
+                'without_mpi': True,
+                'without_nowide': True,
+                'without_program_options': True,
+                'without_python': True,
+                # 'without_random': True,
+                # 'without_regex': True,  # Transitive
+                'without_serialization': True,
+                'without_stacktrace': True,
+                # 'without_system': True,
+                'without_test': True,
+                # 'without_thread': True,  # Transitive
+                'without_timer': True,
+                'without_type_erasure': True,
+                'without_url': True,
+                'without_wave': True
+            })})
+        self.requires('civetweb/[^1.16]', options={
             'with_ssl': True,
-            'with_static_files': False,
-            'with_websockets': False,
-        }))
-        self.requires('mbedtls/[^2.28]', options=self._custom_opts({
+
+            **self._optional_opts({
+                'with_caching': False,
+                'with_cgi': False,
+                'with_static_files': False,
+                'with_websockets': False,
+            })})
+        self.requires('mbedtls/[^2.28]', options=self._optional_opts({
             'with_zlib': False,
         }))
-        self.requires('openssl/[^3.2]', options=self._custom_opts({
+        self.requires('openssl/[^3.2]', options=self._optional_opts({
             # Deprecated features are needed by Qt (otherwise linker error _SSL_CTX_use_RSAPrivateKey)
             # 'no_deprecated': True,
             'no_legacy': True,
@@ -197,30 +203,31 @@ class PepRecipe(ConanFile):
             'no_rc4': True,
             'no_ssl3': True,
         }))
-        self.requires('prometheus-cpp/[^1.1]', options=self._custom_opts({
+        self.requires('prometheus-cpp/[^1.1]', options=self._optional_opts({
             'with_pull': False,
         }))
         self.requires('protobuf/[^3.21]')
         self.requires('sqlite_orm/[^1.8]')
-        self.requires('xxhash/[^0.8.2]', options=self._custom_opts({
+        self.requires('xxhash/[^0.8.2]', options=self._optional_opts({
             'utility': False,
         }))
 
         if self.options.with_client and not self.options.use_system_qt:
-            self.requires('qt/[^6.6]', options={**{
+            self.requires('qt/[^6.6]', options={
                 'essential_modules': False,
                 'qtsvg': True,
                 'qttranslations': True,
-            }, **self._custom_opts({
-                'with_sqlite3': False,
-                'with_pq': False,
-                'with_odbc': False,
-                'with_brotli': False,
-                'with_openal': False,
-                'with_md4c': False,
-            }), **({  # Workaround for https://github.com/conan-io/conan-center-index/pull/21535
-                       'with_harfbuzz': False
-                   } if self.settings.os == 'Macos' else {})})
+
+                # Workaround for https://github.com/conan-io/conan-center-index/pull/21535
+                **({'with_harfbuzz': False} if self.settings.os == 'Macos' else {}),
+                **self._optional_opts({
+                    'with_sqlite3': False,
+                    'with_pq': False,
+                    'with_odbc': False,
+                    'with_brotli': False,
+                    'with_openal': False,
+                    'with_md4c': False,
+                })})
 
         # XXX Remove when std timezones are widely supported
         if self.options.with_castor:
@@ -240,20 +247,22 @@ class PepRecipe(ConanFile):
             #  so we list them here as well.
             #  See https://github.com/conan-io/conan-center-index/issues/22693
             # Also, for windeployqt we build shared via our conan_profile file
-            self.tool_requires('qt/<host_version>', options={**{
+            self.tool_requires('qt/<host_version>', options={
                 'essential_modules': False,
                 'qtsvg': True,
                 'qttranslations': True,
 
                 'qttools': True,  # e.g. windeployqt
-            }, **self._custom_opts({
-                'with_sqlite3': False,
-                'with_pq': False,
-                'with_odbc': False,
-                'with_brotli': False,
-                'with_openal': False,
-                'with_md4c': False,
-            }), **({'with_harfbuzz': False} if self.settings.os == 'Macos' else {})})
+
+                **({'with_harfbuzz': False} if self.settings.os == 'Macos' else {}),
+                **self._optional_opts({
+                    'with_sqlite3': False,
+                    'with_pq': False,
+                    'with_odbc': False,
+                    'with_brotli': False,
+                    'with_openal': False,
+                    'with_md4c': False,
+                })})
 
     def system_requirements(self):
         apt = Apt(self)
@@ -276,5 +285,6 @@ class PepRecipe(ConanFile):
 
             brew.install(['qt@6'])
 
-    def _custom_opts(self, opts: dict) -> dict:
+    def _optional_opts(self, opts: dict) -> dict:
+        """Options that are not required but strip down packages to our needs"""
         return opts if self.options.custom_dependency_opts else {}
