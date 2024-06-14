@@ -408,6 +408,8 @@ test-images:
   image: alpine
   #language=sh
   script:
+    # We don't check $NEW_IMAGE here, because we want to make sure that when a commit is added to a different branch,
+    #  we run a pipeline in PEP core in the corresponding branch
     - apk add --no-cache jq curl
     - ./run-pipeline.sh "$IMAGE_TAG_TEST" "$CORE_REF" "$MERGE_LOCKFILES_JOB"
 
@@ -419,10 +421,13 @@ test-images-manual:
   image: alpine
   #language=sh
   script:
-    # We don't check $NEW_IMAGE here, because we want to make sure that when a commit is added to a different branch,
-    #  we run a pipeline in PEP core in the corresponding branch
     - apk add --no-cache jq curl
-    - ./run-pipeline.sh "$IMAGE_TAG" "$CORE_REF" "$MERGE_LOCKFILES_JOB"
+    - tag="$IMAGE_TAG"
+    - if [ -n "$LOCKFILE_CHANGED" ]; then
+    -   echo 'Lockfile changed, will use test images'
+    -   tag="$IMAGE_TAG_TEST"
+    - fi
+    - ./run-pipeline.sh "$tag" "$CORE_REF" "$MERGE_LOCKFILES_JOB"
 
 
 # ==== Deploy ====
