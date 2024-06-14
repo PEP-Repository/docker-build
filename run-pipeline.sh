@@ -36,7 +36,8 @@ then
 fi
 
 # Wait for pipeline to complete, see https://gitlab.com/gitlab-org/gitlab/-/issues/201882
-# Alternative would be to use https://docs.gitlab.com/ee/ci/yaml/#trigger, but then one cannot choose the branch and cannot override CORE_TEST_REF manually
+# Alternative would be to use https://docs.gitlab.com/ee/ci/yaml/#trigger, but then cannot override CORE_REF when manually activating the job
+# because this is not supported. Besides, nested variables such as `$CORE_REF: $CI_COMMIT_BRANCH` don't work with trigger:branch
 
 # All possible statuses are documented on https://docs.gitlab.com/ee/api/pipelines.html. I cannot find any documentation on what these statuses mean.
 # Not all statuses are listed below. I don't expect we will encounter the missing statuses, but if we do we must investigate in which category they should fall.
