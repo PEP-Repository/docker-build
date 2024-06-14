@@ -86,6 +86,8 @@ workflow:
   fi
 
 
+# ==== Build base images ====
+
 # Build & push Docker image
 .docker-image:
   stage: docker-image
@@ -156,7 +158,9 @@ runtime/ubuntu-2204:
     IMAGE_KIND: runtime
     IMAGE_NAME: ubuntu-2204
 
-####
+
+# ==== Generate lockfile ====
+
 .generate-lockfile:
   stage: generate-lockfile
   rules:
@@ -293,7 +297,9 @@ merge-lockfiles:
       # Save $MERGE_LOCKFILES_JOB, $LOCKFILE_CHANGED for jobs below
       dotenv: env.env
 
-####
+
+# ==== Install dependencies with Conan ====
+
 .conan-builder:
   stage: conan-install
   rules:
@@ -385,7 +391,9 @@ builder/flatpak:
     - echo '==== Pushing image ===='
     - docker push "$CONTAINER_IMAGE"
 
-###
+
+# ==== Analyze ====
+
 test-images:
   stage: analyze
   rules:
@@ -414,7 +422,10 @@ test-images-manual:
     - apk add --no-cache jq curl
     - ./run-pipeline.sh "$IMAGE_TAG" "$CORE_REF" "$MERGE_LOCKFILES_JOB"
 
-###
+
+# ==== Deploy ====
+
+# Retag test images as non-test
 retag-images:
   stage: deploy
   tags:
@@ -440,7 +451,9 @@ retag-images:
         docker buildx imagetools create "$PROJECT_REGISTRY/$image:$IMAGE_TAG_TEST" --tag "$PROJECT_REGISTRY/$image:$IMAGE_TAG"
       done
 
-update-core:
+# Commit updated lockfile if applicable
+# Update docker-build submodule in core
+commit-update:
   stage: deploy
   needs:
     - retag-images
@@ -523,7 +536,7 @@ update-core:
     - cd ../
 
     # ==== Update core repo ====
-    - echo 'Updating core'
+    - echo "Updating $CORE_PROJECT"
     # We just updated the submodule, now update the image tag as well
     - git sparse-checkout add ci_cd/
     - runner_image_yml=./ci_cd/docker-common.yml
