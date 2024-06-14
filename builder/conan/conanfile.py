@@ -39,7 +39,7 @@ class PepRecipe(ConanFile):
         'with_servers': True,
         'with_castor': True,
         'with_tests': True,
-        'with_benchmark': False,
+        'with_benchmark': True,
         'with_unwinder': True,
 
         'shared_libs': False,
@@ -174,6 +174,9 @@ class PepRecipe(ConanFile):
             'without_type_erasure': True,
             'without_url': True,
             'without_wave': True,
+
+            # Instruct Boost that it can use std::filesystem
+            'filesystem_use_std_fs': True,
         }))
         self.requires('civetweb/[^1.16]', options=self._custom_opts({
             'with_caching': False,
