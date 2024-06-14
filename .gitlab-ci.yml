@@ -61,7 +61,8 @@ workflow:
 
 #language=sh
 .docker_login: &docker_login
-  docker login -u gitlab-ci-token -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
+  # Username can be anything
+  docker login -u - -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
 #language=sh
 .git_colors: &git_colors
   git config --global color.ui always
@@ -452,13 +453,16 @@ update-core:
       fi
 
     # ==== Checkout core repo + docker-build submodule ====
-    - apk add --no-cache git openssh
+    - apk add --no-cache git
     - *git_colors
+    # Do not put token in the URL to prevent it from being printed on clone
     - |
-      mkdir -p ~/.ssh
-      >>~/.ssh/known_hosts echo "$CI_SERVER_HOST,131.174.138.131 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBDd/zrrJ+9MjUvHBq55u3sdP6Tu+lqA+zCwFDeHtLSl40sOGZvDQ1AE/R6bnQQTSQ+GKUFdwHAar7ePVCBXeDhw="
-      eval "$(ssh-agent -s)"
-      echo "$SSH_KEY_GITLAB" | tr -d '\r' | ssh-add -
+      cat >./git-password.sh <<'EOF'
+      #!/usr/bin/env sh
+      exec echo "$GITLAB_ACCESS_TOKEN"
+      EOF
+      chmod +x ./git-password.sh
+      git config --global core.askPass "$PWD/git-password.sh"
     - |
       git config --global user.email support@pep.cs.ru.nl
       git config --global user.name "Gitlab CI script from $CI_PROJECT_NAME"
@@ -472,7 +476,7 @@ update-core:
       --depth=1
       --shallow-submodules
       --recurse-submodules=docker-build
-      "git@$CI_SERVER_HOST:$CORE_PROJECT.git" ./pep
+      "$CI_SERVER_URL/$CORE_PROJECT.git" ./pep
     - cd ./pep/
 
     # ==== Update docker-build submodule ====
