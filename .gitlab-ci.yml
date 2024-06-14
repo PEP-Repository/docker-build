@@ -460,7 +460,7 @@ commit-update:
   rules:
     # Enable if we force it to
     # Enable on scheduled pipelines
-    - if: "!($FORCE_COMMIT != '' || $CI_PIPELINE_SOURCE == 'schedule')"
+    - if: $FORCE_COMMIT == '' && $CI_PIPELINE_SOURCE != 'schedule'
       when: never
     - if: $UPDATE_LOCKFILE
       needs:
