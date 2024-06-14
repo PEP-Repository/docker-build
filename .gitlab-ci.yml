@@ -251,7 +251,7 @@ merge-lockfiles:
     - builder/lockfile/macos-arm
     - builder/lockfile/macos-x86
   rules:
-    - if: $NO_UPDATE_LOCKFILE
+    - if: $UPDATE_LOCKFILE
   variables:
     IMAGE_KIND: builder
   tags:
