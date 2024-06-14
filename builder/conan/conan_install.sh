@@ -19,6 +19,7 @@ cp ./conan_profile "$(conan config home)/profiles/default"
 
 echo '==== Installing Release packages ===='
 conan install ./ --build=missing \
+  --lockfile=./conan-ci.lock \
   -s build_type=Release \
   $concurrency_option_conan \
   -o "&:with_client=False" \
@@ -27,6 +28,7 @@ conan install ./ --build=missing \
 
 echo '==== Installing Debug packages ===='
 conan install ./ --build=missing \
+  --lockfile=./conan-ci.lock \
   -s build_type=Debug \
   $concurrency_option_conan \
   -o "&:with_client=False" \
