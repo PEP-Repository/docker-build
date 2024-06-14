@@ -352,9 +352,12 @@ builder/ubuntu-rolling:
 
 builder/flatpak:
   stage: conan-install
+  needs:
+    - builder/base/flatpak
   rules:
     - if: $UPDATE_LOCKFILE
       needs:
+        - builder/base/flatpak
         - merge-lockfiles
     - when: on_success
   tags:
