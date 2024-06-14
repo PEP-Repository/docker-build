@@ -28,18 +28,24 @@ variables:
       If the previous image for a commit is at least this old, it will be rebuilt.
       Set to 0 to force rebuild
 
+  UPDATE_LOCKFILE:
+    value: 'yes'
+    options:
+      - ''
+      - 'yes'
+    description: Update conan-ci.lock
   FORCE_TEST:
     value: ''
     options:
       - ''
       - 'yes'
-    description: Run test-images not only on branches with scheduled pipelines
+    description: Run test-images not only in scheduled pipelines
   FORCE_COMMIT:
     value: ''
     options:
       - ''
       - 'yes'
-    description: Commit docker-build submodule & lockfile update not only on branches with scheduled pipelines
+    description: Commit docker-build submodule & lockfile update not only in scheduled pipelines
 
   # This is a YAML space-separated string, equivalent to >-, see https://yaml-multiline.info/
   # Images that should be retagged from $IMAGE_TAG_TEST to $IMAGE_TAG
@@ -48,8 +54,8 @@ variables:
     builder-ubuntu-rolling
     builder-flatpak
     runtime-ubuntu-2204
-  # Branches update pipelines are scheduled on, in regex form
-  SCHEDULE_BRANCHES_REGEX: ^(master|stable|release)$
+    builder-ubuntu-rolling
+    builder-flatpak
 
 # Applies to whole pipeline
 workflow:
@@ -153,6 +159,8 @@ runtime/ubuntu-2204:
 ####
 .generate-lockfile:
   stage: generate-lockfile
+  rules:
+    - if: $UPDATE_LOCKFILE
   variables:
     IMAGE_KIND: builder
     CLICOLOR_FORCE: '1'  # Colored output for Conan
@@ -239,6 +247,8 @@ merge-lockfiles:
     - builder/lockfile/windows
     - builder/lockfile/macos-arm
     - builder/lockfile/macos-x86
+  rules:
+    - if: $NO_UPDATE_LOCKFILE
   variables:
     IMAGE_KIND: builder
   tags:
@@ -286,8 +296,11 @@ merge-lockfiles:
 ####
 .conan-builder:
   stage: conan-install
-  needs:
-    - merge-lockfiles
+  rules:
+    - if: $UPDATE_LOCKFILE
+      needs:
+        - merge-lockfiles
+    - when: on_success
   tags:
     - docker
   image: docker
@@ -334,8 +347,11 @@ builder/ubuntu-rolling:
 
 builder/flatpak:
   stage: conan-install
-  needs:
-    - merge-lockfiles
+  rules:
+    - if: $UPDATE_LOCKFILE
+      needs:
+        - merge-lockfiles
+    - when: on_success
   tags:
     - docker
   image: docker
@@ -375,8 +391,8 @@ test-images:
   rules:
     # Enable if we force it to
     - if: $FORCE_TEST
-    # Enable on schedule branches
-    - if: $CI_COMMIT_BRANCH =~ $SCHEDULE_BRANCHES_REGEX
+    # Enable on scheduled pipelines
+    - if: $CI_PIPELINE_SOURCE == 'schedule'
   tags:
     - docker-small
   image: alpine
@@ -428,12 +444,16 @@ update-core:
   stage: deploy
   needs:
     - retag-images
-    - merge-lockfiles
   rules:
     # Enable if we force it to
-    - if: $FORCE_COMMIT
-    # Enable on schedule branches
-    - if: $CI_COMMIT_BRANCH =~ $SCHEDULE_BRANCHES_REGEX
+    # Enable on scheduled pipelines
+    - if: "!($FORCE_COMMIT != '' || $CI_PIPELINE_SOURCE == 'schedule')"
+      when: never
+    - if: $UPDATE_LOCKFILE
+      needs:
+        - retag-images
+        - merge-lockfiles
+    - when: on_success
   tags:
     - docker-small
   image: docker
@@ -492,11 +512,13 @@ update-core:
       fi
     # Before committing, make sure we are on a branch
     - git checkout -B "$CI_COMMIT_BRANCH" "$branch_head"
-    - mv -f "$CI_PROJECT_DIR/conan-ci.lock" ./builder/conan/
-    - git add .; git status
-    - |
-      git commit -m "Update conan-ci.lock for pipeline $CI_PIPELINE_ID
-      $CI_JOB_URL"
+    - if [ -n "$LOCKFILE_CHANGED" ]; then
+    -   mv -f "$CI_PROJECT_DIR/conan-ci.lock" ./builder/conan/
+    -   git add .; git status
+    -   |
+        git commit -m "Update conan-ci.lock for pipeline $CI_PIPELINE_ID
+        $CI_JOB_URL"
+    - fi
     - docker_build_commit="$(git rev-parse HEAD)"
     - cd ../
 
