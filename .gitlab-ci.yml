@@ -17,10 +17,10 @@ variables:
   IMAGE_TAG: $IMAGE_TAG_PREFIX$CI_COMMIT_SHA
   IMAGE_TAG_TEST: $IMAGE_TAG_PREFIX_TEST$CI_COMMIT_SHA
 
-  CORE_PROJECT: pep/core
-  CORE_REF:
+  FOSS_PROJECT: pep/core
+  FOSS_REF:
     value: $CI_COMMIT_BRANCH
-    description: Override to set branch/ref of pep/core to test images on & commit to (for a branch)
+    description: Override to set branch/ref of the PEP FOSS repo to test images on & commit to (for a branch)
 
   IMAGE_MAX_AGE_DAYS:
     value: '6'
@@ -409,9 +409,9 @@ test-images:
   #language=sh
   script:
     # We don't check $NEW_IMAGE here, because we want to make sure that when a commit is added to a different branch,
-    #  we run a pipeline in PEP core in the corresponding branch
+    #  we run a pipeline in PEP FOSS in the corresponding branch
     - apk add --no-cache jq curl
-    - ./run-pipeline.sh "$IMAGE_TAG_TEST" "$CORE_REF" "$MERGE_LOCKFILES_JOB"
+    - ./run-pipeline.sh "$IMAGE_TAG_TEST" "$FOSS_REF" "$MERGE_LOCKFILES_JOB"
 
 test-images-manual:
   stage: analyze-manual
@@ -427,7 +427,7 @@ test-images-manual:
     -   echo 'Lockfile changed, will use test images'
     -   tag="$IMAGE_TAG_TEST"
     - fi
-    - ./run-pipeline.sh "$tag" "$CORE_REF" "$MERGE_LOCKFILES_JOB"
+    - ./run-pipeline.sh "$tag" "$FOSS_REF" "$MERGE_LOCKFILES_JOB"
 
 
 # ==== Deploy ====
@@ -459,7 +459,7 @@ retag-images:
       done
 
 # Commit updated lockfile if applicable
-# Update docker-build submodule in core
+# Update docker-build submodule in PEP FOSS
 commit-update:
   stage: deploy
   needs:
@@ -492,7 +492,7 @@ commit-update:
         exit 1
       fi
 
-    # ==== Checkout core repo + docker-build submodule ====
+    # ==== Checkout PEP FOSS repo + docker-build submodule ====
     - apk add --no-cache git
     - *git_colors
     # Do not put token in the URL to prevent it from being printed on clone
@@ -510,13 +510,13 @@ commit-update:
     - rm -rf ./pep
     # --sparse: Sparse checkout: do not checkout all subdirectories on the disk
     # --depth=1: Shallow clone: do not fetch history
-    - git clone --branch="$CORE_REF"
+    - git clone --branch="$FOSS_REF"
       --sparse
       --no-tags
       --depth=1
       --shallow-submodules
       --recurse-submodules=docker-build
-      "$CI_SERVER_URL/$CORE_PROJECT.git" ./pep
+      "$CI_SERVER_URL/$FOSS_PROJECT.git" ./pep
     - cd ./pep/
 
     # ==== Update docker-build submodule ====
@@ -542,8 +542,8 @@ commit-update:
     - docker_build_commit="$(git rev-parse HEAD)"
     - cd ../
 
-    # ==== Update core repo ====
-    - echo "Updating $CORE_PROJECT"
+    # ==== Update PEP FOSS repo ====
+    - echo "Updating $FOSS_PROJECT"
     # We just updated the submodule, now update the image tag as well
     - git sparse-checkout add ci_cd/
     - runner_image_yml=./ci_cd/docker-common.yml
@@ -552,7 +552,7 @@ commit-update:
       diff_exit=0; git diff --no-patch --exit-code "$runner_image_yml" || diff_exit="$?"
       case "$diff_exit" in
         0) # No differences
-          >&2 echo "Failed to update $runner_image_yml in $CORE_PROJECT"
+          >&2 echo "Failed to update $runner_image_yml in $FOSS_PROJECT"
           exit 1 ;;
         1) ;;
         *) exit "$diff_exit" ;;
@@ -581,6 +581,6 @@ commit-update:
     -   'echo "Made commit at: $CI_PROJECT_URL/-/commit/$(git rev-parse HEAD)"'
     - )
 
-    - echo "Pushing $CORE_PROJECT"
+    - echo "Pushing $FOSS_PROJECT"
     - git push
-    - 'echo "Made commit at: $CI_SERVER_URL/$CORE_PROJECT/-/commit/$(git rev-parse HEAD)"'
+    - 'echo "Made commit at: $CI_SERVER_URL/$FOSS_PROJECT/-/commit/$(git rev-parse HEAD)"'

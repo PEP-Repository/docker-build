@@ -15,7 +15,7 @@ fi
 mkdir -p "$(conan config home)/profiles/"
 cp ./conan_profile "$(conan config home)/profiles/default"
 
-# Install dependencies with Conan for configurations used in pep/core/.gitlab-ci.yml
+# Install dependencies with Conan for configurations used in CI
 
 echo '==== Installing Release packages ===='
 conan install ./ --build=missing \
