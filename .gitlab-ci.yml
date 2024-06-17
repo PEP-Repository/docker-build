@@ -574,12 +574,14 @@ commit-update:
       done
 
     # ==== Push commits ====
-    - echo "Pushing $CI_PROJECT_NAME"
-    - (
-    -   cd ./docker-build/
-    -   git push -o ci.skip
-    -   'echo "Made commit at: $CI_PROJECT_URL/-/commit/$(git rev-parse HEAD)"'
-    - )
+    - if [ -n "$LOCKFILE_CHANGED" ]; then
+    -   echo "Pushing $CI_PROJECT_NAME"
+    -   (
+    -     cd ./docker-build/
+    -     git push -o ci.skip
+    -     'echo "Made commit at: $CI_PROJECT_URL/-/commit/$(git rev-parse HEAD)"'
+    -   )
+    - fi
 
     - echo "Pushing $FOSS_PROJECT"
     - git push
