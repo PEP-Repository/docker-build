@@ -54,8 +54,6 @@ variables:
     builder-ubuntu-rolling
     builder-flatpak
     runtime-ubuntu-2204
-    builder-ubuntu-rolling
-    builder-flatpak
 
 # Applies to whole pipeline
 workflow:
