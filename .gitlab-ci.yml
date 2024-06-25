@@ -1,4 +1,5 @@
 stages:
+  - check-existing
   - docker-image
   - generate-lockfile
   - conan-install
@@ -13,9 +14,8 @@ variables:
 
   PROJECT_REGISTRY: $CI_REGISTRY/$CI_PROJECT_PATH
   IMAGE_TAG_PREFIX: sha-
-  IMAGE_TAG_PREFIX_TEST: test-sha-
   IMAGE_TAG: $IMAGE_TAG_PREFIX$CI_COMMIT_SHA
-  IMAGE_TAG_TEST: $IMAGE_TAG_PREFIX_TEST$CI_COMMIT_SHA
+  IMAGE_TAG_TEST: test-$IMAGE_TAG_PREFIX$CI_PIPELINE_ID-$CI_COMMIT_SHA
 
   FOSS_PROJECT: pep/core
   FOSS_REF:
@@ -48,7 +48,7 @@ variables:
     description: Commit docker-build submodule & lockfile update not only in scheduled pipelines
 
   # This is a YAML space-separated string, equivalent to >-, see https://yaml-multiline.info/
-  # Images that should be retagged from $IMAGE_TAG_TEST to $IMAGE_TAG
+  # Images that we push in this pipeline
   DEPLOY_IMAGES:
     builder-ubuntu-2204
     builder-ubuntu-rolling
@@ -83,6 +83,65 @@ workflow:
   fi
 
 
+# ==== Check for recent images ====
+
+# Check for recent existing images for this commit.
+# Set $REUSE_IMAGES if all images were recent enough
+check-existing:
+  stage: check-existing
+  rules:
+    - if: $IMAGE_MAX_AGE_DAYS != '0'
+  tags:
+    - docker-small
+  image: docker
+  #language=sh
+  script:
+    - touch "$CI_PROJECT_DIR/env.env"
+    - apk add --no-cache jq coreutils  # Also add coreutils for `date` (Alpine/busybox date doesn't parse ISO-8601 well)
+    - *docker_login
+    - reuse=yes
+    - for image_name in $DEPLOY_IMAGES; do
+    -   echo "Checking $image_name"
+    -   prev_created="$(docker buildx imagetools inspect "$PROJECT_REGISTRY/$image_name:$IMAGE_TAG" --format '{{json .Image}}' | jq --raw-output .created || true)"
+    -   if [ -n "$prev_created" ]; then
+    -     diff_secs="$(($(date +%s) - $(date -d "$prev_created" +%s)))"
+    -     diff_days="$((diff_secs / 60 / 60 / 24))"
+    -     echo "Previous image created at $prev_created, $diff_days days ($diff_secs s) ago"
+    -     if [ "$diff_days" -lt "$IMAGE_MAX_AGE_DAYS" ]; then
+    -       echo 'Recent enough'
+    -     else
+    -       echo 'Not recent enough'
+    -       reuse=''
+    -       break
+    -     fi
+    -   else
+    -     echo 'No existing image for this commit'
+    -     reuse=''
+    -     break
+    -   fi
+    - done
+
+    - if [ -n "$reuse" ]; then
+    -   echo 'Will reuse all images'
+    -   echo 'REUSE_IMAGES=yes' >>"$CI_PROJECT_DIR/env.env"  # Save, see artifacts
+    - else
+    -   echo 'Will rebuild all images'
+    - fi
+  artifacts:
+    reports:
+      # Save $REUSE_IMAGES for jobs below
+      dotenv: env.env
+
+# A better way to skip jobs is not yet available, see https://gitlab.com/gitlab-org/gitlab/-/issues/292816, https://gitlab.com/gitlab-org/gitlab/-/issues/329217
+# $REUSE_IMAGES is retrieved from check-existing via env.env
+#language=sh
+.reuse_images: &reuse_images |
+  if [ -n "$REUSE_IMAGES" ]; then
+    echo "Images were recent enough, won't rebuild"
+    exit
+  fi
+
+
 # ==== Build base images ====
 
 # Build & push Docker image
@@ -95,30 +154,12 @@ workflow:
     CONTAINER_IMAGE: $PROJECT_REGISTRY/$IMAGE_KIND-$IMAGE_NAME:$IMAGE_TAG_TEST
   services:
     - docker:dind
-  #language=sh
   before_script:
-    - touch "$CI_PROJECT_DIR/env.env"
-    - apk add --no-cache jq coreutils  # Also add coreutils for `date` (Alpine/busybox date doesn't parse ISO-8601 well)
-    - *docker_login
-    - prev_created="$(docker buildx imagetools inspect "$PROJECT_REGISTRY/$IMAGE_KIND-$IMAGE_NAME:$IMAGE_TAG" --format '{{json .Image}}' | jq --raw-output .created || true)"
-    - if [ -n "$prev_created" ]; then
-    -   diff_secs="$(($(date +%s) - $(date -d "$prev_created" +%s)))"
-    -   diff_days="$((diff_secs / 60 / 60 / 24))"
-    -   echo "Previous image created at $prev_created, $diff_days days ($diff_secs s) ago"
-    -   if [ "$diff_days" -lt "$IMAGE_MAX_AGE_DAYS" ]; then
-    -     echo "Recent enough, won't rebuild"
-    -     exit
-    -   else
-    -     echo 'Not recent enough, will rebuild'
-    -   fi
-    - else
-    -   echo 'No existing image for this commit'
-    - fi
-    - echo 'NEW_IMAGE=yes' >>"$CI_PROJECT_DIR/env.env"  # Save, see artifacts
-    - echo "Tagging image as $CONTAINER_IMAGE"
+    - *reuse_images
   #language=sh
   script:
     - echo '==== Building & pushing image ===='
+    - echo "Tagging image as $CONTAINER_IMAGE"
     - docker buildx build
       --pull
       --push
@@ -126,10 +167,6 @@ workflow:
       --tag "$CONTAINER_IMAGE"
       $DOCKER_ARGS
       "./$IMAGE_KIND/"
-  artifacts:
-    reports:
-      # Save $NEW_IMAGE for jobs below
-      dotenv: env.env
 
 builder/base/ubuntu-2204:
   extends: .docker-image
@@ -165,6 +202,8 @@ runtime/ubuntu-2204:
   variables:
     IMAGE_KIND: builder
     CLICOLOR_FORCE: '1'  # Colored output for Conan
+  before_script:
+    - *reuse_images
   # This script must work with both bash and powershell
   #language=sh
   script:
@@ -222,6 +261,14 @@ builder/lockfile/windows:
     - windows
   variables:
     name: windows
+  # Override
+  #language=powershell
+  before_script:
+    - |
+      if ($REUSE_IMAGES) {
+        echo "Images were recent enough, won't rebuild"
+        exit
+      }
 
 builder/lockfile/macos-arm:
   extends: .generate-lockfile
@@ -255,6 +302,8 @@ merge-lockfiles:
   tags:
     - docker-small
   image: $PROJECT_REGISTRY/builder-ubuntu-2204:$IMAGE_TAG_TEST
+  before_script:
+    - *reuse_images
   #language=bash
   script:
     - echo "MERGE_LOCKFILES_JOB=$CI_JOB_ID" >>"$CI_PROJECT_DIR/env.env"  # Save, see artifacts
@@ -312,6 +361,8 @@ merge-lockfiles:
     CONTAINER_IMAGE: $PROJECT_REGISTRY/$IMAGE_KIND-$IMAGE_NAME:$IMAGE_TAG_TEST
   services:
     - docker:dind
+  before_script:
+    - *reuse_images
   #language=sh
   script:
     - *set_concurrency_limit
@@ -367,6 +418,8 @@ builder/flatpak:
     CONTAINER_IMAGE: $PROJECT_REGISTRY/$IMAGE_KIND-$IMAGE_NAME:$IMAGE_TAG_TEST
   services:
     - docker:dind
+  before_script:
+    - *reuse_images
   #language=sh
   script:
     - *set_concurrency_limit
@@ -406,7 +459,7 @@ test-images:
   image: alpine
   #language=sh
   script:
-    # We don't check $NEW_IMAGE here, because we want to make sure that when a commit is added to a different branch,
+    # We don't check $REUSE_IMAGES here, because we want to make sure that when a commit is added to a different branch,
     #  we run a pipeline in PEP FOSS in the corresponding branch
     - apk add --no-cache jq curl
     - ./run-pipeline.sh "$IMAGE_TAG_TEST" "$FOSS_REF" "$MERGE_LOCKFILES_JOB"
@@ -420,12 +473,7 @@ test-images-manual:
   #language=sh
   script:
     - apk add --no-cache jq curl
-    - tag="$IMAGE_TAG"
-    - if [ -n "$LOCKFILE_CHANGED" ]; then
-    -   echo 'Lockfile changed, will use test images'
-    -   tag="$IMAGE_TAG_TEST"
-    - fi
-    - ./run-pipeline.sh "$tag" "$FOSS_REF" "$MERGE_LOCKFILES_JOB"
+    - ./run-pipeline.sh "$IMAGE_TAG_TEST" "$FOSS_REF" "$MERGE_LOCKFILES_JOB"
 
 
 # ==== Deploy ====
@@ -439,20 +487,20 @@ retag-images:
   variables:
     GIT_STRATEGY: none  # Do not fetch nor clean working tree
   #language=sh
-  script:
-    # A better way to skip jobs is not yet available, see https://gitlab.com/gitlab-org/gitlab/-/issues/292816, https://gitlab.com/gitlab-org/gitlab/-/issues/329217
-    # $NEW_IMAGE, $LOCKFILE_CHANGED are retrieved from jobs above via env.env
-    - if [ -z "$NEW_IMAGE" ]; then exit; fi
+  before_script:
+    - *reuse_images
+    # $LOCKFILE_CHANGED is retrieved from jobs above via env.env
     - |
       if [ -n "$LOCKFILE_CHANGED" ]; then
         echo "Lockfile changed, won't retag images as ours for this commit"
         exit
       fi
+  #language=sh
+  script:
     - *docker_login
     - |
       for image in $DEPLOY_IMAGES; do
         echo "Retagging $image:$IMAGE_TAG_TEST as $PROJECT_REGISTRY/$image:$IMAGE_TAG"
-        # This assumes test tags of an image will not be cleaned up if it is still recent and thus reused
         docker buildx imagetools create "$PROJECT_REGISTRY/$image:$IMAGE_TAG_TEST" --tag "$PROJECT_REGISTRY/$image:$IMAGE_TAG"
       done
 
@@ -460,30 +508,26 @@ retag-images:
 # Update docker-build submodule in PEP FOSS
 commit-update:
   stage: deploy
-  needs:
-    - retag-images
+  dependencies:
+    - merge-lockfiles
   rules:
     # Enable if we force it to
     # Enable on scheduled pipelines
-    - if: $FORCE_COMMIT == '' && $CI_PIPELINE_SOURCE != 'schedule'
-      when: never
-    - if: $UPDATE_LOCKFILE
-      needs:
-        - retag-images
-        - merge-lockfiles
-    - when: on_success
+    - if: $FORCE_COMMIT != '' || $CI_PIPELINE_SOURCE == 'schedule'
   tags:
     - docker-small
   image: docker
   variables:
     GIT_STRATEGY: none  # Do not fetch nor clean working tree
   #language=sh
-  script:
+  before_script:
     - |
       if [ -z "$FORCE_COMMIT" -a -z "$LOCKFILE_CHANGED" ]; then
         echo "Lockfile did not change, won't commit"
         exit
       fi
+  #language=sh
+  script:
     - |
       if [ -z "$CI_COMMIT_BRANCH" ]; then
         >&2 echo 'Pipeline is not for a branch, cannot commit'
@@ -565,8 +609,6 @@ commit-update:
     - *docker_login
     - |
       for image in $DEPLOY_IMAGES; do
-        echo "Retagging $image:$IMAGE_TAG_TEST as $PROJECT_REGISTRY/$image:$IMAGE_TAG_PREFIX_TEST$docker_build_commit"
-        docker buildx imagetools create "$PROJECT_REGISTRY/$image:$IMAGE_TAG_TEST" --tag "$PROJECT_REGISTRY/$image:$IMAGE_TAG_PREFIX_TEST$docker_build_commit"
         echo "Retagging $image:$IMAGE_TAG_TEST as $PROJECT_REGISTRY/$image:$IMAGE_TAG_PREFIX$docker_build_commit"
         docker buildx imagetools create "$PROJECT_REGISTRY/$image:$IMAGE_TAG_TEST" --tag "$PROJECT_REGISTRY/$image:$IMAGE_TAG_PREFIX$docker_build_commit"
       done
