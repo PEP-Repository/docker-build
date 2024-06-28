@@ -195,7 +195,6 @@ check-existing:
       --push
       --file "./$IMAGE_KIND/$IMAGE_NAME.Dockerfile"
       --tag "$CONTAINER_IMAGE"
-      $DOCKER_ARGS
       "./$IMAGE_KIND/"
 
 builder/base/ubuntu-2204:
