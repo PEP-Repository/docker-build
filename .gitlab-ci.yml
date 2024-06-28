@@ -659,9 +659,9 @@ deploy:
     -       sed --in-place "s/\(RUNNER_IMAGE_TAG:\s*\)\S*/\1$new_image_tag/" "$runner_image_yml"
     #       Make sure sed actually matched something
     -       |
-            if ! grep --quiet "RUNNER_IMAGE_TAG:\s*$new_image_tag" "$runner_image_yml"; then
+            if ! grep -q "RUNNER_IMAGE_TAG:\s*$new_image_tag" "$runner_image_yml"; then
               >&2 warn "Failed to update $runner_image_yml in $FOSS_PROJECT"
-              exit
+              exit 1
             fi
     #     Did we update docker-build (via checkout / lockfile commit) or the RUNNER_IMAGE_TAG?
     #     Or was PEP FOSS already up-to-date?
