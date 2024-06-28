@@ -18,7 +18,7 @@ variables:
 
   FOSS_PROJECT: pep/core
   FOSS_REF:
-    value: $CI_COMMIT_REF
+    value: $CI_COMMIT_REF_NAME
     description: Override to set branch/ref of the PEP FOSS repo to test images on & commit to (for a branch)
 
   IMAGE_MAX_AGE_DAYS:
@@ -484,6 +484,7 @@ builder/flatpak:
     - docker container cp "./$IMAGE_KIND/flatpak/" "$container:/tmp/flatpak"
     - docker container cp "./$IMAGE_KIND/conan/" "$container:/tmp/conan"
     - |
+      concurrency_option=''
       if [ -n "$concurrency_limit" ]; then
         concurrency_option="--jobs=$concurrency_limit"
       fi
@@ -511,9 +512,10 @@ test-images:
         $TEST_BEFORE_DEPLOY == 'always' ||
         (
           $TEST_BEFORE_DEPLOY == 'necessary' &&
-          ($CI_COMMIT_REF_PROTECTED == "true" || $CI_PIPELINE_SOURCE == 'schedule')
+          ($CI_COMMIT_REF_PROTECTED == 'true' || $CI_PIPELINE_SOURCE == 'schedule')
         )
     - when: manual
+      allow_failure: true  # Make sure that the pipeline still continues
   tags:
     - docker-small
   image: alpine
