@@ -188,6 +188,7 @@ check-existing:
     - *reuse_images
   #language=sh
   script:
+    - *docker_login
     - bold '==== Building & pushing image ===='
     - echo "Tagging image as $CONTAINER_IMAGE"
     - docker buildx build
