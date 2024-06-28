@@ -666,7 +666,7 @@ deploy:
     #     Did we update docker-build (via checkout / lockfile commit) or the RUNNER_IMAGE_TAG?
     #     Or was PEP FOSS already up-to-date?
     -     |
-          git diff && true
+          git diff --exit-code && true
           case "$?" in
             0) # No differences
               bold "$FOSS_PROJECT was already up-to-date"
