@@ -619,8 +619,9 @@ deploy:
     # ==== Update docker-build submodule ====
     - bold "Updating $CI_PROJECT_NAME"
     - cd "$docker_build_repo"
+    #TODO make work with non-branches
     # By default, submodule has only main branch
-    - git remote set-branches "$CI_COMMIT_BRANCH"
+    - git remote set-branches origin "$CI_COMMIT_BRANCH"
     - git fetch origin "$CI_COMMIT_BRANCH"
     # Checkout our branch
     - git switch "$CI_COMMIT_BRANCH"
