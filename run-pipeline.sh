@@ -16,10 +16,10 @@ image_tag="$1"
 foss_ref="$2"
 lockfile_job="$3"
 
-foss_project_urlencode="$(printf %s "$FOSS_PROJECT" | jq --slurp --raw-input --raw-output @uri)"
+foss_project_urlencoded="$(printf %s "$FOSS_PROJECT" | jq --slurp --raw-input --raw-output @uri)"
 
 echo "Running a $FOSS_PROJECT pipeline on $foss_ref using RUNNER_IMAGE_TAG=$image_tag"
-response=$(curl --no-progress-meter --fail --globoff --request POST "$CI_API_V4_URL/projects/$foss_project_urlencode/trigger/pipeline" \
+response=$(curl --no-progress-meter --fail --globoff --request POST "$CI_API_V4_URL/projects/$foss_project_urlencoded/trigger/pipeline" \
     --data-urlencode "token=$CI_JOB_TOKEN" \
     --data-urlencode "ref=$foss_ref" \
     --data-urlencode "variables[FORCE_BUILD_STABLE_RELEASE]=yes" \
@@ -50,7 +50,7 @@ echo 'Polling status'
 last_status=''
 while true
 do
-  status=$(curl --no-progress-meter --fail --header "PRIVATE-TOKEN:$GITLAB_ACCESS_TOKEN" "$CI_API_V4_URL/projects/$foss_project_urlencode/pipelines/$pipelineid" | jq ".status")
+  status=$(curl --no-progress-meter --fail --header "PRIVATE-TOKEN:$GITLAB_ACCESS_TOKEN" "$CI_API_V4_URL/projects/$foss_project_urlencoded/pipelines/$pipelineid" | jq ".status")
 
   if [ "$status" != "$last_status" ]; then
     printf '\n%s' "$status"
