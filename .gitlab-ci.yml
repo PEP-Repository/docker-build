@@ -183,11 +183,10 @@ check-existing:
     CONTAINER_IMAGE: $PROJECT_REGISTRY/$IMAGE_KIND-$IMAGE_NAME:$IMAGE_TAG_TEST
   services:
     - docker:dind
-  before_script:
-    - *script_header
-    - *reuse_images
   #language=sh
   script:
+    - *script_header
+    - *reuse_images
     - *docker_login
     - bold '==== Building & pushing image ===='
     - echo "Tagging image as $CONTAINER_IMAGE"
@@ -343,12 +342,11 @@ merge-lockfiles:
   tags:
     - docker-small
   image: $PROJECT_REGISTRY/builder-ubuntu-2204:$IMAGE_TAG_TEST
-  before_script:
-    - *script_header
-    - *reuse_images
   #language=bash
   script:
-    - echo "MERGE_LOCKFILES_JOB=$CI_JOB_ID" >>"$CI_PROJECT_DIR/env.env"  # Save, see artifacts
+    - touch "$CI_PROJECT_DIR/env.env"
+    - *script_header
+    - *reuse_images
     - *git_colors
     - cd "./$IMAGE_KIND/conan/"
     - jobs=(
@@ -382,6 +380,7 @@ merge-lockfiles:
       esac
     # Also put lockfile in root artifact directory for easy access, e.g. from PEP FOSS (via $MERGE_LOCKFILES_JOB)
     - cp ./conan-ci.lock "$CI_PROJECT_DIR"
+    - echo "MERGE_LOCKFILES_JOB=$CI_JOB_ID" >>"$CI_PROJECT_DIR/env.env"  # Save, see artifacts
   artifacts:
     paths:
       - ./$IMAGE_KIND/conan/conan-ci.lock
@@ -411,11 +410,10 @@ merge-lockfiles:
     CONTAINER_IMAGE: $PROJECT_REGISTRY/$IMAGE_KIND-$IMAGE_NAME:$IMAGE_TAG_TEST
   services:
     - docker:dind
-  before_script:
-    - *script_header
-    - *reuse_images
   #language=sh
   script:
+    - *script_header
+    - *reuse_images
     - *set_concurrency_limit
     - *docker_login
     - bold '==== Executing Conan in container ===='
@@ -470,11 +468,10 @@ builder/flatpak:
     CONTAINER_IMAGE: $PROJECT_REGISTRY/$IMAGE_KIND-$IMAGE_NAME:$IMAGE_TAG_TEST
   services:
     - docker:dind
-  before_script:
-    - *script_header
-    - *reuse_images
   #language=sh
   script:
+    - *script_header
+    - *reuse_images
     - *set_concurrency_limit
     - *docker_login
     - bold '==== Executing Flatpak Builder with Conan in container ===='
