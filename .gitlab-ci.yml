@@ -539,9 +539,6 @@ deploy:
   stage: deploy
   dependencies:
     - merge-lockfiles
-  # Redundant with script below, but skip creating this job when there cannot be anything to commit
-  rules:
-    - if: ($UPDATE_LOCKFILE == 'branches only' && $CI_COMMIT_BRANCH) || $UPDATE_FOSS != 'no'
   tags:
     - docker-small
   image: docker
