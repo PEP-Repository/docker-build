@@ -619,17 +619,25 @@ deploy:
     # ==== Update docker-build submodule ====
     - bold "Updating $CI_PROJECT_NAME"
     - cd "$docker_build_repo"
-    #TODO make work with non-branches
-    # By default, submodule has only main branch
-    - git remote set-branches origin "$CI_COMMIT_BRANCH"
-    - git fetch origin "$CI_COMMIT_BRANCH"
-    # Checkout our branch
-    - git switch "$CI_COMMIT_BRANCH"
-    # Is the commit SHA from this pipeline the tip of our branch?
+    # Is this a branch pipeline?
+    - if [ -n "${CI_COMMIT_BRANCH:-}" ]; then
+    #   By default, submodule has only main branch
+    -   git remote set-branches origin "$CI_COMMIT_BRANCH"
+    -   git fetch origin "$CI_COMMIT_BRANCH"
+    #   Checkout our branch
+    -   git switch "$CI_COMMIT_BRANCH"
+    - else
+    #   If this is a tag pipeline, we just check out the tag to update the submodule in FOSS.
+    #   We won't be able to commit the lockfile, but in that case update is disabled above anyway
+    -   git fetch origin "$CI_COMMIT_REF_NAME"
+    -   git checkout FETCH_HEAD
+    - fi
+
+    # Is the commit SHA from this pipeline the tip of our branch/tag?
     - |
       tip="$(git rev-parse HEAD)"
       if [ "$tip" != "$CI_COMMIT_SHA" ]; then
-        >&2 warn "This ($CI_COMMIT_SHA) is not the latest $CI_PROJECT_NAME commit for $CI_COMMIT_BRANCH, that is $tip"
+        >&2 warn "This ($CI_COMMIT_SHA) is not the latest $CI_PROJECT_NAME commit for $CI_COMMIT_REF_NAME, that is $tip"
         exit 1
       fi
     - if [ -n "${LOCKFILE_CHANGED:-}" ]; then
@@ -652,17 +660,17 @@ deploy:
     -   if ! git show-ref --heads "$FOSS_REF"; then
     -     warn "$FOSS_PROJECT $FOSS_REF is not a branch, will not update FOSS repo"
     -   else
-    -       bold "Committing in $FOSS_PROJECT"
-    #       We just updated the submodule, now update the image tag as well
-    -       git sparse-checkout add ci_cd/
-    -       runner_image_yml=./ci_cd/docker-common.yml
-    -       sed --in-place "s/\(RUNNER_IMAGE_TAG:\s*\)\S*/\1$new_image_tag/" "$runner_image_yml"
-    #       Make sure sed actually matched something
-    -       |
-            if ! grep -q "RUNNER_IMAGE_TAG:\s*$new_image_tag" "$runner_image_yml"; then
-              >&2 warn "Failed to update $runner_image_yml in $FOSS_PROJECT"
-              exit 1
-            fi
+    -     bold "Committing in $FOSS_PROJECT"
+    #     We just updated the submodule, now update the image tag as well
+    -     git sparse-checkout add ci_cd/
+    -     runner_image_yml=./ci_cd/docker-common.yml
+    -     sed --in-place "s/\(RUNNER_IMAGE_TAG:\s*\)\S*/\1$new_image_tag/" "$runner_image_yml"
+    #     Make sure sed actually matched something
+    -     |
+          if ! grep -q "RUNNER_IMAGE_TAG:\s*$new_image_tag" "$runner_image_yml"; then
+            >&2 warn "Failed to update $runner_image_yml in $FOSS_PROJECT"
+            exit 1
+          fi
     #     Did we update docker-build (via checkout / lockfile commit) or the RUNNER_IMAGE_TAG?
     #     Or was PEP FOSS already up-to-date?
     -     |
