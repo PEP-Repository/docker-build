@@ -587,6 +587,7 @@ deploy:
 
     - if [ "$UPDATE_FOSS" != no ]; then
     -   bold "Cloning $FOSS_PROJECT and $CI_PROJECT_NAME"
+    -   rm -rf ./pep
     #   --sparse: Sparse checkout: do not checkout all subdirectories on the disk
     #   --depth=1: Shallow clone: do not fetch history
     #   This requires $FOSS_REF to exist
@@ -602,6 +603,7 @@ deploy:
     -   docker_build_repo="$foss_repo/docker-build"
     - else
     -   bold "Cloning only $CI_PROJECT_NAME"
+    -   rm -rf ./docker-build
     -   git clone
         --branch="$CI_COMMIT_BRANCH"
         --no-tags
