@@ -543,14 +543,18 @@ deploy:
   script:
     - *script_header
 
-    # Figure out what we have to do with the images
+    # -====- Figure out what we have to do with the images -====-
+
     - if [ -n "${LOCKFILE_CHANGED:-}" ]; then
+    #   We will commit and retag below
     -   |
         bold 'Lockfile was changed, so we cannot retag the built images for this commit'
         bold "Hence we need to update $CI_PROJECT_NAME, and retag images for the new commit"
     - elif [ -n "${REUSE_IMAGES:-}" ]; then
+    #   We don't have to retag
     -   warn "Images were recent enough, don't need to retag"
     - else
+    #   Retag here
     -   bold 'Retagging test images just built for this commit'
     -   *docker_login
     -   |
@@ -560,11 +564,14 @@ deploy:
         done
     - fi
 
+    # Do we need to commit the lockfile and/or check if FOSS is up-to-date?
     - |
       if [ -z "${LOCKFILE_CHANGED:-}" ] && [ "$UPDATE_FOSS" = no ]; then
         warn "Won't commit anything, lockfile did not change and UPDATE_FOSS is false"
         exit
       fi
+
+    # -====- Update repositories -====-
 
     # ==== Clone docker-build, and PEP FOSS repo if necessary (with docker-build as submodule) ====
     - apk add --no-cache git
