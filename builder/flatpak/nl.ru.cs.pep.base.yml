@@ -20,9 +20,13 @@ modules:
 
         export CONAN_HOME="$FLATPAK_DEST/tmp/conan/"
 
-        # Use faster and less memory-intensive GNU gold linker
+        # -fuse-ld=gold: Use faster and less memory-intensive GNU gold linker
+        # --lockfile-partial --update: If for some reason we would need different dependencies for Flatpak
+        #  than for the platforms we generated the lockfile on (e.g. because of the different compiler),
+        #  make sure to just take the latest version instead of quitting because the version is not in the lockfile
         conan install ./ --profile:all=./conan_profile --build=missing \
           --lockfile=./conan-ci.lock \
+          --lockfile-partial --update \
           -c:a tools.build:exelinkflags='["-fuse-ld=gold"]' \
           -c:a tools.build:sharedlinkflags='["-fuse-ld=gold"]' \
           -c:a tools.build:jobs="$FLATPAK_BUILDER_N_JOBS" \
