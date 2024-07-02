@@ -236,7 +236,6 @@ runtime/ubuntu-2204:
   rules:
     - if: $UPDATE_LOCKFILE == 'branches only' && $CI_COMMIT_BRANCH
   variables:
-    IMAGE_KIND: builder
     CLICOLOR_FORCE: '1'  # Colored output for Conan
   before_script:
     - *script_header
@@ -244,7 +243,7 @@ runtime/ubuntu-2204:
   # This script must work with both bash and powershell
   #language=sh
   script:
-    - cd "./$IMAGE_KIND/conan/"
+    - cd ./builder/conan/
     # Create Release & Debug lockfile and merge them
     - conan lock create ./ --update
       --profile:all=./conan_profile
@@ -270,7 +269,7 @@ runtime/ubuntu-2204:
       --lockfile-out="./conan.$name.lock"
   artifacts:
     paths:
-      - ./$IMAGE_KIND/conan/conan.$name.lock
+      - ./builder/conan/conan.$name.lock
 
 .generate-lockfile-docker:
   extends: .generate-lockfile
@@ -337,8 +336,6 @@ merge-lockfiles:
     - builder/lockfile/macos-x86
   rules:
     - if: $UPDATE_LOCKFILE == 'branches only' && $CI_COMMIT_BRANCH
-  variables:
-    IMAGE_KIND: builder
   tags:
     - docker-small
   image: $PROJECT_REGISTRY/builder-ubuntu-2204:$IMAGE_TAG_TEST
@@ -348,7 +345,7 @@ merge-lockfiles:
     - *script_header
     - *reuse_images
     - *git_colors
-    - cd "./$IMAGE_KIND/conan/"
+    - cd ./builder/conan/
     - jobs=(
         ubuntu-2204
         ubuntu-rolling
@@ -383,7 +380,7 @@ merge-lockfiles:
     - echo "MERGE_LOCKFILES_JOB=$CI_JOB_ID" >>"$CI_PROJECT_DIR/env.env"  # Save, see artifacts
   artifacts:
     paths:
-      - ./$IMAGE_KIND/conan/conan-ci.lock
+      - ./builder/conan/conan-ci.lock
       - ./conan-ci.lock
     reports:
       # Save $MERGE_LOCKFILES_JOB, $LOCKFILE_CHANGED for jobs below
@@ -406,8 +403,7 @@ merge-lockfiles:
     - docker
   image: docker
   variables:
-    IMAGE_KIND: builder
-    CONTAINER_IMAGE: $PROJECT_REGISTRY/$IMAGE_KIND-$IMAGE_NAME:$IMAGE_TAG_TEST
+    CONTAINER_IMAGE: $PROJECT_REGISTRY/builder-$IMAGE_NAME:$IMAGE_TAG_TEST
   services:
     - docker:dind
   #language=sh
@@ -418,16 +414,16 @@ merge-lockfiles:
     - *docker_login
     - bold '==== Executing Conan in container ===='
     - container="$(docker container run --pull=always --interactive --detach "$CONTAINER_IMAGE")"
-    - if [ -d "./$IMAGE_KIND/cache/conan-home/" ]; then
+    - if [ -d ./builder/cache/conan-home/ ]; then
     -   echo 'Copying cached .conan2 folder'
-    -   docker container cp "./$IMAGE_KIND/cache/conan-home/" "$container:/root/.conan2/"
+    -   docker container cp ./builder/cache/conan-home/ "$container:/root/.conan2/"
     - fi
-    - docker container cp ."/$IMAGE_KIND/conan/" "$container:/tmp/conan"
+    - docker container cp ./builder/conan/ "$container:/tmp/conan"
     - docker container exec "$container" /tmp/conan/conan_install.sh "$concurrency_limit"
     - docker container exec "$container" rm -rf '/tmp/*'
-    - rm -rf "./$IMAGE_KIND/cache/conan-home/"
-    - mkdir -p "./$IMAGE_KIND/cache/"
-    - docker container cp "$container:/root/.conan2/" "./$IMAGE_KIND/cache/conan-home"
+    - rm -rf ./builder/cache/conan-home/
+    - mkdir -p ./builder/cache/
+    - docker container cp "$container:/root/.conan2/" ./builder/cache/conan-home
     - docker container stop "$container"
     - docker container commit --message 'Add Conan packages' "$container" "$CONTAINER_IMAGE"
 
@@ -436,7 +432,7 @@ merge-lockfiles:
   cache:
     key: docker-builder-cache
     paths:
-      - ./$IMAGE_KIND/cache/
+      - ./builder/cache/
 
 builder/ubuntu-2204:
   extends: .conan-builder
@@ -463,9 +459,8 @@ builder/flatpak:
     - docker
   image: docker
   variables:
-    IMAGE_KIND: builder
     IMAGE_NAME: flatpak
-    CONTAINER_IMAGE: $PROJECT_REGISTRY/$IMAGE_KIND-$IMAGE_NAME:$IMAGE_TAG_TEST
+    CONTAINER_IMAGE: $PROJECT_REGISTRY/builder-$IMAGE_NAME:$IMAGE_TAG_TEST
   services:
     - docker:dind
   #language=sh
@@ -478,8 +473,8 @@ builder/flatpak:
     # --privileged is necessary for flatpak-builder, see https://github.com/flatpak/flatpak-builder/issues/237
     - container="$(docker container run --pull=always --privileged --interactive --detach "$CONTAINER_IMAGE")"
     #TODO Cache ~/.conan2 like above?
-    - docker container cp "./$IMAGE_KIND/flatpak/" "$container:/tmp/flatpak"
-    - docker container cp "./$IMAGE_KIND/conan/" "$container:/tmp/conan"
+    - docker container cp ./builder/flatpak/ "$container:/tmp/flatpak"
+    - docker container cp ./builder/conan/ "$container:/tmp/conan"
     - |
       concurrency_option=''
       if [ -n "$concurrency_limit" ]; then
@@ -548,6 +543,7 @@ deploy:
   script:
     - *script_header
 
+    # Figure out what we have to do with the images
     - if [ -n "${LOCKFILE_CHANGED:-}" ]; then
     -   |
         bold 'Lockfile was changed, so we cannot retag the built images for this commit'
@@ -565,7 +561,7 @@ deploy:
     - fi
 
     - |
-      if [ -z "${LOCKFILE_CHANGED:-}" -a "$UPDATE_FOSS" = no ]; then
+      if [ -z "${LOCKFILE_CHANGED:-}" ] && [ "$UPDATE_FOSS" = no ]; then
         warn "Won't commit anything, lockfile did not change and UPDATE_FOSS is false"
         exit
       fi
