@@ -681,6 +681,7 @@ deploy:
             *) exit "$?" ;;
           esac
     -     if [ -z "$foss_up_to_date" ]; then
+    #       Commit updates
     -       git add .; git status
     -       |
             git commit -m "Update docker-build for pipeline $CI_PIPELINE_ID
