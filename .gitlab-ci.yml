@@ -584,12 +584,10 @@ deploy:
     - if [ "$UPDATE_FOSS" != no ]; then
     -   bold "Cloning $FOSS_PROJECT and $CI_PROJECT_NAME"
     -   rm -rf ./pep
-    #   --sparse: Sparse checkout: do not checkout all subdirectories on the disk
     #   --depth=1: Shallow clone: do not fetch history
     #   This requires $FOSS_REF to exist
     -   git clone
         --branch="$FOSS_REF"
-        --sparse
         --no-tags
         --depth=1
         --shallow-submodules
@@ -654,7 +652,6 @@ deploy:
     -   else
     -     bold "Committing in $FOSS_PROJECT"
     #     We just updated the submodule, now update the image tag as well
-    -     git sparse-checkout add ci_cd/
     -     runner_image_yml=./ci_cd/docker-common.yml
     -     sed --in-place "s/\(RUNNER_IMAGE_TAG:\s*\)\S*/\1$new_image_tag/" "$runner_image_yml"
     #     Make sure sed actually matched something
