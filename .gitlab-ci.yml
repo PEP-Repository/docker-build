@@ -658,6 +658,7 @@ deploy:
     -     |
           if ! grep -q "RUNNER_IMAGE_TAG:\s*$new_image_tag" "$runner_image_yml"; then
             >&2 warn "Failed to update $runner_image_yml in $FOSS_PROJECT"
+            >&2 warn 'Make sure that the file has a line like "RUNNER_IMAGE_TAG: ..."'
             exit 1
           fi
     #     Did we update docker-build (via checkout / lockfile commit) or the RUNNER_IMAGE_TAG?
