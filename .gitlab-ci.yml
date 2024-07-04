@@ -20,12 +20,6 @@ variables:
     value: $CI_COMMIT_REF_NAME
     description: Override to set branch/ref of the PEP FOSS repo to test images on & commit to (for a branch)
 
-  IMAGE_MAX_AGE_DAYS:
-    value: '6'
-    description:
-      If the previous image for a commit is at least this old, it will be rebuilt.
-      Set to 0 to force rebuild
-
   UPDATE_LOCKFILE:
     value: 'branches only'
     options:
@@ -94,73 +88,6 @@ workflow:
   fi
 
 
-# =================================
-# ==== Check for recent images ====
-# =================================
-
-# Check for recent existing images for this commit.
-# We only reuse image if *all* images were recent enough,
-# as to keep logic simpler and keep apt dependencies consistent.
-# Normally, due to the retagging step, it will be the case anyway that either all or no images were recent.
-# Set $REUSE_IMAGES if all images were recent enough
-check-existing:
-  stage: check-existing
-  rules:
-    # Quick exit if we force rebuild
-    - if: $IMAGE_MAX_AGE_DAYS != '0'
-  tags:
-    - docker-small
-  image: docker
-  #language=sh
-  script:
-    - *script_header
-    - touch "$CI_PROJECT_DIR/env.env"
-    - apk add --no-cache jq coreutils  # Also add coreutils for `date` (Alpine/busybox date doesn't parse ISO-8601 well)
-    - *docker_login
-    - reuse=yes
-    - for image_name in $DEPLOY_IMAGES; do
-    -   echo "Checking $image_name"
-    -   prev_created="$(docker buildx imagetools inspect "$PROJECT_REGISTRY/$image_name:$IMAGE_TAG" --format '{{json .Image}}' | jq --raw-output .created || true)"
-    -   if [ -n "$prev_created" ]; then
-    -     diff_secs="$(($(date +%s) - $(date -d "$prev_created" +%s)))"
-    -     diff_days="$((diff_secs / 60 / 60 / 24))"
-    -     echo "Previous image created at $prev_created, $diff_days days ($diff_secs s) ago"
-    -     if [ "$diff_days" -lt "$IMAGE_MAX_AGE_DAYS" ]; then
-    -       echo 'Recent enough'
-    -     else
-    -       echo 'Not recent enough'
-    -       reuse=''
-    -       break
-    -     fi
-    -   else
-    -     echo 'No existing image for this commit'
-    -     reuse=''
-    -     break
-    -   fi
-    - done
-
-    - if [ -n "$reuse" ]; then
-    -   bold 'Will reuse all images'
-    -   echo 'REUSE_IMAGES=yes' >>"$CI_PROJECT_DIR/env.env"  # Save, see artifacts
-    - else
-    -   bold 'Will rebuild all images'
-    - fi
-  artifacts:
-    reports:
-      # Save $REUSE_IMAGES for jobs below
-      dotenv: env.env
-
-# Skip the rest of this image building job if we are reusing images.
-# A better way to skip jobs is not yet available, see https://gitlab.com/gitlab-org/gitlab/-/issues/292816, https://gitlab.com/gitlab-org/gitlab/-/issues/329217
-# $REUSE_IMAGES is retrieved from check-existing via env.env
-#language=sh
-.reuse_images: &reuse_images |
-  if [ -n "${REUSE_IMAGES:-}" ]; then
-    warn "Images were recent enough, won't rebuild"
-    exit
-  fi
-
-
 # ===========================
 # ==== Build base images ====
 # ===========================
@@ -170,7 +97,6 @@ check-existing:
 # We tag the images using $IMAGE_TAG_TEST at first,
 # such that they will not overwrite existing images for protected branches
 # before we tested them.
-# This is skipped if we are reusing images
 
 # Build & push Docker image
 .docker-image:
@@ -193,7 +119,6 @@ check-existing:
         >&2 warn "Image $IMAGE_KIND-$IMAGE_NAME is not in DEPLOY_IMAGES!"
         exit 1
       fi
-    - *reuse_images
     - *docker_login
     - bold '==== Building & pushing image ===='
     - echo "Tagging image as $CONTAINER_IMAGE"
@@ -241,7 +166,6 @@ runtime/ubuntu-2204:
 # e.g. Windows may require `strawberryperl` while Linux uses perl from the system.
 # In the end, we should have a lockfile that works for all CI runners, and likely for most devboxes as well.
 # See https://docs.conan.io/2/tutorial/versioning/lockfiles.html.
-# This is skipped if we are reusing images
 
 .generate-lockfile:
   stage: generate-lockfile
@@ -251,7 +175,6 @@ runtime/ubuntu-2204:
     CLICOLOR_FORCE: '1'  # Colored output for Conan
   before_script:
     - *script_header
-    - *reuse_images
   # This script must work with both bash and powershell
   #language=sh
   script:
@@ -315,11 +238,6 @@ builder/lockfile/windows:
   #language=powershell
   before_script:
     - Set-StrictMode -Version 3.0
-    - |
-      if ((Test-Path variable:REUSE_IMAGES) -and $REUSE_IMAGES) {
-        Write-Host -ForegroundColor Yellow "Images were recent enough, won't rebuild"
-        exit
-      }
 
 builder/lockfile/macos-arm:
   extends: .generate-lockfile
@@ -356,7 +274,6 @@ merge-lockfiles:
   script:
     - touch "$CI_PROJECT_DIR/env.env"
     - *script_header
-    - *reuse_images
     - *git_colors
     - cd ./builder/conan/
     - jobs=(
@@ -406,7 +323,6 @@ merge-lockfiles:
 # Pull the images that we built in the docker-image stage and
 # use the lockfile we just generated to install Conan dependencies in the containers (and Flatpak in a container).
 # Finally, push the updated containers under the same tag.
-# This is skipped if we are reusing images
 
 .conan-builder:
   stage: conan-install
@@ -422,7 +338,6 @@ merge-lockfiles:
   #language=sh
   script:
     - *script_header
-    - *reuse_images
     - *set_concurrency_limit
     - *docker_login
     - bold '==== Executing Conan in container ===='
@@ -479,7 +394,6 @@ builder/flatpak:
   #language=sh
   script:
     - *script_header
-    - *reuse_images
     - *set_concurrency_limit
     - *docker_login
     - bold '==== Executing Flatpak Builder with Conan in container ===='
@@ -527,8 +441,6 @@ test-images:
   #language=sh
   script:
     - *script_header
-    # We don't check $REUSE_IMAGES here, because we want to make sure that when a commit is added to a different branch,
-    #  we run a pipeline in PEP FOSS in the corresponding branch
     - apk add --no-cache jq curl
     # $MERGE_LOCKFILES_JOB may not be set if $UPDATE_LOCKFILE is false
     - ./run-pipeline.sh "$IMAGE_TAG_TEST" "$FOSS_REF" "${MERGE_LOCKFILES_JOB:-}"
@@ -563,9 +475,6 @@ deploy:
     -   |
         bold 'Lockfile was changed, so we cannot retag the built images for this commit'
         bold "Hence we need to update $CI_PROJECT_NAME, and retag images for the new commit"
-    - elif [ -n "${REUSE_IMAGES:-}" ]; then
-    #   We don't have to retag
-    -   warn "Images were recent enough, don't need to retag"
     - else
     #   Retag here
     -   bold 'Retagging test images just built for this commit'
