@@ -477,6 +477,7 @@ deploy:
     -   |
         bold 'Lockfile was changed, so we cannot retag the built images for this commit'
         bold "Hence we need to update $CI_PROJECT_NAME, and retag images for the new commit"
+
     - else
     #   Retag here
     -   bold 'Retagging test images just built for this commit'
@@ -486,14 +487,14 @@ deploy:
           echo "Retagging $image:$IMAGE_TAG_TEST as $CI_REGISTRY_IMAGE/$image:$IMAGE_TAG"
           docker buildx imagetools create "$CI_REGISTRY_IMAGE/$image:$IMAGE_TAG_TEST" --tag "$CI_REGISTRY_IMAGE/$image:$IMAGE_TAG"
         done
-    - fi
 
-    # Do we need to commit the lockfile and/or check if FOSS is up-to-date?
-    - |
-      if [ -z "${LOCKFILE_CHANGED:-}" ] && [ "$UPDATE_FOSS" = no ]; then
-        warn "Won't commit anything, lockfile did not change and UPDATE_FOSS is false"
-        exit
-      fi
+    #   We don't need to update the lockfile. If we also don't need to check if FOSS is up-to-date, we can stop here
+    -   |
+        if [ "$UPDATE_FOSS" = no ]; then
+          warn "Won't commit anything, lockfile did not change and UPDATE_FOSS is false"
+          exit
+        fi
+    - fi
 
     # -====- Update repositories -====-
 
