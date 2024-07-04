@@ -443,7 +443,7 @@ test-images:
     - *script_header
     - apk add --no-cache jq curl
     # $MERGE_LOCKFILES_JOB may not be set if $UPDATE_LOCKFILE is false
-    - ./run-pipeline.sh "$IMAGE_TAG_TEST" "$FOSS_REF" "${MERGE_LOCKFILES_JOB:-}"
+    - ./run-pipeline.sh "$IMAGE_TAG_TEST" "$FOSS_REF" "${MERGE_LOCKFILES_JOB-}"
 
 
 # ================
@@ -474,7 +474,7 @@ deploy:
 
     # -====- Figure out what we have to do with the images -====-
 
-    - if [ -n "${LOCKFILE_CHANGED:-}" ]; then
+    - if [ -n "${LOCKFILE_CHANGED-}" ]; then
     #   We will commit and retag below
     -   |
         bold 'Lockfile was changed, so we cannot retag the built images for this commit'
@@ -544,7 +544,7 @@ deploy:
     - bold "Updating $CI_PROJECT_NAME"
     - cd "$docker_build_repo"
     # Is this a branch pipeline?
-    - if [ -n "${CI_COMMIT_BRANCH:-}" ]; then
+    - if [ -n "${CI_COMMIT_BRANCH-}" ]; then
     #   By default, submodule has only main branch
     -   git remote set-branches origin "$CI_COMMIT_BRANCH"
     -   git fetch origin "$CI_COMMIT_BRANCH"
@@ -564,7 +564,7 @@ deploy:
         >&2 warn "This ($CI_COMMIT_SHA) is not the latest $CI_PROJECT_NAME commit for $CI_COMMIT_REF_NAME, that is $tip"
         exit 1
       fi
-    - if [ -n "${LOCKFILE_CHANGED:-}" ]; then
+    - if [ -n "${LOCKFILE_CHANGED-}" ]; then
     -   bold "Committing lockfile in $CI_PROJECT_NAME"
     -   mv --force "$CI_PROJECT_DIR/conan-ci.lock" ./builder/conan/
     -   git add .; git status
@@ -621,7 +621,7 @@ deploy:
     - fi
 
     # ==== Retag built images for created docker-build commit ====
-    - if [ -n "${LOCKFILE_CHANGED:-}" ]; then
+    - if [ -n "${LOCKFILE_CHANGED-}" ]; then
     -   bold "Retagging images just built as those for the new $CI_PROJECT_NAME commit ($docker_build_commit)"
     -   *docker_login
     -   |
@@ -632,7 +632,8 @@ deploy:
     - fi
 
     # ==== Push commits ====
-    - if [ -n "${LOCKFILE_CHANGED:-}" ]; then
+
+    - if [ -n "${LOCKFILE_CHANGED-}" ]; then
     -   bold "Pushing $CI_PROJECT_NAME"
     -   (
     -     cd "$docker_build_repo"
