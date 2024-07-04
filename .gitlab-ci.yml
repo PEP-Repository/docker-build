@@ -11,7 +11,6 @@ variables:
   DOCKER_TLS_CERTDIR: "" # Work around failing CI jobs: see https://gitlab.com/gitlab-org/gitlab-ce/issues/64959#note_194582424
   FF_SCRIPT_SECTIONS: 'true'  # Enable collapsible sections per script line, with timings
 
-  PROJECT_REGISTRY: $CI_REGISTRY/$CI_PROJECT_PATH
   IMAGE_TAG_PREFIX: sha-
   IMAGE_TAG: $IMAGE_TAG_PREFIX$CI_COMMIT_SHA
   IMAGE_TAG_TEST: test-$IMAGE_TAG_PREFIX$CI_PIPELINE_ID-$CI_COMMIT_SHA
@@ -180,12 +179,20 @@ check-existing:
     - docker-small
   image: docker
   variables:
-    CONTAINER_IMAGE: $PROJECT_REGISTRY/$IMAGE_KIND-$IMAGE_NAME:$IMAGE_TAG_TEST
+    CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/$IMAGE_KIND-$IMAGE_NAME:$IMAGE_TAG_TEST
   services:
     - docker:dind
   #language=sh
   script:
     - *script_header
+    - |
+      string=" $DEPLOY_IMAGES "
+      substring=" $IMAGE_KIND-$IMAGE_NAME "
+      # Does string not contain substring?
+      if [ "${string#*"$substring"}" = "$string" ]; then
+        >&2 warn "Image $IMAGE_KIND-$IMAGE_NAME is not in DEPLOY_IMAGES!"
+        exit 1
+      fi
     - *reuse_images
     - *docker_login
     - bold '==== Building & pushing image ===='
@@ -196,6 +203,8 @@ check-existing:
       --file "./$IMAGE_KIND/$IMAGE_NAME.Dockerfile"
       --tag "$CONTAINER_IMAGE"
       "./$IMAGE_KIND/"
+
+# ==== Builders ====
 
 builder/base/ubuntu-2204:
   extends: .docker-image
@@ -215,6 +224,8 @@ builder/base/flatpak:
     IMAGE_KIND: builder
     IMAGE_NAME: flatpak
 
+# ==== Runtimes ====
+
 runtime/ubuntu-2204:
   extends: .docker-image
   variables:
@@ -228,6 +239,7 @@ runtime/ubuntu-2204:
 # We generate a Conan lockfile on each platform for Release & Debug configurations and merge all of them.
 # This is because settings etc. can cause different dependencies to be pulled,
 # e.g. Windows may require `strawberryperl` while Linux uses perl from the system.
+# In the end, we should have a lockfile that works for all CI runners, and likely for most devboxes as well.
 # See https://docs.conan.io/2/tutorial/versioning/lockfiles.html.
 # This is skipped if we are reusing images
 
@@ -275,7 +287,7 @@ runtime/ubuntu-2204:
   extends: .generate-lockfile
   tags:
     - docker-small
-  image: $PROJECT_REGISTRY/builder-$name:$IMAGE_TAG_TEST
+  image: $CI_REGISTRY_IMAGE/builder-$name:$IMAGE_TAG_TEST
 
 builder/lockfile/ubuntu-2204:
   extends: .generate-lockfile-docker
@@ -284,6 +296,7 @@ builder/lockfile/ubuntu-2204:
   variables:
     name: ubuntu-2204
 
+# Generally, this should be the same as the LTS, but let's include it anyway
 builder/lockfile/ubuntu-rolling:
   extends: .generate-lockfile-docker
   needs:
@@ -338,7 +351,7 @@ merge-lockfiles:
     - if: $UPDATE_LOCKFILE == 'branches only' && $CI_COMMIT_BRANCH
   tags:
     - docker-small
-  image: $PROJECT_REGISTRY/builder-ubuntu-2204:$IMAGE_TAG_TEST
+  image: $CI_REGISTRY_IMAGE/builder-ubuntu-2204:$IMAGE_TAG_TEST
   #language=bash
   script:
     - touch "$CI_PROJECT_DIR/env.env"
@@ -403,7 +416,7 @@ merge-lockfiles:
     - docker
   image: docker
   variables:
-    CONTAINER_IMAGE: $PROJECT_REGISTRY/builder-$IMAGE_NAME:$IMAGE_TAG_TEST
+    CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/builder-$IMAGE_NAME:$IMAGE_TAG_TEST
   services:
     - docker:dind
   #language=sh
@@ -460,7 +473,7 @@ builder/flatpak:
   image: docker
   variables:
     IMAGE_NAME: flatpak
-    CONTAINER_IMAGE: $PROJECT_REGISTRY/builder-$IMAGE_NAME:$IMAGE_TAG_TEST
+    CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/builder-$IMAGE_NAME:$IMAGE_TAG_TEST
   services:
     - docker:dind
   #language=sh
@@ -559,8 +572,8 @@ deploy:
     -   *docker_login
     -   |
         for image in $DEPLOY_IMAGES; do
-          echo "Retagging $image:$IMAGE_TAG_TEST as $PROJECT_REGISTRY/$image:$IMAGE_TAG"
-          docker buildx imagetools create "$PROJECT_REGISTRY/$image:$IMAGE_TAG_TEST" --tag "$PROJECT_REGISTRY/$image:$IMAGE_TAG"
+          echo "Retagging $image:$IMAGE_TAG_TEST as $CI_REGISTRY_IMAGE/$image:$IMAGE_TAG"
+          docker buildx imagetools create "$CI_REGISTRY_IMAGE/$image:$IMAGE_TAG_TEST" --tag "$CI_REGISTRY_IMAGE/$image:$IMAGE_TAG"
         done
     - fi
 
@@ -699,8 +712,8 @@ deploy:
     -   *docker_login
     -   |
         for image in $DEPLOY_IMAGES; do
-          echo "Retagging $image:$IMAGE_TAG_TEST as $PROJECT_REGISTRY/$image:$new_image_tag"
-          docker buildx imagetools create "$PROJECT_REGISTRY/$image:$IMAGE_TAG_TEST" --tag "$PROJECT_REGISTRY/$image:$new_image_tag"
+          echo "Retagging $image:$IMAGE_TAG_TEST as $CI_REGISTRY_IMAGE/$image:$new_image_tag"
+          docker buildx imagetools create "$CI_REGISTRY_IMAGE/$image:$IMAGE_TAG_TEST" --tag "$CI_REGISTRY_IMAGE/$image:$new_image_tag"
         done
     - fi
 
