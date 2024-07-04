@@ -459,6 +459,8 @@ deploy:
   stage: deploy
   dependencies:
     - merge-lockfiles
+  # Do not run concurrently for the same commit
+  resource_group: $CI_PROJECT_PATH_SLUG/$CI_JOB_NAME_SLUG/$CI_COMMIT_SHA
   tags:
     - docker-small
   image: docker
