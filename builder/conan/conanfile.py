@@ -65,7 +65,7 @@ class PepRecipe(ConanFile):
 
     def validate(self):
         if not self.settings.build_type:
-            # See ./pep/core/CMakeLists.txt for context
+            # See CMakeLists.txt in PEP FOSS repo for context
             raise ConanInvalidConfiguration(
                 'We do not support multiconfig builds yet (see pep/core#499), '
                 'please explicitly specify -s:a build_type=<...> to force consistent builds.')

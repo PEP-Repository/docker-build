@@ -12,27 +12,28 @@ else
   concurrency_option_conan=''
 fi
 
-# Install dependencies with Conan for configurations used in pep/core/.gitlab-ci.yml
-
->>"./conan_profile" "./conan_platform_tool_requires.sh"
 mkdir -p "$(conan config home)/profiles/"
-cp "./conan_profile" "$(conan config home)/profiles/default"
+cp ./conan_profile "$(conan config home)/profiles/default"
+
+# Install dependencies with Conan for configurations used in CI
 
 echo '==== Installing Release packages ===='
-conan install ./ --build=missing --update \
+conan install ./ --build=missing \
+  --lockfile=./conan-ci.lock \
   -s build_type=Release \
   $concurrency_option_conan \
-  -o with_client=False \
-  -o with_tests=True \
-  -o with_benchmark=True
+  -o "&:with_client=False" \
+  -o "&:with_tests=True" \
+  -o "&:with_benchmark=True"
 
 echo '==== Installing Debug packages ===='
-conan install ./ --build=missing --update \
+conan install ./ --build=missing \
+  --lockfile=./conan-ci.lock \
   -s build_type=Debug \
   $concurrency_option_conan \
-  -o with_client=False \
-  -o with_tests=True \
-  -o with_benchmark=False
+  -o "&:with_client=False" \
+  -o "&:with_tests=True" \
+  -o "&:with_benchmark=False"
 
 echo 'Cleaning cache'
 # Remove old packages

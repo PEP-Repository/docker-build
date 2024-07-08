@@ -1,156 +1,409 @@
 stages:
-  - docker-images
-  - analyze
+  - check-existing
+  - docker-image
+  - generate-lockfile
+  - conan-install
+  - test-images
   - deploy
-  - analyze-manual
 
 variables:
   DOCKER_DRIVER: overlay2 # faster docker builds, see https://gitlab.com/gitlab-org/gitlab-ce/issues/21374, https://docs.docker.com/storage/storagedriver/overlayfs-driver/
   DOCKER_TLS_CERTDIR: "" # Work around failing CI jobs: see https://gitlab.com/gitlab-org/gitlab-ce/issues/64959#note_194582424
   FF_SCRIPT_SECTIONS: 'true'  # Enable collapsible sections per script line, with timings
 
-  PROJECT_REGISTRY: ${CI_REGISTRY}/${CI_PROJECT_PATH}
-  IMAGE_TAG: sha-${CI_COMMIT_SHA}
-  IMAGE_TAG_TEST: sha-test-${CI_COMMIT_SHA}
+  IMAGE_TAG_PREFIX: sha-
+  IMAGE_TAG: $IMAGE_TAG_PREFIX$CI_COMMIT_SHA
+  IMAGE_TAG_TEST: test-$IMAGE_TAG_PREFIX$CI_PIPELINE_ID-$CI_COMMIT_SHA
 
-  # Override to set branch/ref of pep/core to test images on
-  CORE_TEST_REF: ${CI_COMMIT_BRANCH}
+  FOSS_PROJECT: pep/core
+  FOSS_REF:
+    value: $CI_COMMIT_REF_NAME
+    description: Override to set branch/ref of the PEP FOSS repo to test images on & commit to (for a branch)
 
-  # >- is a YAML space-separated string, see https://yaml-multiline.info/
-  # Images that should be retagged from $IMAGE_TAG_TEST to $IMAGE_TAG
-  DEPLOY_IMAGES: >-
+  UPDATE_LOCKFILE:
+    value: 'branches only'
+    options:
+      - 'branches only'  # Only for branch pipelines
+      - 'no'
+    description: Update conan-ci.lock
+  TEST_BEFORE_DEPLOY:
+    value: necessary
+    options:
+      - necessary  # Only for protected refs and scheduled pipelines
+      - always
+      - never
+    description: Run test-images
+  UPDATE_FOSS:
+    value: 'branches only'
+    options:
+      - 'branches only'  # Only when $FOSS_REF is a branch
+      - 'no'
+    description: Commit docker-build submodule to PEP FOSS
+
+  # This is a YAML space-separated string, equivalent to >-, see https://yaml-multiline.info/
+  # Images that we push in this pipeline
+  DEPLOY_IMAGES:
     builder-ubuntu-2204
     builder-ubuntu-rolling
     builder-flatpak
     runtime-ubuntu-2204
-  # Branches update pipelines are scheduled on, in regex form
-  SCHEDULE_BRANCHES_REGEX: ^(master|stable|release)$
-  # If the previous image for a commit is at least this old, it will be rebuilt
-  IMAGE_MAX_AGE_DAYS: 6
+
+# Applies to whole pipeline
+workflow:
+  rules:
+    # Do not create MR pipelines (see https://docs.gitlab.com/ee/ci/pipelines/merge_request_pipelines.html ).
+    # As soon as we use one `rules:` tag in a job, that job would run on any MR pipeline, unless specified otherwise.
+    # Prevent that by disabling the whole pipeline in this case
+    - if: $CI_PIPELINE_SOURCE != 'merge_request_event'
+
+#language=sh
+.script_header: &script_header |
+  set -u
+  bold() {
+    # Bold underlined cyan
+    IFS=' ' printf "\e[1;4;96m%s\e[0m\n" "$*"
+  }
+  warn() {
+    # Yellow
+    IFS=' ' printf "\e[33m%s\e[0m\n" "$*"
+  }
+
+#language=sh
+.docker_login: &docker_login
+  docker login -u gitlab-ci-token -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
+#language=sh
+.git_colors: &git_colors
+  git config --global color.ui always
 
 # You can set a tag `limit_concurrency:<VALUE>` on a gitlab runner if it runs out of memory.
 # Jobs can invoke this anchor to retrieve the configured <VALUE> (if any) into the "concurrency_limit" variable.
+#language=sh
 .set_concurrency_limit: &set_concurrency_limit |
+  apk add --no-cache jq
   concurrency_limit=$(echo "$CI_RUNNER_TAGS" | jq -r '.[]' | sed -n 's/^limit_concurrency:\([0-9]\+\)$/\1/p')
   if [ -z "$concurrency_limit" ]; then
-    >&2 echo "No concurrency limit specified"
+    echo 'No concurrency limit specified'
   else
-    >&2 echo "Concurrency limit is $concurrency_limit"
+    echo "Concurrency limit is $concurrency_limit"
   fi
 
-.docker-base:
-  stage: docker-images
+
+# ===========================
+# ==== Build base images ====
+# ===========================
+# Here we build the Linux runtime image and the builder images,
+# but do not add Conan packages yet, as we first want to update the lockfile,
+# for which we need all images.
+# We tag the images using $IMAGE_TAG_TEST at first,
+# such that they will not overwrite existing images for protected branches
+# before we tested them.
+
+# Build & push Docker image
+.docker-image:
+  stage: docker-image
+  tags:
+    - docker-small
+  image: docker
+  variables:
+    CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/$IMAGE_KIND-$IMAGE_NAME:$IMAGE_TAG_TEST
+  services:
+    - docker:dind
+  #language=sh
+  script:
+    - *script_header
+    - |
+      string=" $DEPLOY_IMAGES "
+      substring=" $IMAGE_KIND-$IMAGE_NAME "
+      # Does string not contain substring?
+      if [ "${string#*"$substring"}" = "$string" ]; then
+        >&2 warn "Image $IMAGE_KIND-$IMAGE_NAME is not in DEPLOY_IMAGES!"
+        exit 1
+      fi
+    - *docker_login
+    - bold '==== Building & pushing image ===='
+    - echo "Tagging image as $CONTAINER_IMAGE"
+    - docker buildx build
+      --pull
+      --push
+      --file "./$IMAGE_KIND/$IMAGE_NAME.Dockerfile"
+      --tag "$CONTAINER_IMAGE"
+      "./$IMAGE_KIND/"
+
+# ==== Builders ====
+
+builder/base/ubuntu-2204:
+  extends: .docker-image
+  variables:
+    IMAGE_KIND: builder
+    IMAGE_NAME: ubuntu-2204
+
+builder/base/ubuntu-rolling:
+  extends: .docker-image
+  variables:
+    IMAGE_KIND: builder
+    IMAGE_NAME: ubuntu-rolling
+
+builder/base/flatpak:
+  extends: .docker-image
+  variables:
+    IMAGE_KIND: builder
+    IMAGE_NAME: flatpak
+
+# ==== Runtimes ====
+
+runtime/ubuntu-2204:
+  extends: .docker-image
+  variables:
+    IMAGE_KIND: runtime
+    IMAGE_NAME: ubuntu-2204
+
+
+# ===========================
+# ==== Generate lockfile ====
+# ===========================
+# We generate a Conan lockfile on each platform for Release & Debug configurations and merge all of them.
+# This is because settings etc. can cause different dependencies to be pulled,
+# e.g. Windows may require `strawberryperl` while Linux uses perl from the system.
+# In the end, we should have a lockfile that works for all CI runners, and likely for most devboxes as well.
+# See https://docs.conan.io/2/tutorial/versioning/lockfiles.html.
+
+.generate-lockfile:
+  stage: generate-lockfile
+  rules:
+    - if: $UPDATE_LOCKFILE == 'branches only' && $CI_COMMIT_BRANCH
+  variables:
+    CLICOLOR_FORCE: '1'  # Colored output for Conan
+  before_script:
+    - *script_header
+  # This script must work with both bash and powershell
+  #language=sh
+  script:
+    - cd ./builder/conan/
+    # Create Release & Debug lockfile and merge them
+    - conan lock create ./ --update
+      --profile:all=./conan_profile
+      --lockfile=''
+      --lockfile-out=./conan-rel.lock
+      -s build_type=Release
+      -o "&:with_client=True"
+      -o "&:with_tests=True"
+      -o "&:with_benchmark=True"
+      -o "&:use_system_qt=False"
+    - conan lock create ./ --update
+      --profile:all=./conan_profile
+      --lockfile=''
+      --lockfile-out=./conan-dbg.lock
+      -s "&:build_type=Debug"
+      -o "&:with_client=True"
+      -o "&:with_tests=True"
+      -o "&:with_benchmark=True"
+      -o "&:use_system_qt=False"
+    - conan lock merge
+      --lockfile=./conan-rel.lock
+      --lockfile=./conan-dbg.lock
+      --lockfile-out="./conan.$name.lock"
+  artifacts:
+    paths:
+      - ./builder/conan/conan.$name.lock
+
+.generate-lockfile-docker:
+  extends: .generate-lockfile
+  tags:
+    - docker-small
+  image: $CI_REGISTRY_IMAGE/builder-$name:$IMAGE_TAG_TEST
+
+builder/lockfile/ubuntu-2204:
+  extends: .generate-lockfile-docker
+  needs:
+    - builder/base/ubuntu-2204
+  variables:
+    name: ubuntu-2204
+
+# Generally, this should be the same as the LTS, but let's include it anyway
+builder/lockfile/ubuntu-rolling:
+  extends: .generate-lockfile-docker
+  needs:
+    - builder/base/ubuntu-rolling
+  variables:
+    name: ubuntu-rolling
+
+builder/lockfile/windows:
+  extends: .generate-lockfile
+  needs: []
+  tags:
+    - windows
+  variables:
+    name: windows
+  # Override
+  #language=powershell
+  before_script:
+    - Set-StrictMode -Version 3.0
+
+builder/lockfile/macos-arm:
+  extends: .generate-lockfile
+  needs: []
+  tags:
+    - macos-arm
+  variables:
+    name: macos-arm
+
+builder/lockfile/macos-x86:
+  extends: .generate-lockfile
+  needs: []
+  tags:
+    - macos-x86
+  variables:
+    name: macos-x86
+
+# Merge all generated lockfiles.
+# Currently, we don't incorporate the Flatpak here because it should generally be identical to Ubuntu LTS
+merge-lockfiles:
+  stage: generate-lockfile
+  needs:
+    - builder/lockfile/ubuntu-2204
+    - builder/lockfile/ubuntu-rolling
+    - builder/lockfile/windows
+    - builder/lockfile/macos-arm
+    - builder/lockfile/macos-x86
+  rules:
+    - if: $UPDATE_LOCKFILE == 'branches only' && $CI_COMMIT_BRANCH
+  tags:
+    - docker-small
+  image: $CI_REGISTRY_IMAGE/builder-ubuntu-2204:$IMAGE_TAG_TEST
+  #language=bash
+  script:
+    - touch "$CI_PROJECT_DIR/env.env"
+    - *script_header
+    - *git_colors
+    - cd ./builder/conan/
+    - jobs=(
+        ubuntu-2204
+        ubuntu-rolling
+        windows
+        macos-arm
+        macos-x86
+      )
+    - |
+      merge_flags=()
+      for name in "${jobs[@]}"; do
+        merge_flags+=("--lockfile=./conan.$name.lock")
+      done
+    # We don't call this file conan.lock, such that it won't be picked up automatically
+    # when running conan with this conanfile (and not a symlink).
+    # We don't necessarily want to always use the lockfile on devboxes
+    - conan lock merge "${merge_flags[@]}" --lockfile-out=./conan-ci.lock
+    # Also make git diff work for new files
+    - git add --intent-to-add ./conan-ci.lock
+    # `&& true` prevents quitting the shell
+    - |
+      git diff --exit-code ./conan-ci.lock && true
+      case "$?" in
+        0) bold 'conan-ci.lock did not change' ;;
+        1) 
+          bold 'conan-ci.lock changed'
+          echo 'LOCKFILE_CHANGED=yes' >>"$CI_PROJECT_DIR/env.env"  # Save if changed, see artifacts
+          ;;
+        *) exit "$?" ;;
+      esac
+    # Also put lockfile in root artifact directory for easy access, e.g. from PEP FOSS (via $MERGE_LOCKFILES_JOB)
+    - cp ./conan-ci.lock "$CI_PROJECT_DIR"
+    - echo "MERGE_LOCKFILES_JOB=$CI_JOB_ID" >>"$CI_PROJECT_DIR/env.env"  # Save, see artifacts
+  artifacts:
+    paths:
+      - ./builder/conan/conan-ci.lock
+      - ./conan-ci.lock
+    reports:
+      # Save $MERGE_LOCKFILES_JOB, $LOCKFILE_CHANGED for jobs below
+      dotenv: env.env
+
+
+# =========================================
+# ==== Install dependencies with Conan ====
+# =========================================
+# Pull the images that we built in the docker-image stage and
+# use the lockfile we just generated to install Conan dependencies in the containers (and Flatpak in a container).
+# Finally, push the updated containers under the same tag.
+
+.conan-builder:
+  stage: conan-install
+  dependencies:
+    - merge-lockfiles
   tags:
     - docker
   image: docker
   variables:
-    CONTAINER_IMAGE: ${PROJECT_REGISTRY}/${IMAGE_KIND}-${IMAGE_NAME}:${IMAGE_TAG_TEST}
+    CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/builder-$IMAGE_NAME:$IMAGE_TAG_TEST
   services:
     - docker:dind
-  before_script:
-    - apk add --no-cache jq coreutils  # Also add coreutils for `date` (Alpine/busybox date doesn't parse ISO-8601 well)
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - touch env.env
-    - |
-      prev_created=$(docker buildx imagetools inspect ${PROJECT_REGISTRY}/${IMAGE_KIND}-${IMAGE_NAME}:${IMAGE_TAG} --format '{{json .Image}}' | jq --raw-output .created || true)
-      if [ -n "$prev_created" ]; then
-        diff_secs=$(($(date +%s) - $(date -d "$prev_created" +%s)))
-        diff_days=$((diff_secs / 60 / 60 / 24))
-        echo "Previous image created at $prev_created, $diff_days days ($diff_secs s) ago"
-        if [ "$diff_days" -lt "${IMAGE_MAX_AGE_DAYS}" ]; then
-          echo "Recent enough, won't rebuild"
-          exit
-        else
-          echo 'Not recent enough, will rebuild'
-        fi
-      else
-        echo 'No existing image for this commit'
-      fi
-      echo 'NEW_IMAGE=1' >>env.env  # Save, see artifacts
-    - echo "Tagging image as $CONTAINER_IMAGE"
-    - *set_concurrency_limit
+  #language=sh
   script:
-    - echo '==== Building & pushing image ===='
-    - >
-      docker buildx build
-      --pull
-      --push
-      --file ./${IMAGE_KIND}/${IMAGE_NAME}.Dockerfile
-      --tag ${CONTAINER_IMAGE}
-      ${DOCKER_ARGS}
-      ./${IMAGE_KIND}/
-  artifacts:
-    reports:
-      # Save $NEW_IMAGE for jobs below
-      dotenv: env.env
-
-.conan-builder-base:
-  extends: .docker-base
-  variables:
-    IMAGE_KIND: builder
-  script:  # Override
-    - echo '==== Building image ===='
-    - >
-      docker build
-      --file ./${IMAGE_KIND}/${IMAGE_NAME}.Dockerfile
-      --tag ${CONTAINER_IMAGE}
-      ${DOCKER_ARGS}
-      ./${IMAGE_KIND}/
-
-    - echo "==== Executing Conan in container ===="
-    - container="$(docker container run --interactive --detach ${CONTAINER_IMAGE})"
-    - |
-      if [ -d ./${IMAGE_KIND}/cache/conan-home/ ]; then
-        echo 'Copying cached .conan2 folder'
-        docker cp ./${IMAGE_KIND}/cache/conan-home/ "$container:/root/.conan2/"
-      fi
-    - docker container cp ./${IMAGE_KIND}/conan/ "$container:/tmp/conan"
+    - *script_header
+    - *set_concurrency_limit
+    - *docker_login
+    - bold '==== Executing Conan in container ===='
+    - container="$(docker container run --pull=always --interactive --detach "$CONTAINER_IMAGE")"
+    - if [ -d ./builder/cache/conan-home/ ]; then
+    -   echo 'Copying cached .conan2 folder'
+    -   docker container cp ./builder/cache/conan-home/ "$container:/root/.conan2/"
+    - fi
+    - docker container cp ./builder/conan/ "$container:/tmp/conan"
     - docker container exec "$container" /tmp/conan/conan_install.sh "$concurrency_limit"
     - docker container exec "$container" rm -rf '/tmp/*'
-    - rm -rf ./${IMAGE_KIND}/cache/conan-home/
-    - mkdir -p ./${IMAGE_KIND}/cache/
-    - docker container cp "$container:/root/.conan2/" ./${IMAGE_KIND}/cache/conan-home
+    - rm -rf ./builder/cache/conan-home/
+    - mkdir -p ./builder/cache/
+    - docker container cp "$container:/root/.conan2/" ./builder/cache/conan-home
     - docker container stop "$container"
-    - docker container commit --message 'Add Conan packages' "$container" ${CONTAINER_IMAGE}
+    - docker container commit --message 'Add Conan packages' "$container" "$CONTAINER_IMAGE"
 
-    - echo "==== Pushing image ===="
-    - docker push ${CONTAINER_IMAGE}
+    - bold '==== Pushing image ===='
+    - docker push "$CONTAINER_IMAGE"
   cache:
     key: docker-builder-cache
     paths:
-      - ./${IMAGE_KIND}/cache/
+      - ./builder/cache/
 
 builder/ubuntu-2204:
-  extends: .conan-builder-base
+  extends: .conan-builder
   variables:
     IMAGE_NAME: ubuntu-2204
 
 builder/ubuntu-rolling:
-  extends: .conan-builder-base
+  extends: .conan-builder
   variables:
     IMAGE_NAME: ubuntu-rolling
 
 builder/flatpak:
-  extends: .docker-base
+  stage: conan-install
+  # We need both the image with flatpak-builder and the lockfile
+  needs:
+    - builder/base/flatpak
+  rules:
+    - if: $UPDATE_LOCKFILE == 'branches only' && $CI_COMMIT_BRANCH
+      needs:
+        - builder/base/flatpak
+        - merge-lockfiles
+    - when: on_success
+  tags:
+    - docker
+  image: docker
   variables:
-    IMAGE_KIND: builder
     IMAGE_NAME: flatpak
-  script:  # Override
-    - echo '==== Building image ===='
-    - >
-      docker build
-      --file ./${IMAGE_KIND}/${IMAGE_NAME}.Dockerfile
-      --tag ${CONTAINER_IMAGE}
-      ${DOCKER_ARGS}
-      ./${IMAGE_KIND}/
-
-    - echo "==== Executing Flatpak Builder with Conan in container ===="
+    CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/builder-$IMAGE_NAME:$IMAGE_TAG_TEST
+  services:
+    - docker:dind
+  #language=sh
+  script:
+    - *script_header
+    - *set_concurrency_limit
+    - *docker_login
+    - bold '==== Executing Flatpak Builder with Conan in container ===='
     # --privileged is necessary for flatpak-builder, see https://github.com/flatpak/flatpak-builder/issues/237
-    - container="$(docker container run --privileged --interactive --detach ${CONTAINER_IMAGE})"
+    - container="$(docker container run --pull=always --privileged --interactive --detach "$CONTAINER_IMAGE")"
     #TODO Cache ~/.conan2 like above?
-    - docker container cp ./${IMAGE_KIND}/flatpak/ "$container:/tmp/flatpak"
-    - docker container cp ./${IMAGE_KIND}/conan/ "$container:/tmp/conan"
+    - docker container cp ./builder/flatpak/ "$container:/tmp/flatpak"
+    - docker container cp ./builder/conan/ "$container:/tmp/conan"
     - |
+      concurrency_option=''
       if [ -n "$concurrency_limit" ]; then
         concurrency_option="--jobs=$concurrency_limit"
       fi
@@ -159,59 +412,242 @@ builder/flatpak:
     - docker container exec "$container" flatpak build-bundle /tmp/flatpak/repo /pep-base.flatpak nl.ru.cs.pep.base --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo
     - docker container exec "$container" rm -rf '/tmp/*'
     - docker container stop "$container"
-    - docker container commit --message 'Build base flatpak with Conan packages' "$container" ${CONTAINER_IMAGE}
+    - docker container commit --message 'Build base flatpak with Conan packages' "$container" "$CONTAINER_IMAGE"
 
-    - echo "==== Pushing image ===="
-    - docker push ${CONTAINER_IMAGE}
-
-runtime/ubuntu-2204:
-  extends: .docker-base
-  variables:
-    IMAGE_KIND: runtime
-    IMAGE_NAME: ubuntu-2204
+    - bold '==== Pushing image ===='
+    - docker push "$CONTAINER_IMAGE"
 
 
+# =====================
+# ==== Test images ====
+# =====================
+# Test if PEP FOSS still builds with the images we just built:
+# start a pipeline in the FOSS repo that overrides the docker-build version
+# and forwards the updated lockfile
 test-images:
-  stage: analyze
+  stage: test-images
   rules:
-    # Only enable on schedule branches, and do not create MR pipelines (see https://docs.gitlab.com/ee/ci/pipelines/merge_request_pipelines.html )
-    - if: $CI_COMMIT_BRANCH !~ $SCHEDULE_BRANCHES_REGEX || $CI_PIPELINE_SOURCE == 'merge_request_event'
-      when: never
-    - when: on_success
+    - if:
+        $TEST_BEFORE_DEPLOY == 'always' ||
+        (
+          $TEST_BEFORE_DEPLOY == 'necessary' &&
+          ($CI_COMMIT_REF_PROTECTED == 'true' || $CI_PIPELINE_SOURCE == 'schedule')
+        )
+    - when: manual
+      allow_failure: true  # Make sure that the pipeline still continues
   tags:
     - docker-small
   image: alpine
+  #language=sh
   script:
+    - *script_header
     - apk add --no-cache jq curl
-    - ./run-pipeline.sh ${IMAGE_TAG_TEST} "${CORE_TEST_REF}"
+    # $MERGE_LOCKFILES_JOB may not be set if $UPDATE_LOCKFILE is false
+    - ./run-pipeline.sh "$IMAGE_TAG_TEST" "$FOSS_REF" "${MERGE_LOCKFILES_JOB-}"
 
-test-images-manual:
-  stage: analyze-manual
-  when: manual
-  tags:
-    - docker-small
-  image: alpine
-  script:
-    # We don't check $NEW_IMAGE here, because we want to make sure that when a commit is added to a different branch,
-    #  we run a pipeline in PEP core in the corresponding branch
-    - apk add --no-cache jq curl
-    - ./run-pipeline.sh ${IMAGE_TAG} "${CORE_TEST_REF}"
 
-deploy-images:
+# ================
+# ==== Deploy ====
+# ================
+# If lockfile was updated:
+# - Make commit in docker-build
+# - Retag test images for that commit
+# - If $UPDATE_FOSS: Update submodule & RUNNER_IMAGE_TAG in $FOSS_REF to that commit
+# If lockfile wasn't updated:
+# - Retag test images for our commit
+deploy:
   stage: deploy
+  dependencies:
+    - merge-lockfiles
+  # We don't want to run this concurrently for the same commit, as the final image names etc. will be the same.
+  # I'd like to add $CI_COMMIT_SHA here, but resource groups are persistent and I don't want to create infinitely many,
+  # so this now also disallows deploys for different commits from running simultaneously
+  resource_group: $CI_JOB_NAME_SLUG
   tags:
     - docker-small
   image: docker
-  services:
-    - docker:dind
+  variables:
+    GIT_STRATEGY: none  # Do not fetch nor clean working tree
+  #language=sh
   script:
-    # A better way to skip jobs is not yet available, see https://gitlab.com/gitlab-org/gitlab/-/issues/292816, https://gitlab.com/gitlab-org/gitlab/-/issues/329217
-    # $NEW_IMAGE is retrieved from jobs above via env.env
-    - if [ "$NEW_IMAGE" != 1 ]; then exit; fi
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - *script_header
+
+    # -====- Figure out what we have to do with the images -====-
+
+    - if [ -n "${LOCKFILE_CHANGED-}" ]; then
+    #   We will commit and retag below
+    -   |
+        bold 'Lockfile was changed, so we cannot retag the built images for this commit'
+        bold "Hence we need to update $CI_PROJECT_NAME, and retag images for the new commit"
+
+    - else
+    #   Retag here
+    -   bold 'Retagging test images just built for this commit'
+    -   *docker_login
+    -   |
+        for image in $DEPLOY_IMAGES; do
+          echo "Retagging $image:$IMAGE_TAG_TEST as $CI_REGISTRY_IMAGE/$image:$IMAGE_TAG"
+          docker buildx imagetools create "$CI_REGISTRY_IMAGE/$image:$IMAGE_TAG_TEST" --tag "$CI_REGISTRY_IMAGE/$image:$IMAGE_TAG"
+        done
+
+    #   We don't need to update the lockfile. If we also don't need to check if FOSS is up-to-date, we can stop here
+    -   |
+        if [ "$UPDATE_FOSS" = no ]; then
+          warn "Won't commit anything, lockfile did not change and UPDATE_FOSS is false"
+          exit
+        fi
+    - fi
+
+    # -====- Update repositories -====-
+
+    # ==== Clone docker-build, and PEP FOSS repo if necessary (with docker-build as submodule) ====
+    - apk add --no-cache git
+    - *git_colors
+    # Do not put token in the URL to prevent it from being printed on clone
     - |
-      for image in ${DEPLOY_IMAGES}; do
-        echo "Retagging $image:${IMAGE_TAG_TEST} as ${PROJECT_REGISTRY}/$image:${IMAGE_TAG}"
-        # This assumes sha-test tags of an image will not be cleaned up if it is still recent and thus reused
-        docker buildx imagetools create --tag ${PROJECT_REGISTRY}/$image:${IMAGE_TAG} ${PROJECT_REGISTRY}/$image:${IMAGE_TAG_TEST}
-      done
+      cat >./git-password.sh <<'EOF'
+      #!/usr/bin/env sh
+      exec echo "$GITLAB_ACCESS_TOKEN"
+      EOF
+      chmod +x ./git-password.sh
+      git config --global core.askPass "$PWD/git-password.sh"
+    - |
+      git config --global user.email support@pep.cs.ru.nl
+      git config --global user.name "Gitlab CI script from $CI_PROJECT_NAME"
+
+    - if [ "$UPDATE_FOSS" != no ]; then
+    -   bold "Cloning $FOSS_PROJECT and $CI_PROJECT_NAME"
+    -   rm -rf ./pep
+    #   --depth=1: Shallow clone: do not fetch history
+    #   This requires $FOSS_REF to exist
+    -   git clone
+        --branch="$FOSS_REF"
+        --no-tags
+        --depth=1
+        --shallow-submodules
+        --recurse-submodules=docker-build
+        "$CI_SERVER_URL/$FOSS_PROJECT.git" ./pep
+    -   foss_repo="$CI_PROJECT_DIR/pep"
+    -   docker_build_repo="$foss_repo/docker-build"
+    - else
+    -   bold "Cloning only $CI_PROJECT_NAME"
+    -   rm -rf ./docker-build
+    -   git clone
+        --branch="$CI_COMMIT_BRANCH"
+        --no-tags
+        --depth=1
+        "$CI_PROJECT_URL.git" ./docker-build
+    -   docker_build_repo="$CI_PROJECT_DIR/docker-build"
+    - fi
+
+    # ==== Update docker-build submodule ====
+    - bold "Updating $CI_PROJECT_NAME"
+    - cd "$docker_build_repo"
+    # Is this a branch pipeline?
+    - if [ -n "${CI_COMMIT_BRANCH-}" ]; then
+    #   By default, submodule has only main branch
+    -   git remote set-branches origin "$CI_COMMIT_BRANCH"
+    -   git fetch origin "$CI_COMMIT_BRANCH"
+    #   Checkout our branch
+    -   git switch "$CI_COMMIT_BRANCH"
+    - else
+    #   If this is a tag pipeline, we just check out the tag to update the submodule in FOSS.
+    #   We won't be able to commit the lockfile, but in that case update is disabled above anyway
+    -   git fetch origin "$CI_COMMIT_REF_NAME"
+    -   git checkout FETCH_HEAD
+    - fi
+
+    # Is the commit SHA from this pipeline the tip of our branch/tag?
+    - |
+      tip="$(git rev-parse HEAD)"
+      if [ "$tip" != "$CI_COMMIT_SHA" ]; then
+        >&2 warn "This ($CI_COMMIT_SHA) is not the latest $CI_PROJECT_NAME commit for $CI_COMMIT_REF_NAME, that is $tip"
+        exit 1
+      fi
+    - if [ -n "${LOCKFILE_CHANGED-}" ]; then
+    -   bold "Committing lockfile in $CI_PROJECT_NAME"
+    -   mv --force "$CI_PROJECT_DIR/conan-ci.lock" ./builder/conan/
+    -   git add .; git status
+    -   |
+        git commit -m "Update conan-ci.lock for pipeline $CI_PIPELINE_ID
+        $CI_JOB_URL"
+    - fi
+    - docker_build_commit="$(git rev-parse HEAD)"
+    - cd "$CI_PROJECT_DIR"
+    - new_image_tag="$IMAGE_TAG_PREFIX$docker_build_commit"
+
+    # ==== Update PEP FOSS repo ====
+    - updated_foss=''
+    - if [ "$UPDATE_FOSS" != no ]; then
+    -   cd "$foss_repo"
+    #   $FOSS_REF exists, but is it a branch?
+    -   if ! git show-ref --heads "$FOSS_REF"; then
+    -     warn "$FOSS_PROJECT $FOSS_REF is not a branch, will not update FOSS repo"
+    -   else
+    -     bold "Committing in $FOSS_PROJECT"
+    #     We just updated the submodule, now update the image tag as well
+    -     runner_image_yml=./ci_cd/docker-common.yml
+    -     sed --in-place "s/\(RUNNER_IMAGE_TAG:\s*\)\S*/\1$new_image_tag/" "$runner_image_yml"
+    #     Make sure sed actually matched something
+    -     |
+          if ! grep -q "RUNNER_IMAGE_TAG:\s*$new_image_tag" "$runner_image_yml"; then
+            >&2 warn "Failed to update $runner_image_yml in $FOSS_PROJECT"
+            >&2 warn 'Make sure that the file has a line like "RUNNER_IMAGE_TAG: ..."'
+            exit 1
+          fi
+    #     Did we update docker-build (via checkout / lockfile commit) or the RUNNER_IMAGE_TAG?
+    #     Or was PEP FOSS already up-to-date?
+    -     |
+          git diff --exit-code && true
+          case "$?" in
+            0) # No differences
+              bold "$FOSS_PROJECT was already up-to-date"
+              foss_up_to_date=yes
+              ;;
+            1) foss_up_to_date='' ;;
+            *) exit "$?" ;;
+          esac
+    -     if [ -z "$foss_up_to_date" ]; then
+    #       Commit updates
+    -       git add .; git status
+    -       |
+            git commit -m "Update docker-build for pipeline $CI_PIPELINE_ID
+            $CI_JOB_URL"
+    -       updated_foss=yes
+    -     fi
+    -   fi
+    -   foss_commit="$(git rev-parse HEAD)"
+    -   cd "$CI_PROJECT_DIR"
+    - fi
+
+    # ==== Retag built images for created docker-build commit ====
+    - if [ -n "${LOCKFILE_CHANGED-}" ]; then
+    -   bold "Retagging images just built as those for the new $CI_PROJECT_NAME commit ($docker_build_commit)"
+    -   *docker_login
+    -   |
+        for image in $DEPLOY_IMAGES; do
+          echo "Retagging $image:$IMAGE_TAG_TEST as $CI_REGISTRY_IMAGE/$image:$new_image_tag"
+          docker buildx imagetools create "$CI_REGISTRY_IMAGE/$image:$IMAGE_TAG_TEST" --tag "$CI_REGISTRY_IMAGE/$image:$new_image_tag"
+        done
+    - fi
+
+    # ==== Push commits ====
+
+    - if [ -n "${LOCKFILE_CHANGED-}" ]; then
+    -   bold "Pushing $CI_PROJECT_NAME"
+    -   (
+    -     cd "$docker_build_repo"
+    -     git push -o ci.skip
+    -     'bold "Made commit at: $CI_PROJECT_URL/-/commit/$docker_build_commit"'
+    -   )
+    - fi
+
+    - if [ -n "$updated_foss" ]; then
+    -   (
+    -     cd "$foss_repo"
+    -     bold "Pushing $FOSS_PROJECT"
+          # The pipeline triggered by this should terminate with the same status as the test pipeline (if we ran one above)
+    -     git push
+    -     'bold "Made commit at: $CI_SERVER_URL/$FOSS_PROJECT/-/commit/$foss_commit"'
+    -   )
+    - fi
