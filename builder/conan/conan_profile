@@ -31,7 +31,7 @@ compiler.runtime={{runtime}}
 [conf]
 {% if compiler_exe -%}
 # Specify executables consistent with compiler in settings above
-tools.build:compiler_executables={ 'c':'{{c_compiler_exe}}', 'c++':'{{cxx_compiler_exe}}' }
+tools.build:compiler_executables={ 'c':'{{c_compiler_exe}}', 'cpp':'{{cxx_compiler_exe}}' }
 {%- endif %}
 
 {% if compiler != 'msvc' %} tools.cmake.cmaketoolchain:generator=Ninja {% endif %}
