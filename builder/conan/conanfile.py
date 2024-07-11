@@ -148,7 +148,6 @@ class PepRecipe(ConanFile):
                 'bzip2': False,
 
                 # 'without_atomic': True,  # Transitive (required by other Boost components)
-                'without_charconv': True,
                 # 'without_chrono': True,  # Transitive
                 'without_cobalt': True,
                 # 'without_container': True,  # Transitive
