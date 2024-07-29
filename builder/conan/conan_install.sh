@@ -4,7 +4,7 @@ set -eu
 concurrency_limit=${1:-}
 
 # cd to script directory
-cd "${0%/*}"
+cd "$(dirname -- "$0")"
 
 if [ -n "$concurrency_limit" ]; then
   concurrency_option_conan="-c:a tools.build:jobs=$concurrency_limit"

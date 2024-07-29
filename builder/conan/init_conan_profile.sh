@@ -18,7 +18,7 @@ if [ -e "$conan_profile" ]; then
 fi
 
 # Render our autodetect profile and take one section ('Build profile:') to put in the profile file (and print)
-conan profile show --profile:all="${0%/*}/conan_profile" |
+conan profile show --profile:all="$(dirname -- "$0")/conan_profile" |
   awk 'p==1 {print $0} /Build profile:/ {p=1}' |
   tee "$conan_profile"
 echo "Profile written to $conan_profile"
