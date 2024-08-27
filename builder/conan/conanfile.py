@@ -238,7 +238,7 @@ class PepRecipe(ConanFile):
         if self.options.with_benchmark:
             self.requires('benchmark/[^1.8]')
 
-        self.requires('inja/3.4.0')
+        self.requires('inja/[^3.4]')
 
     def build_requirements(self):
         # Add these to PATH
