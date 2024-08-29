@@ -201,6 +201,7 @@ class PepRecipe(ConanFile):
             'no_rc2': True,
             'no_rc4': True,
             'no_ssl3': True,
+            **({'openssldir': '/etc/ssl'} if self.settings.os == 'Macos'),
         }))
         self.requires('prometheus-cpp/[^1.1]', options=self._optional_opts({
             'with_pull': False,
