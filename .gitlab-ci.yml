@@ -21,9 +21,9 @@ variables:
     description: Override to set branch/ref of the PEP FOSS repo to test images on & commit to (for a branch)
 
   UPDATE_LOCKFILE:
-    value: 'conanfile changed'
+    value: necessary
     options:
-      - 'conanfile changed'  # Only for branch pipelines where conanfile.py changed
+      - necessary  # Only for branch pipelines where conanfile.py changed
       - 'yes'  # Only for branch pipelines
       - 'no'
     description: Update conan-ci.lock
@@ -174,7 +174,8 @@ runtime/ubuntu-2204:
     - if: $UPDATE_LOCKFILE == 'no' || $CI_COMMIT_BRANCH == ''
       when: never
     - if: $UPDATE_LOCKFILE == 'yes'
-    - if: $UPDATE_LOCKFILE == 'conanfile changed'
+    - if: $UPDATE_LOCKFILE == 'necessary' && $CI_PIPELINE_SOURCE == 'schedule'
+    - if: $UPDATE_LOCKFILE == 'necessary'
       changes: ./builder/conan/conanfile.py
   variables:
     CLICOLOR_FORCE: '1'  # Colored output for Conan
@@ -274,6 +275,7 @@ merge-lockfiles:
     - if: $UPDATE_LOCKFILE == 'no' || $CI_COMMIT_BRANCH == ''
       when: never
     - if: $UPDATE_LOCKFILE == 'yes'
+    - if: $UPDATE_LOCKFILE == 'necessary' && $CI_PIPELINE_SOURCE == 'schedule'
     - if: $UPDATE_LOCKFILE == 'conanfile changed'
       changes: ./builder/conan/conanfile.py
   tags:
@@ -388,7 +390,7 @@ builder/flatpak:
     - builder/base/flatpak
   rules:
     - if: $UPDATE_LOCKFILE == 'no' || $CI_COMMIT_BRANCH == ''
-    - if: $UPDATE_LOCKFILE == 'yes'
+    - if: $UPDATE_LOCKFILE == 'yes' || ($UPDATE_LOCKFILE == 'necessary' && $CI_PIPELINE_SOURCE == 'schedule')
       needs:
         - builder/base/flatpak
         - merge-lockfiles
