@@ -176,7 +176,8 @@ runtime/ubuntu-2204:
     - if: $UPDATE_LOCKFILE == 'yes'
     - if: $UPDATE_LOCKFILE == 'necessary' && $CI_PIPELINE_SOURCE == 'schedule'
     - if: $UPDATE_LOCKFILE == 'necessary'
-      changes: ./builder/conan/conanfile.py
+      changes:
+        - builder/conan/conanfile.py
   variables:
     CLICOLOR_FORCE: '1'  # Colored output for Conan
   before_script:
@@ -276,8 +277,9 @@ merge-lockfiles:
       when: never
     - if: $UPDATE_LOCKFILE == 'yes'
     - if: $UPDATE_LOCKFILE == 'necessary' && $CI_PIPELINE_SOURCE == 'schedule'
-    - if: $UPDATE_LOCKFILE == 'conanfile changed'
-      changes: ./builder/conan/conanfile.py
+    - if: $UPDATE_LOCKFILE == 'necessary'
+      changes:
+        - builder/conan/conanfile.py
   tags:
     - docker-small
   image: $CI_REGISTRY_IMAGE/builder-ubuntu-2204:$IMAGE_TAG_TEST
@@ -394,8 +396,9 @@ builder/flatpak:
       needs:
         - builder/base/flatpak
         - merge-lockfiles
-    - if: $UPDATE_LOCKFILE == 'conanfile changed'
-      changes: ./builder/conan/conanfile.py
+    - if: $UPDATE_LOCKFILE == 'necessary'
+      changes:
+        - builder/conan/conanfile.py
       needs:
         - builder/base/flatpak
         - merge-lockfiles
