@@ -171,7 +171,7 @@ runtime/ubuntu-2204:
 .generate-lockfile:
   stage: generate-lockfile
   rules:
-    - if: $UPDATE_LOCKFILE == 'no' || $CI_COMMIT_BRANCH == ''
+    - if: $UPDATE_LOCKFILE == 'no' || $CI_COMMIT_BRANCH == null
       when: never
     - if: $UPDATE_LOCKFILE == 'yes'
     - if: $UPDATE_LOCKFILE == 'necessary' && $CI_PIPELINE_SOURCE == 'schedule'
@@ -273,7 +273,7 @@ merge-lockfiles:
     - builder/lockfile/macos-arm
     - builder/lockfile/macos-x86
   rules:
-    - if: $UPDATE_LOCKFILE == 'no' || $CI_COMMIT_BRANCH == ''
+    - if: $UPDATE_LOCKFILE == 'no' || $CI_COMMIT_BRANCH == null
       when: never
     - if: $UPDATE_LOCKFILE == 'yes'
     - if: $UPDATE_LOCKFILE == 'necessary' && $CI_PIPELINE_SOURCE == 'schedule'
@@ -391,7 +391,7 @@ builder/flatpak:
   needs:
     - builder/base/flatpak
   rules:
-    - if: $UPDATE_LOCKFILE == 'no' || $CI_COMMIT_BRANCH == ''
+    - if: $UPDATE_LOCKFILE == 'no' || $CI_COMMIT_BRANCH == null
     - if: $UPDATE_LOCKFILE == 'yes' || ($UPDATE_LOCKFILE == 'necessary' && $CI_PIPELINE_SOURCE == 'schedule')
       needs:
         - builder/base/flatpak
