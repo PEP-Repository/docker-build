@@ -21,9 +21,9 @@ variables:
     description: Override to set branch/ref of the PEP FOSS repo to test images on & commit to (for a branch)
 
   UPDATE_LOCKFILE:
-    value: necessary
+    value: 'necessary'
     options:
-      - necessary  # Only for branch pipelines where conanfile.py changed
+      - 'necessary'  # Only for branch pipelines where conanfile.py changed
       - 'yes'  # Only for branch pipelines
       - 'no'
     description: Update conan-ci.lock
