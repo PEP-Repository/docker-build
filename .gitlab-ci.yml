@@ -586,7 +586,7 @@ deploy:
     - if [ -n "${LOCKFILE_CHANGED-}" ]; then
     -   bold "Committing lockfile in $CI_PROJECT_NAME"
     -   mv --force "$CI_PROJECT_DIR/conan-ci.lock" ./builder/conan/
-    -   git add .; git status
+    -   git add --intent-to-add .; git status -v
     -   |
         git commit -m "Update conan-ci.lock for pipeline $CI_PIPELINE_ID
         $CI_JOB_URL"
