@@ -21,9 +21,10 @@ variables:
     description: Override to set branch/ref of the PEP FOSS repo to test images on & commit to (for a branch)
 
   UPDATE_LOCKFILE:
-    value: 'branches only'
+    value: 'conanfile changed'
     options:
-      - 'branches only'  # Only for branch pipelines
+      - 'conanfile changed'  # Only for branch pipelines where conanfile.py changed
+      - 'yes'  # Only for branch pipelines
       - 'no'
     description: Update conan-ci.lock
   TEST_BEFORE_DEPLOY:
@@ -170,7 +171,11 @@ runtime/ubuntu-2204:
 .generate-lockfile:
   stage: generate-lockfile
   rules:
-    - if: $UPDATE_LOCKFILE == 'branches only' && $CI_COMMIT_BRANCH
+    - if: $UPDATE_LOCKFILE == 'no' || $CI_COMMIT_BRANCH == ''
+      when: never
+    - if: $UPDATE_LOCKFILE == 'yes'
+    - if: $UPDATE_LOCKFILE == 'conanfile changed'
+      changes: ./builder/conan/conanfile.py
   variables:
     CLICOLOR_FORCE: '1'  # Colored output for Conan
   before_script:
@@ -266,7 +271,11 @@ merge-lockfiles:
     - builder/lockfile/macos-arm
     - builder/lockfile/macos-x86
   rules:
-    - if: $UPDATE_LOCKFILE == 'branches only' && $CI_COMMIT_BRANCH
+    - if: $UPDATE_LOCKFILE == 'no' || $CI_COMMIT_BRANCH == ''
+      when: never
+    - if: $UPDATE_LOCKFILE == 'yes'
+    - if: $UPDATE_LOCKFILE == 'conanfile changed'
+      changes: ./builder/conan/conanfile.py
   tags:
     - docker-small
   image: $CI_REGISTRY_IMAGE/builder-ubuntu-2204:$IMAGE_TAG_TEST
@@ -378,11 +387,16 @@ builder/flatpak:
   needs:
     - builder/base/flatpak
   rules:
-    - if: $UPDATE_LOCKFILE == 'branches only' && $CI_COMMIT_BRANCH
+    - if: $UPDATE_LOCKFILE == 'no' || $CI_COMMIT_BRANCH == ''
+    - if: $UPDATE_LOCKFILE == 'yes'
       needs:
         - builder/base/flatpak
         - merge-lockfiles
-    - when: on_success
+    - if: $UPDATE_LOCKFILE == 'conanfile changed'
+      changes: ./builder/conan/conanfile.py
+      needs:
+        - builder/base/flatpak
+        - merge-lockfiles
   tags:
     - docker
   image: docker
