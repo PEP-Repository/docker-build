@@ -387,7 +387,9 @@ builder/ubuntu-rolling:
 
 builder/flatpak:
   stage: conan-install
-  # We need both the image with flatpak-builder and the lockfile
+  # We need both the image with flatpak-builder and the lockfile,
+  # so we add the merge-lockfiles dependency if that job is run,
+  # and run this job in any case
   needs:
     - builder/base/flatpak
   rules:
@@ -402,6 +404,7 @@ builder/flatpak:
       needs:
         - builder/base/flatpak
         - merge-lockfiles
+    - when: on_success
   tags:
     - docker
   image: docker
