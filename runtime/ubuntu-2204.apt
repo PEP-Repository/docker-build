@@ -8,6 +8,7 @@ xxd
 
 # PEP dependencies
 libstdc++6
+tzdata  # For timezone info (/usr/share/zoneinfo, used e.g. in `date` package)
 
 # For autocompletion
 bash-completion
