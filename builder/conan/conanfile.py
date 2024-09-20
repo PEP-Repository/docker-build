@@ -206,7 +206,7 @@ class PepRecipe(ConanFile):
             'with_pull': False,
         }))
         self.requires('protobuf/[^3.21]')
-        self.requires('sqlite_orm/[^1.8]')
+        self.requires('sqlite_orm/[~1.8 || ^1.9.1]') # Exclude 1.9, because of https://github.com/fnc12/sqlite_orm/issues/1346
         self.requires('xxhash/[^0.8.2]', options=self._optional_opts({
             'utility': False,
         }))
