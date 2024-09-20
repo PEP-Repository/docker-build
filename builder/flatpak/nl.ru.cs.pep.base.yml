@@ -4,7 +4,8 @@ runtime-version: '6.6'
 sdk: org.kde.Sdk
 build-options:
   env:
-    CLICOLOR_FORCE: '1'  # Colored output for e.g. Conan
+    CMAKE_COLOR_DIAGNOSTICS: 'ON'  # Let CMake pass -fcolor-diagnostics
+    CLICOLOR_FORCE: '1'  # Colored output for e.g. Conan & Ninja (otherwise -fcolor-diagnostics still won't work)
 modules:
   - name: conan
     buildsystem: simple
