@@ -360,7 +360,7 @@ merge-lockfiles:
     -   docker container cp ./builder/cache/conan-home/ "$container:/root/.conan2/"
     - fi
     - docker container cp ./builder/conan/ "$container:/tmp/conan"
-    - docker container exec "$container" /tmp/conan/conan_install.sh "$concurrency_limit"
+    - docker container exec "$container" /tmp/conan/conan_install_ci.sh "$concurrency_limit"
     - docker container exec "$container" rm -rf '/tmp/*'
     - rm -rf ./builder/cache/conan-home/
     - mkdir -p ./builder/cache/
