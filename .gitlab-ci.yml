@@ -47,6 +47,7 @@ variables:
     builder-ubuntu-2204
     builder-ubuntu-rolling
     builder-flatpak
+    builder-website
     runtime-ubuntu-2204
 
 # Applies to whole pipeline
