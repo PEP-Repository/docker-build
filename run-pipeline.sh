@@ -25,7 +25,8 @@ response=$(curl --no-progress-meter --fail --globoff --request POST "$CI_API_V4_
     --data-urlencode "variables[FORCE_BUILD_STABLE_RELEASE]=yes" \
     --data-urlencode "variables[RUNNER_IMAGE_TAG]=$image_tag" \
     --data-urlencode "variables[OVERRIDE_DOCKER_BUILD_REF]=$CI_COMMIT_SHA" \
-    --data-urlencode "variables[DOCKER_BUILD_LOCKFILE_JOB]=$lockfile_job"
+    --data-urlencode "variables[DOCKER_BUILD_LOCKFILE_JOB]=$lockfile_job" \
+    --data-urlencode "variables[FORCE_BUILD_DOCS]=true"
 )
 echo "Response: $response"
 pipelineid=$(echo "$response" | jq ".id")
