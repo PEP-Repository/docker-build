@@ -48,7 +48,6 @@ variables:
     builder-ubuntu-rolling
     builder-flatpak
     builder-website
-    builder-docs
     runtime-ubuntu-2204
 
 # Applies to whole pipeline
@@ -157,12 +156,6 @@ builder/base/website:
   variables:
     IMAGE_KIND: builder
     IMAGE_NAME: website
-
-builder/base/docs:
-  extends: .docker-image
-  variables:
-    IMAGE_KIND: builder
-    IMAGE_NAME: docs
 
 # ==== Runtimes ====
 
