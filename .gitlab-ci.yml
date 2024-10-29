@@ -44,11 +44,11 @@ variables:
   # This is a YAML space-separated string, equivalent to >-, see https://yaml-multiline.info/
   # Images that we push in this pipeline
   DEPLOY_IMAGES:
-    builder-ubuntu-2204
+    builder-ubuntu-lts
     builder-ubuntu-rolling
     builder-flatpak
     builder-website
-    runtime-ubuntu-2204
+    runtime-ubuntu-lts
 
 # Applies to whole pipeline
 workflow:
@@ -133,11 +133,11 @@ workflow:
 
 # ==== Builders ====
 
-builder/base/ubuntu-2204:
+builder/base/ubuntu-lts:
   extends: .docker-image
   variables:
     IMAGE_KIND: builder
-    IMAGE_NAME: ubuntu-2204
+    IMAGE_NAME: ubuntu-lts
 
 builder/base/ubuntu-rolling:
   extends: .docker-image
@@ -159,11 +159,11 @@ builder/base/website:
 
 # ==== Runtimes ====
 
-runtime/ubuntu-2204:
+runtime/ubuntu-lts:
   extends: .docker-image
   variables:
     IMAGE_KIND: runtime
-    IMAGE_NAME: ubuntu-2204
+    IMAGE_NAME: ubuntu-lts
 
 
 # ===========================
@@ -226,12 +226,12 @@ runtime/ubuntu-2204:
     - docker-small
   image: $CI_REGISTRY_IMAGE/builder-$name:$IMAGE_TAG_TEST
 
-builder/lockfile/ubuntu-2204:
+builder/lockfile/ubuntu-lts:
   extends: .generate-lockfile-docker
   needs:
-    - builder/base/ubuntu-2204
+    - builder/base/ubuntu-lts
   variables:
-    name: ubuntu-2204
+    name: ubuntu-lts
 
 # Generally, this should be the same as the LTS, but let's include it anyway
 builder/lockfile/ubuntu-rolling:
@@ -274,7 +274,7 @@ builder/lockfile/macos-x86:
 merge-lockfiles:
   stage: generate-lockfile
   needs:
-    - builder/lockfile/ubuntu-2204
+    - builder/lockfile/ubuntu-lts
     - builder/lockfile/ubuntu-rolling
     - builder/lockfile/windows
     - builder/lockfile/macos-arm
@@ -289,7 +289,7 @@ merge-lockfiles:
         - builder/conan/conanfile.py
   tags:
     - docker-small
-  image: $CI_REGISTRY_IMAGE/builder-ubuntu-2204:$IMAGE_TAG_TEST
+  image: $CI_REGISTRY_IMAGE/builder-ubuntu-lts:$IMAGE_TAG_TEST
   #language=bash
   script:
     - touch "$CI_PROJECT_DIR/env.env"
@@ -297,7 +297,7 @@ merge-lockfiles:
     - *git_colors
     - cd ./builder/conan/
     - jobs=(
-        ubuntu-2204
+        ubuntu-lts
         ubuntu-rolling
         windows
         macos-arm
@@ -382,10 +382,10 @@ merge-lockfiles:
     paths:
       - ./builder/cache/
 
-builder/ubuntu-2204:
+builder/ubuntu-lts:
   extends: .conan-builder
   variables:
-    IMAGE_NAME: ubuntu-2204
+    IMAGE_NAME: ubuntu-lts
 
 builder/ubuntu-rolling:
   extends: .conan-builder
