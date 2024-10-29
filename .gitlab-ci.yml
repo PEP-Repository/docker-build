@@ -47,7 +47,7 @@ variables:
     builder-ubuntu-lts
     builder-ubuntu-rolling
     builder-flatpak
-    builder-website
+    runtime-ubuntu-2204
     runtime-ubuntu-lts
 
 # Applies to whole pipeline
@@ -151,11 +151,6 @@ builder/base/flatpak:
     IMAGE_KIND: builder
     IMAGE_NAME: flatpak
 
-builder/base/website:
-  extends: .docker-image
-  variables:
-    IMAGE_KIND: builder
-    IMAGE_NAME: website
 
 # ==== Runtimes ====
 
