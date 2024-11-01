@@ -47,7 +47,6 @@ variables:
     builder-ubuntu-lts
     builder-ubuntu-rolling
     builder-flatpak
-    runtime-ubuntu-2204
     runtime-ubuntu-lts
 
 # Applies to whole pipeline
