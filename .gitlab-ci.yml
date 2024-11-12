@@ -23,7 +23,7 @@ variables:
   UPDATE_LOCKFILE:
     value: 'necessary'
     options:
-      - 'necessary'  # Only for branch pipelines where conanfile.py changed
+      - 'necessary'  # Only for branch pipelines where conanfile.py / conan_profile changed
       - 'yes'  # Only for branch pipelines
       - 'no'
     description: Update conan-ci.lock
@@ -179,6 +179,7 @@ runtime/ubuntu-lts:
     - if: $UPDATE_LOCKFILE == 'necessary'
       changes:
         - builder/conan/conanfile.py
+        - builder/conan/conan_profile
   variables:
     CLICOLOR_FORCE: '1'  # Colored output for Conan
   before_script:
@@ -281,6 +282,7 @@ merge-lockfiles:
     - if: $UPDATE_LOCKFILE == 'necessary'
       changes:
         - builder/conan/conanfile.py
+        - builder/conan/conan_profile
   tags:
     - docker-small
   image: $CI_REGISTRY_IMAGE/builder-ubuntu-lts:$IMAGE_TAG_TEST
@@ -402,6 +404,7 @@ builder/flatpak:
     - if: $UPDATE_LOCKFILE == 'necessary'
       changes:
         - builder/conan/conanfile.py
+        - builder/conan/conan_profile
       needs:
         - builder/base/flatpak
         - merge-lockfiles
