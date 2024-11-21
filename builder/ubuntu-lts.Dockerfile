@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu
 # CLICOLOR_FORCE: Colored output for e.g. Conan & Ninja (otherwise -fcolor-diagnostics still won't work)
 # CMAKE_COLOR_DIAGNOSTICS: Let CMake pass -fcolor-diagnostics
 ENV CLICOLOR_FORCE=1 CMAKE_COLOR_DIAGNOSTICS=ON DEBIAN_FRONTEND=noninteractive
