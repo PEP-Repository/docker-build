@@ -229,11 +229,11 @@ class PepRecipe(ConanFile):
             # Use system timezone database where possible, auto-download to ~/Downloads on Windows
             self.requires('date/[^3.0]', options={} if self.settings.os == 'Windows' else {'use_system_tz_db': True})
 
-        if self.options.with_server:
+        if self.options.with_servers:
             self.requires('inja/[^3.4]')
             self.requires('sqlite_orm/[~1.8 || ^1.9.1]') # Exclude 1.9, because of https://github.com/fnc12/sqlite_orm/issues/1346
 
-        if self.options.with_castor or self.options.with_server:
+        if self.options.with_castor or self.options.with_servers:
             self.requires('prometheus-cpp/[^1.1]', options=self._optional_opts({
                 'with_pull': False,
             }))
