@@ -25,8 +25,7 @@ response=$(curl --no-progress-meter --fail --globoff --request POST "$CI_API_V4_
     --data-urlencode "variables[FORCE_BUILD_STABLE_RELEASE]=yes" \
     --data-urlencode "variables[RUNNER_IMAGE_TAG]=$image_tag" \
     --data-urlencode "variables[OVERRIDE_DOCKER_BUILD_REF]=$CI_COMMIT_SHA" \
-    --data-urlencode "variables[DOCKER_BUILD_LOCKFILE_JOB]=$lockfile_job" \
-    --data-urlencode "variables[FORCE_BUILD_DOCS]=true"
+    --data-urlencode "variables[DOCKER_BUILD_LOCKFILE_JOB]=$lockfile_job"
 )
 echo "Response: $response"
 pipelineid=$(echo "$response" | jq ".id")
@@ -35,6 +34,11 @@ if [ "$pipelineid" = "null" ]
 then
   exit 1
 fi
+
+# Set pipeline name
+curl --no-progress-meter --fail --globoff --request PUT "$CI_API_V4_URL/projects/$foss_project_urlencoded/pipelines/$pipelineid/metadata" \
+    --data-urlencode "token=$CI_JOB_TOKEN" \
+    --data-urlencode "name=Testing images for docker-build pipeline $CI_PIPELINE_ID"
 
 # Wait for pipeline to complete, see https://gitlab.com/gitlab-org/gitlab/-/issues/201882
 # Alternative would be to use https://docs.gitlab.com/ee/ci/yaml/#trigger, but then cannot override FOSS_REF when manually activating the job
