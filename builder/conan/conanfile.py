@@ -207,6 +207,7 @@ class PepRecipe(ConanFile):
             'with_pull': False,
         }))
         self.requires('protobuf/[^3.21]')
+        self.requires('sqlite_orm/[~1.8 || ^1.9.1]') # Exclude 1.9, because of https://github.com/fnc12/sqlite_orm/issues/1346
         self.requires('xxhash/[^0.8.2]', options=self._optional_opts({
             'utility': False,
         }))
@@ -232,9 +233,6 @@ class PepRecipe(ConanFile):
         if self.options.with_castor:
             # Use system timezone database where possible, auto-download to ~/Downloads on Windows
             self.requires('date/[^3.0]', options={} if self.settings.os == 'Windows' else {'use_system_tz_db': True})
-
-        if self.options.with_servers:
-            self.requires('sqlite_orm/[~1.8 || ^1.9.1]') # Exclude 1.9, because of https://github.com/fnc12/sqlite_orm/issues/1346
 
         if self.options.with_tests:
             self.requires('gtest/[^1.14]')
