@@ -191,9 +191,6 @@ class PepRecipe(ConanFile):
                 'with_websockets': False,
             })})
         self.requires('inja/[^3.4]')
-        self.requires('mbedtls/[^2.28]', options=self._optional_opts({
-            'with_zlib': False,
-        }))
         self.requires('openssl/[^3.2]', options=self._optional_opts({
             # Deprecated features are needed by Qt (otherwise linker error _SSL_CTX_use_RSAPrivateKey)
             # 'no_deprecated': True,
