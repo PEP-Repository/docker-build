@@ -190,6 +190,7 @@ class PepRecipe(ConanFile):
                 'with_static_files': False,
                 'with_websockets': False,
             })})
+        self.requires('inja/[^3.4]')
         self.requires('mbedtls/[^2.28]', options=self._optional_opts({
             'with_zlib': False,
         }))

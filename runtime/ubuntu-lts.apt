@@ -1,4 +1,4 @@
-# APT dependencies for ubuntu-2204 runtime
+# APT dependencies for ubuntu-lts runtime
 
 ca-certificates
 logrotate
