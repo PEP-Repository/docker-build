@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu
 ENV CLICOLOR_FORCE=1 DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update \

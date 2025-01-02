@@ -5,7 +5,9 @@ set -eu -o pipefail
 profile_name="${1:-default}"
 
 conan_home="$(conan config home)"
-conan_profile="$conan_home/profiles/$profile_name"
+conan_profiles_dir="$conan_home/profiles"
+mkdir -p "$conan_profiles_dir"
+conan_profile="$conan_profiles_dir/$profile_name"
 
 if [ -e "$conan_profile" ]; then
   read -rp "$conan_profile already exists, replace? (y/n): " choice

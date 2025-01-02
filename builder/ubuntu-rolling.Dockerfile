@@ -1,5 +1,7 @@
 FROM ubuntu:rolling
-ENV CLICOLOR_FORCE=1 DEBIAN_FRONTEND=noninteractive
+# CLICOLOR_FORCE: Colored output for e.g. Conan & Ninja (otherwise -fcolor-diagnostics still won't work)
+# CMAKE_COLOR_DIAGNOSTICS: Let CMake pass -fcolor-diagnostics
+ENV CLICOLOR_FORCE=1 CMAKE_COLOR_DIAGNOSTICS=ON DEBIAN_FRONTEND=noninteractive
 
 COPY ./ubuntu-common.apt ./ubuntu-rolling.apt /tmp/
 
