@@ -6,6 +6,9 @@ stages:
   - test-images
   - deploy
 
+include:
+  - /dind.yml
+
 variables:
   DOCKER_DRIVER: overlay2 # faster docker builds, see https://gitlab.com/gitlab-org/gitlab-ce/issues/21374, https://docs.docker.com/storage/storagedriver/overlayfs-driver/
   DOCKER_TLS_CERTDIR: /certs
@@ -102,13 +105,9 @@ workflow:
 # Build & push Docker image
 .docker-image:
   stage: docker-image
-  tags:
-    - docker-small
-  image: docker
+  extends: .dind-small
   variables:
     CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/$IMAGE_KIND-$IMAGE_NAME:$IMAGE_TAG_TEST
-  services:
-    - docker:dind
   #language=sh
   script:
     - *script_header
@@ -342,15 +341,11 @@ merge-lockfiles:
 
 .conan-builder:
   stage: conan-install
+  extends: .dind
   dependencies:
     - merge-lockfiles
-  tags:
-    - docker
-  image: docker
   variables:
     CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/builder-$IMAGE_NAME:$IMAGE_TAG_TEST
-  services:
-    - docker:dind
   #language=sh
   script:
     - *script_header
@@ -390,6 +385,7 @@ builder/ubuntu-rolling:
 
 builder/flatpak:
   stage: conan-install
+  extends: .dind
   # We need both the image with flatpak-builder and the lockfile,
   # so we add the merge-lockfiles dependency if that job is run,
   # and run this job in any case
@@ -409,14 +405,9 @@ builder/flatpak:
         - builder/base/flatpak
         - merge-lockfiles
     - when: on_success
-  tags:
-    - docker
-  image: docker
   variables:
     IMAGE_NAME: flatpak
     CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/builder-$IMAGE_NAME:$IMAGE_TAG_TEST
-  services:
-    - docker:dind
   #language=sh
   script:
     - *script_header

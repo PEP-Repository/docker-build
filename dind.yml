@@ -1,0 +1,23 @@
+# Copy from pep/core /ci_cd/dind.yml
+
+# Fake docker-in-docker: just spin up sibling containers by connecting to the host (unix:///var/run/docker.sock)
+# This enables using the host cache
+.dind-sock:
+  tags:
+    - docker-sock
+  image: docker
+
+# Actual docker-in-docker
+.dind-dind:
+  tags:
+    - docker
+  services:
+    - docker:dind
+  image: docker
+
+.dind:
+  extends: .dind-dind
+
+# Currently the same
+.dind-small:
+  extends: .dind
