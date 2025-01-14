@@ -8,7 +8,7 @@ stages:
 
 variables:
   DOCKER_DRIVER: overlay2 # faster docker builds, see https://gitlab.com/gitlab-org/gitlab-ce/issues/21374, https://docs.docker.com/storage/storagedriver/overlayfs-driver/
-  DOCKER_TLS_CERTDIR: "" # Work around failing CI jobs: see https://gitlab.com/gitlab-org/gitlab-ce/issues/64959#note_194582424
+  DOCKER_TLS_CERTDIR: /certs
   FF_SCRIPT_SECTIONS: 'true'  # Enable collapsible sections per script line, with timings
 
   IMAGE_TAG_PREFIX: sha-
@@ -315,7 +315,7 @@ merge-lockfiles:
       git diff --exit-code ./conan-ci.lock && true
       case "$?" in
         0) bold 'conan-ci.lock did not change' ;;
-        1) 
+        1)
           bold 'conan-ci.lock changed'
           echo 'LOCKFILE_CHANGED=yes' >>"$CI_PROJECT_DIR/env.env"  # Save if changed, see artifacts
           ;;
