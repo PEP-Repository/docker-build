@@ -32,7 +32,8 @@
     DOCKER_HOST: tcp://docker:2375
 
 .dind:
-  extends: .dind-dind
+  # Change to switch between spinning up sibling containers and actual DinD
+  extends: .dind-sock
 
 # Currently the same
 .dind-small:
