@@ -23,7 +23,7 @@
     # but not in our Ubuntu-based builder image: https://github.com/docker-library/docker/blob/49e7a0aa907a6033c2482efbf8e25bb97588b184/27/cli/Dockerfile#L155-L166,
     # which includes script https://github.com/docker-library/docker/blob/49e7a0aa907a6033c2482efbf8e25bb97588b184/27/cli/docker-entrypoint.sh.
     # We could copy this config + script, but it's probably not worth it, since we trust the linux-runner VM we're running in anyway.
-    # Instead, we set this to empty to disable TLS verification.
+    # Instead, we set this to empty instead of /certs to disable TLS verification.
     # See https://hub.docker.com/_/docker
     DOCKER_TLS_CERTDIR: ''
     # The same script that is missing from our builder image would also set the address of the docker daemon to connect with,
