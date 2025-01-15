@@ -11,7 +11,7 @@ include:
 
 variables:
   DOCKER_DRIVER: overlay2 # faster docker builds, see https://gitlab.com/gitlab-org/gitlab-ce/issues/21374, https://docs.docker.com/storage/storagedriver/overlayfs-driver/
-  DOCKER_TLS_CERTDIR: /certs
+
   FF_SCRIPT_SECTIONS: 'true'  # Enable collapsible sections per script line, with timings
 
   IMAGE_TAG_PREFIX: sha-
