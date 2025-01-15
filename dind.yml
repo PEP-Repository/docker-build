@@ -1,7 +1,8 @@
 # dind.yml in pep/core> and pep/docker-build> should ideally be kept in sync
 
-# Fake docker-in-docker: just spin up sibling containers by connecting to the host (unix:///var/run/docker.sock)
-# This enables using the host cache
+# Fake docker-in-docker: just spin up sibling containers by connecting to the host (unix:///var/run/docker.sock).
+# This enables using the host cache.
+# See https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/#the-socket-solution
 .dind-sock:
   tags:
     - docker-sock
