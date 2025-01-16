@@ -34,7 +34,7 @@
 
 .dind:
   # Change to switch between spinning up sibling containers and actual DinD
-  extends: .dind-sock
+  extends: .dind-dind
 
 # Currently the same
 .dind-small:
