@@ -17,6 +17,10 @@ RUN apt-get update && \
 ENV PIPX_BIN_DIR=/usr/local/bin
 RUN pipx install 'conan>=2.1,==2.*'
 
+ENV GOPATH="/usr/local/go"
+ENV PATH="${GOPATH}/bin:${PATH}"
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+
 # Install Docker: https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository
 # Install apptainer: adapted from https://apptainer.org/docs/admin/main/installation.html#install-ubuntu-packages
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
