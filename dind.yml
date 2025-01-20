@@ -1,6 +1,7 @@
 # dind.yml in pep/core> and pep/docker-build> should ideally be kept in sync
 
-# This file was originally created to easily switch between actual Docker-in-Docker and fake Docker-in-docker:
+# Docker-in-Docker doesn't cache images.
+# This file was originally created to easily switch between actual DinD and fake DinD:
 # spinning up sibling containers by connecting to the host (unix:///var/run/docker.sock), which enables using the host cache,
 # see https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/#the-socket-solution.
 # However, this posed problems with bind mounts, which then cannot mount directories inside the container,
@@ -9,7 +10,12 @@
 
 .dind-dind:
   services:
-    - docker:dind
+    # This image spins up dockerd
+    - name: docker:dind
+      # Use our caching registry mirror if available,
+      # see the linux-runner VM YAML in pep/ops>
+      command: [--registry-mirror, http://mirror:5000]
+  # May be overridden by another image containing docker
   image: docker
   variables:
     # Certificates are necessary if we want to do TLS verification for DinD when connecting to the docker daemon.
