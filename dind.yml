@@ -1,18 +1,13 @@
 # dind.yml in pep/core> and pep/docker-build> should ideally be kept in sync
 
-# Fake docker-in-docker: just spin up sibling containers by connecting to the host (unix:///var/run/docker.sock).
-# This enables using the host cache.
-# See https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/#the-socket-solution
-.dind-sock:
-  tags:
-    - docker-sock
-  image: docker
+# This file was originally created to easily switch between actual Docker-in-Docker and fake Docker-in-docker:
+# spinning up sibling containers by connecting to the host (unix:///var/run/docker.sock), which enables using the host cache,
+# see https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/#the-socket-solution.
+# However, this posed problems with bind mounts, which then cannot mount directories inside the container,
+# see https://gitlab.pep.cs.ru.nl/pep/core/-/issues/2484#note_44341.
+# Instead, we now use it to nicely manage the single common DinD config.
 
-# Actual docker-in-docker
 .dind-dind:
-  tags:
-    # We cannot use a runner which has /var/run/docker.sock mounted, as this will render the socket busy and unusable for DinD
-    - docker
   services:
     - docker:dind
   image: docker
@@ -33,9 +28,13 @@
     DOCKER_HOST: tcp://docker:2375
 
 .dind:
-  # Change to switch between spinning up sibling containers and actual DinD
   extends: .dind-dind
+  tags:
+    # Note that we cannot use a runner which has /var/run/docker.sock mounted (as with fake DinD),
+    # as this will render the socket busy and unusable for DinD
+    - docker
 
-# Currently the same
 .dind-small:
-  extends: .dind
+  extends: .dind-dind
+  tags:
+    - docker-small
