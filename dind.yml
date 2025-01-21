@@ -14,7 +14,7 @@
     - name: docker:dind
       # Use our caching registry mirror if available,
       # see the linux-runner VM YAML in pep/ops> and https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#enable-registry-mirror-for-dockerdind-service
-      command: [--registry-mirror, http://mirror:5000]
+      command: [--registry-mirror, https://release.pep.cs.ru.nl:5000]
   # May be overridden by another image containing docker
   image: docker
   variables:
