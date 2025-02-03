@@ -12,8 +12,11 @@ class PepRecipe(ConanFile):
     settings = 'os', 'compiler', 'build_type', 'arch'
 
     options = {
-        # Build GUI (with Qt)
-        'with_client': [True, False],
+        'with_apps': [True, False],
+        # Build pepAssessor GUI (with Qt)
+        'with_assessor': [True, False],
+        'with_cli': [True, False],
+        'with_logon': [True, False],
         'with_servers': [True, False],
         # Build pepPullCastor
         'with_castor': [True, False],
@@ -35,7 +38,10 @@ class PepRecipe(ConanFile):
     }
     default_options = {
         # Enable most functionality by default for a complete devbox
-        'with_client': True,
+        'with_apps': True,
+        'with_assessor': True,
+        'with_cli': True,
+        'with_logon': True,
         'with_servers': True,
         'with_castor': True,
         'with_tests': True,
@@ -106,14 +112,17 @@ class PepRecipe(ConanFile):
         # Force passing build type also in multiconfig case,
         #  see https://gitlab.pep.cs.ru.nl/pep/core/issues/499
         tc.cache_variables['CMAKE_BUILD_TYPE'] = str(self.settings.build_type)
-        tc.cache_variables['BUILD_CLIENT'] = self.options.with_client
-        tc.cache_variables['BUILD_SERVERS'] = self.options.with_servers
+        tc.cache_variables['WITH_APPS'] = self.options.with_apps
+        tc.cache_variables['WITH_ASSESSOR'] = self.options.with_assessor
+        tc.cache_variables['WITH_CLI'] = self.options.with_cli
+        tc.cache_variables['WITH_LOGON'] = self.options.with_logon
+        tc.cache_variables['WITH_SERVERS'] = self.options.with_servers
         tc.cache_variables['WITH_CASTOR'] = self.options.with_castor
         tc.cache_variables['WITH_TESTS'] = self.options.with_tests
         tc.cache_variables['WITH_BENCHMARK'] = self.options.with_benchmark
         tc.cache_variables['WITH_UNWINDER'] = self.options.get_safe('with_unwinder', False)
         for var_def in str(self.options.cmake_variables).split(';') if str(self.options.cmake_variables) else []:
-            name, value = var_def.split('=')
+            name, value = var_def.split('=', maxsplit=1)
             tc.cache_variables[name] = value
         if str(self.options.subbuild_name):
             tc.presets_prefix = str(self.options.subbuild_name)
@@ -125,19 +134,18 @@ class PepRecipe(ConanFile):
         cmake.build()
 
     def requirements(self):
-        if self.options.get_safe('with_unwinder', False) and self.settings.os != 'Windows':
-            self.requires('libunwind/[^1.7]', options=self._optional_opts({
-                'coredump': False,
-                'ptrace': False,
-                'setjmp': False,
-                'minidebuginfo': False,
-                'zlibdebuginfo': False,
+        if self.options.with_cli:
+            self.requires('libarchive/[^3.7]', options=self._optional_opts({
+                'with_zlib': False,
+                'with_iconv': False,
             }))
 
-        self.requires('libarchive/[^3.7]', options=self._optional_opts({
-            'with_zlib': False,
-            'with_iconv': False,
-        }))
+        if self.options.with_benchmark:
+            self.requires('benchmark/[^1.8]')
+
+        # For pepHttpserverlib used by pepAssessor, pepAuthserver, pepLogon. Only on Linux/macOS.
+        use_boost_process = ((self.options.with_logon or self.options.with_assessor or self.options.with_servers)
+                             and self.settings.os in ['Linux', 'Macos'])
         self.requires('boost/[^1.83]', options={
             # Instruct Boost that it can use std::filesystem
             'filesystem_use_std_fs': True,
@@ -147,17 +155,18 @@ class PepRecipe(ConanFile):
                 'zlib': False,
                 'bzip2': False,
 
-                # 'without_atomic': True,  # Transitive (required by other Boost components)
-                # 'without_chrono': True,  # Transitive
+                # 'without_atomic': True,  # For filesystem, log
+                'without_charconv': True,
+                # 'without_chrono': True,  # For thread
                 'without_cobalt': True,
-                # 'without_container': True,  # Transitive
+                # 'without_container': True,  # For json, thread
                 'without_context': True,
                 'without_contract': True,
                 'without_coroutine': True,
                 # 'without_date_time': True,
-                # 'without_exception': True,  # Transitive
+                # 'without_exception': True,
                 'without_fiber': True,
-                # 'without_filesystem': True,  # Transitive
+                # 'without_filesystem': True,  # For log, process
                 'without_graph': True,
                 'without_graph_parallel': True,
                 # 'without_iostreams': True,
@@ -167,63 +176,32 @@ class PepRecipe(ConanFile):
                 'without_math': True,
                 'without_mpi': True,
                 'without_nowide': True,
+                'without_process': not use_boost_process,
                 'without_program_options': True,
                 'without_python': True,
                 # 'without_random': True,
-                # 'without_regex': True,  # Transitive
+                # 'without_regex': True,  # For iostreams, log
                 'without_serialization': True,
                 'without_stacktrace': True,
                 # 'without_system': True,
                 'without_test': True,
-                # 'without_thread': True,  # Transitive
+                # 'without_thread': True,  # For log
                 'without_timer': True,
                 'without_type_erasure': True,
                 'without_url': True,
                 'without_wave': True
             })})
-        self.requires('civetweb/[^1.16]', options={
-            'with_ssl': True,
 
-            **self._optional_opts({
-                'with_caching': False,
-                'with_cgi': False,
-                'with_static_files': False,
-                'with_websockets': False,
-            })})
-        self.requires('inja/[^3.4]')
-        self.requires('openssl/[^3.2]', options=self._optional_opts({
-            # Deprecated features are needed by Qt (otherwise linker error _SSL_CTX_use_RSAPrivateKey)
-            # 'no_deprecated': True,
-            'no_legacy': True,
-            'no_md4': True,
-            'no_rc2': True,
-            'no_rc4': True,
-            'no_ssl3': True,
-        }))
-        self.requires('prometheus-cpp/[^1.1]', options=self._optional_opts({
-            'with_pull': False,
-        }))
-        self.requires('protobuf/[^3.21]')
-        self.requires('sqlite_orm/[~1.8 || ^1.9.1]') # Exclude 1.9, because of https://github.com/fnc12/sqlite_orm/issues/1346
-        self.requires('xxhash/[^0.8.2]', options=self._optional_opts({
-            'utility': False,
-        }))
+        if self.options.with_assessor or self.options.with_servers or self.options.with_logon:
+            # For pepHttpserverlib used by pepAssessor, pepAuthserver, pepLogon
+            self.requires('civetweb/[^1.16]', options={
+                'with_ssl': True,
 
-        if self.options.with_client and not self.options.use_system_qt:
-            self.requires('qt/[^6.6]', options={
-                'essential_modules': False,
-                'qtsvg': True,
-                'qttranslations': True,
-
-                # Workaround for https://github.com/conan-io/conan-center-index/pull/21535
-                **({'with_harfbuzz': False} if self.settings.os == 'Macos' else {}),
                 **self._optional_opts({
-                    'with_sqlite3': False,
-                    'with_pq': False,
-                    'with_odbc': False,
-                    'with_brotli': False,
-                    'with_openal': False,
-                    'with_md4c': False,
+                    'with_caching': False,
+                    'with_cgi': False,
+                    'with_static_files': False,
+                    'with_websockets': False,
                 })})
 
         # XXX Remove when std timezones are widely supported
@@ -233,13 +211,69 @@ class PepRecipe(ConanFile):
 
         if self.options.with_tests:
             self.requires('gtest/[^1.14]')
-        if self.options.with_benchmark:
-            self.requires('benchmark/[^1.8]')
+
+        if self.options.with_servers:
+            # For pepAuthserver
+            self.requires('inja/[^3.4]')
+
+        self.requires('openssl/[^3.2]', options=self._optional_opts({
+            # Deprecated features are needed by Qt (otherwise linker error _SSL_CTX_use_RSAPrivateKey)
+            # 'no_deprecated': True,
+            'no_legacy': True,
+            'no_md4': True,
+            'no_rc2': True,
+            'no_rc4': True,
+            'no_ssl3': True,
+        }))
+
+        if self.options.with_servers:
+            # For pepServerlib
+            self.requires('prometheus-cpp/[^1.1]', options=self._optional_opts({
+                'with_pull': False,
+            }))
+
+        self.requires('protobuf/[^3.21]')
+
+        if self.options.with_assessor and not self.options.use_system_qt:
+            self.requires('qt/[^6.6]', options={
+                'essential_modules': False,
+                'qtsvg': True,
+                'qttranslations': True,
+
+                **self._optional_opts({
+                    'with_freetype': False,
+                    'with_fontconfig': False,
+                    'with_harfbuzz': False,
+                    'with_sqlite3': False,
+                    'with_pq': False,
+                    'with_odbc': False,
+                    'with_brotli': False,
+                    'with_openal': False,
+                    'with_md4c': False,
+                })})
+
+        if self.options.with_apps or self.options.with_servers:
+            self.requires('sqlite_orm/[~1.8 || ^1.9.1]')  # Exclude 1.9, because of https://github.com/fnc12/sqlite_orm/issues/1346
+
+        if self.options.get_safe('with_unwinder', False) and self.settings.os != 'Windows':
+            self.requires('libunwind/[^1.7]', options=self._optional_opts({
+                'coredump': False,
+                'ptrace': False,
+                'setjmp': False,
+                'minidebuginfo': False,
+                'zlibdebuginfo': False,
+            }))
+
+        self.requires('xxhash/[^0.8.2]', options=self._optional_opts({
+            'utility': False,
+        }))
 
     def build_requirements(self):
         # Add these to PATH
+
         self.tool_requires('protobuf/<host_version>')  # protoc
-        if self.options.with_client and not self.options.use_system_qt:
+
+        if self.options.with_assessor and not self.options.use_system_qt:
             # XXX windeployqt is referencing the wrong DLLs (build instead of runtime),
             #  so we list them here as well.
             #  See https://github.com/conan-io/conan-center-index/issues/22693
@@ -251,8 +285,10 @@ class PepRecipe(ConanFile):
 
                 'qttools': True,  # e.g. windeployqt
 
-                **({'with_harfbuzz': False} if self.settings.os == 'Macos' else {}),
                 **self._optional_opts({
+                    'with_freetype': False,
+                    'with_fontconfig': False,
+                    'with_harfbuzz': False,
                     'with_sqlite3': False,
                     'with_pq': False,
                     'with_odbc': False,
@@ -265,7 +301,7 @@ class PepRecipe(ConanFile):
         apt = Apt(self)
         brew = Brew(self)
 
-        if self.options.with_client and self.options.use_system_qt:
+        if self.options.with_assessor and self.options.use_system_qt:
             apt.install([
                 'qt6-base-dev',
                 'qt6-tools-dev',

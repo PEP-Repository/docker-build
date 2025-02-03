@@ -22,7 +22,7 @@ conan install ./ --build=missing \
   --lockfile=./conan-ci.lock \
   -s build_type=Release \
   $concurrency_option_conan \
-  -o "&:with_client=False" \
+  -o "&:with_assessor=False" \
   -o "&:with_tests=True" \
   -o "&:with_benchmark=True"
 
@@ -31,7 +31,7 @@ conan install ./ --build=missing \
   --lockfile=./conan-ci.lock \
   -s build_type=Debug \
   $concurrency_option_conan \
-  -o "&:with_client=False" \
+  -o "&:with_assessor=False" \
   -o "&:with_tests=True" \
   -o "&:with_benchmark=False"
 
