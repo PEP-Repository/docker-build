@@ -242,7 +242,6 @@ class PepRecipe(ConanFile):
 
                 **self._optional_opts({
                     'with_freetype': False,
-                    'with_fontconfig': False,
                     'with_harfbuzz': False,
                     'with_sqlite3': False,
                     'with_pq': False,
@@ -250,6 +249,7 @@ class PepRecipe(ConanFile):
                     'with_brotli': False,
                     'with_openal': False,
                     'with_md4c': False,
+                    **({'with_fontconfig': False} if self.settings.os in ['Linux', 'FreeBSD'] else {})
                 })})
 
         if self.options.with_all_apps or self.options.with_servers:
@@ -287,7 +287,6 @@ class PepRecipe(ConanFile):
 
                 **self._optional_opts({
                     'with_freetype': False,
-                    'with_fontconfig': False,
                     'with_harfbuzz': False,
                     'with_sqlite3': False,
                     'with_pq': False,
@@ -295,6 +294,7 @@ class PepRecipe(ConanFile):
                     'with_brotli': False,
                     'with_openal': False,
                     'with_md4c': False,
+                    **({'with_fontconfig': False} if self.settings.os in ['Linux', 'FreeBSD'] else {})
                 })})
 
     def system_requirements(self):
