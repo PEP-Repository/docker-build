@@ -12,7 +12,8 @@ class PepRecipe(ConanFile):
     settings = 'os', 'compiler', 'build_type', 'arch'
 
     options = {
-        'with_apps': [True, False],
+        # Include pep/apps/ that require extra dependencies?
+        'with_all_apps': [True, False],
         # Build pepAssessor GUI (with Qt)
         'with_assessor': [True, False],
         'with_cli': [True, False],
@@ -38,7 +39,7 @@ class PepRecipe(ConanFile):
     }
     default_options = {
         # Enable most functionality by default for a complete devbox
-        'with_apps': True,
+        'with_all_apps': True,
         'with_assessor': True,
         'with_cli': True,
         'with_logon': True,
@@ -112,7 +113,6 @@ class PepRecipe(ConanFile):
         # Force passing build type also in multiconfig case,
         #  see https://gitlab.pep.cs.ru.nl/pep/core/issues/499
         tc.cache_variables['CMAKE_BUILD_TYPE'] = str(self.settings.build_type)
-        tc.cache_variables['WITH_APPS'] = self.options.with_apps
         tc.cache_variables['WITH_ASSESSOR'] = self.options.with_assessor
         tc.cache_variables['WITH_CLI'] = self.options.with_cli
         tc.cache_variables['WITH_LOGON'] = self.options.with_logon
@@ -226,7 +226,7 @@ class PepRecipe(ConanFile):
             'no_ssl3': True,
         }))
 
-        if self.options.with_servers:
+        if self.options.with_servers or self.options.with_castor:
             # For pepServerlib
             self.requires('prometheus-cpp/[^1.1]', options=self._optional_opts({
                 'with_pull': False,
@@ -252,7 +252,7 @@ class PepRecipe(ConanFile):
                     'with_md4c': False,
                 })})
 
-        if self.options.with_apps or self.options.with_servers:
+        if self.options.with_all_apps or self.options.with_servers:
             self.requires('sqlite_orm/[~1.8 || ^1.9.1]')  # Exclude 1.9, because of https://github.com/fnc12/sqlite_orm/issues/1346
 
         if self.options.get_safe('with_unwinder', False) and self.settings.os != 'Windows':
