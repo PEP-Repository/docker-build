@@ -138,7 +138,7 @@ class PepRecipe(ConanFile):
             'with_zlib': False,
             'with_iconv': False,
         }))
-        self.requires('boost/[^1.83]', options={
+        self.requires('boost/[^1.83 <1.87]', options={
             # Instruct Boost that it can use std::filesystem
             'filesystem_use_std_fs': True,
 
