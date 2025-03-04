@@ -151,7 +151,7 @@ class PepRecipe(ConanFile):
                 # 'without_chrono': True,  # Transitive
                 'without_cobalt': True,
                 # 'without_container': True,  # Transitive
-                'without_context': True,
+                # 'without_context': True,  # Transitive?
                 'without_contract': True,
                 'without_coroutine': True,
                 # 'without_date_time': True,
