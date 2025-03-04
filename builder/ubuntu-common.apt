@@ -9,7 +9,6 @@ ccache
 clang
 cmake
 golang
-golang-goprotobuf-dev
 ninja-build
 
 # Used by scripts
