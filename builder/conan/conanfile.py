@@ -160,7 +160,7 @@ class PepRecipe(ConanFile):
                 # 'without_chrono': True,  # For thread
                 'without_cobalt': True,
                 # 'without_container': True,  # For json, thread
-                'without_context': True,
+                'without_context': not use_boost_process,  # For process
                 'without_contract': True,
                 'without_coroutine': True,
                 # 'without_date_time': True,
@@ -197,10 +197,11 @@ class PepRecipe(ConanFile):
             self.requires('civetweb/[^1.16]', options={
                 'with_ssl': True,
 
+                'with_caching': False,
+                'with_cgi': False,
+                'with_static_files': False,
+
                 **self._optional_opts({
-                    'with_caching': False,
-                    'with_cgi': False,
-                    'with_static_files': False,
                     'with_websockets': False,
                 })})
 
