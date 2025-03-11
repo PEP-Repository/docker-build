@@ -12,8 +12,6 @@ class PepRecipe(ConanFile):
     settings = 'os', 'compiler', 'build_type', 'arch'
 
     options = {
-        # Include pep/apps/ that require extra dependencies?
-        'with_all_apps': [True, False],
         # Build pepAssessor GUI (with Qt)
         'with_assessor': [True, False],
         'with_cli': [True, False],
@@ -39,7 +37,6 @@ class PepRecipe(ConanFile):
     }
     default_options = {
         # Enable most functionality by default for a complete devbox
-        'with_all_apps': True,
         'with_assessor': True,
         'with_cli': True,
         'with_logon': True,
@@ -134,11 +131,10 @@ class PepRecipe(ConanFile):
         cmake.build()
 
     def requirements(self):
-        if self.options.with_cli:
-            self.requires('libarchive/[^3.7]', options=self._optional_opts({
-                'with_zlib': False,
-                'with_iconv': False,
-            }))
+        self.requires('libarchive/[^3.7]', options=self._optional_opts({
+            'with_zlib': False,
+            'with_iconv': False,
+        }))
 
         if self.options.with_benchmark:
             self.requires('benchmark/[^1.8]')
@@ -213,9 +209,7 @@ class PepRecipe(ConanFile):
         if self.options.with_tests:
             self.requires('gtest/[^1.14]')
 
-        if self.options.with_servers:
-            # For pepAuthserver
-            self.requires('inja/[^3.4]')
+        self.requires('inja/[^3.4]')
 
         self.requires('openssl/[^3.2]', options=self._optional_opts({
             # Deprecated features are needed by Qt (otherwise linker error _SSL_CTX_use_RSAPrivateKey)
@@ -253,8 +247,7 @@ class PepRecipe(ConanFile):
                     **({'with_fontconfig': False} if self.settings.os in ['Linux', 'FreeBSD'] else {})
                 })})
 
-        if self.options.with_all_apps or self.options.with_servers:
-            self.requires('sqlite_orm/[~1.8 || ^1.9.1]')  # Exclude 1.9, because of https://github.com/fnc12/sqlite_orm/issues/1346
+        self.requires('sqlite_orm/[~1.8 || ^1.9.1]')  # Exclude 1.9, because of https://github.com/fnc12/sqlite_orm/issues/1346
 
         if self.options.get_safe('with_unwinder', False) and self.settings.os != 'Windows':
             self.requires('libunwind/[^1.7]', options=self._optional_opts({
