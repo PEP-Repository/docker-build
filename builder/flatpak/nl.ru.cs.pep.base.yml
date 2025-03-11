@@ -33,7 +33,6 @@ modules:
           -c:a tools.build:jobs="$FLATPAK_BUILDER_N_JOBS" \
           -o "&:with_assessor=True" \
           -o "&:with_servers=False" \
-          -o "&:with_all_apps=False" \
           -o "&:with_castor=False" \
           -o "&:with_tests=False" \
           -o "&:with_benchmark=False" \
