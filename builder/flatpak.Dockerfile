@@ -8,7 +8,7 @@ RUN apt-get update \
     && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
 RUN flatpak --user remote-add flathub https://dl.flathub.org/repo/flathub.flatpakrepo \
-    && flatpak --user install -y org.kde.Platform//6.6 \
-    && flatpak --user install -y org.kde.Sdk//6.6
+    && flatpak --user install -y org.kde.Platform//6.7 \
+    && flatpak --user install -y org.kde.Sdk//6.7
 
 ENV DEBIAN_FRONTEND=''
