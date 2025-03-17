@@ -242,6 +242,7 @@ class PepRecipe(ConanFile):
                     'with_brotli': False,
                     'with_openal': False,
                     'with_md4c': False,
+                    # Only available on some OSs
                     **({'with_fontconfig': False} if self.settings.os in ['Linux', 'FreeBSD'] else {})
                 })})
 
