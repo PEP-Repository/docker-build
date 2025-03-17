@@ -128,6 +128,10 @@ class PepRecipe(ConanFile):
         cmake.build()
 
     def requirements(self):
+        # Do we require these pep libraries?
+        with_http_serverlib = self.options.with_assessor or self.options.with_logon or self.options.with_servers
+        with_metricslib = self.options.with_servers or self.options.with_castor
+
         self.requires('libarchive/[^3.7]', options=self._optional_opts({
             'with_zlib': False,
             'with_iconv': False,
@@ -136,11 +140,8 @@ class PepRecipe(ConanFile):
         if self.options.with_benchmark:
             self.requires('benchmark/[^1.8]')
 
-        # Do we require pepHttpserverlib?
-        with_http_server = self.options.with_assessor or self.options.with_logon or self.options.with_servers
-
         # See /cpp/pep/httpserver/CMakeLists.txt
-        with_boost_process = with_http_server and self.settings.os in ['Linux', 'Macos']
+        with_boost_process = with_http_serverlib and self.settings.os in ['Linux', 'Macos']
         self.requires('boost/[^1.86]', options={
             # Instruct Boost that it can use std::filesystem
             'filesystem_use_std_fs': True,
@@ -187,7 +188,7 @@ class PepRecipe(ConanFile):
                 'without_wave': True
             })})
 
-        if with_http_server:
+        if with_http_serverlib:
             self.requires('civetweb/[^1.16]', options={
                 'with_ssl': True,
 
@@ -219,8 +220,7 @@ class PepRecipe(ConanFile):
             'no_ssl3': True,
         }))
 
-        if self.options.with_servers or self.options.with_castor:
-            # For pepServerlib
+        if with_metricslib:
             self.requires('prometheus-cpp/[^1.1]', options=self._optional_opts({
                 'with_pull': False,
             }))
