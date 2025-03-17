@@ -136,9 +136,11 @@ class PepRecipe(ConanFile):
         if self.options.with_benchmark:
             self.requires('benchmark/[^1.8]')
 
-        # For pepHttpserverlib used by pepAssessor, pepAuthserver, pepLogon. Only on Linux/macOS.
-        use_boost_process = ((self.options.with_logon or self.options.with_assessor or self.options.with_servers)
-                             and self.settings.os in ['Linux', 'Macos'])
+        # Do we require pepHttpserverlib?
+        with_http_server = self.options.with_assessor or self.options.with_logon or self.options.with_servers
+
+        # See /cpp/pep/httpserver/CMakeLists.txt
+        with_boost_process = with_http_server and self.settings.os in ['Linux', 'Macos']
         self.requires('boost/[^1.86]', options={
             # Instruct Boost that it can use std::filesystem
             'filesystem_use_std_fs': True,
@@ -153,7 +155,7 @@ class PepRecipe(ConanFile):
                 # 'without_chrono': True,  # For thread
                 'without_cobalt': True,
                 # 'without_container': True,  # For json, thread
-                'without_context': not use_boost_process,  # For process
+                'without_context': not with_boost_process,  # For process
                 'without_contract': True,
                 'without_coroutine': True,
                 # 'without_date_time': True,
@@ -169,7 +171,7 @@ class PepRecipe(ConanFile):
                 'without_math': True,
                 'without_mpi': True,
                 'without_nowide': True,
-                'without_process': not use_boost_process,
+                'without_process': not with_boost_process,
                 'without_program_options': True,
                 'without_python': True,
                 # 'without_random': True,
@@ -185,8 +187,7 @@ class PepRecipe(ConanFile):
                 'without_wave': True
             })})
 
-        if self.options.with_assessor or self.options.with_servers or self.options.with_logon:
-            # For pepHttpserverlib used by pepAssessor, pepAuthserver, pepLogon
+        if with_http_server:
             self.requires('civetweb/[^1.16]', options={
                 'with_ssl': True,
 
