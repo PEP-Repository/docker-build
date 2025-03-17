@@ -14,7 +14,6 @@ class PepRecipe(ConanFile):
     options = {
         # Build pepAssessor GUI (with Qt)
         'with_assessor': [True, False],
-        'with_cli': [True, False],
         'with_logon': [True, False],
         'with_servers': [True, False],
         # Build pepPullCastor
@@ -38,7 +37,6 @@ class PepRecipe(ConanFile):
     default_options = {
         # Enable most functionality by default for a complete devbox
         'with_assessor': True,
-        'with_cli': True,
         'with_logon': True,
         'with_servers': True,
         'with_castor': True,
@@ -111,7 +109,6 @@ class PepRecipe(ConanFile):
         #  see https://gitlab.pep.cs.ru.nl/pep/core/issues/499
         tc.cache_variables['CMAKE_BUILD_TYPE'] = str(self.settings.build_type)
         tc.cache_variables['WITH_ASSESSOR'] = self.options.with_assessor
-        tc.cache_variables['WITH_CLI'] = self.options.with_cli
         tc.cache_variables['WITH_LOGON'] = self.options.with_logon
         tc.cache_variables['WITH_SERVERS'] = self.options.with_servers
         tc.cache_variables['WITH_CASTOR'] = self.options.with_castor
