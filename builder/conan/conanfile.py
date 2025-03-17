@@ -139,7 +139,7 @@ class PepRecipe(ConanFile):
         # For pepHttpserverlib used by pepAssessor, pepAuthserver, pepLogon. Only on Linux/macOS.
         use_boost_process = ((self.options.with_logon or self.options.with_assessor or self.options.with_servers)
                              and self.settings.os in ['Linux', 'Macos'])
-        self.requires('boost/[^1.83]', options={
+        self.requires('boost/[^1.86]', options={
             # Instruct Boost that it can use std::filesystem
             'filesystem_use_std_fs': True,
 
