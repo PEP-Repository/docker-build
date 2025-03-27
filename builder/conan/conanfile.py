@@ -246,7 +246,7 @@ class PepRecipe(ConanFile):
                     **({'with_fontconfig': False} if self.settings.os in ['Linux', 'FreeBSD'] else {})
                 })})
 
-        self.requires('sqlite_orm/[~1.8 || ^1.9.1]')  # Exclude 1.9, because of https://github.com/fnc12/sqlite_orm/issues/1346
+        self.requires('sqlite_orm/[^1.9.1]')
 
         if self.options.get_safe('with_unwinder', False) and self.settings.os != 'Windows':
             self.requires('libunwind/[^1.7]', options=self._optional_opts({
