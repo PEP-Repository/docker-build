@@ -184,7 +184,7 @@ class PepRecipe(ConanFile):
                 # 'without_thread': True,  # For log
                 'without_timer': True,
                 'without_type_erasure': True,
-                'without_url': True,
+                # 'without_url': True,
                 'without_wave': True
             })})
 
