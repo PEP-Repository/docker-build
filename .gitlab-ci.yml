@@ -524,7 +524,7 @@ deploy:
     - |
       cat >./git-password.sh <<'EOF'
       #!/usr/bin/env sh
-      exec echo "$GITLAB_ACCESS_TOKEN"
+      exec echo "$PEP_GROUP_REPOSITORY_TOKEN"
       EOF
       chmod +x ./git-password.sh
       git config --global core.askPass "$PWD/git-password.sh"
