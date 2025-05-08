@@ -210,6 +210,8 @@ class PepRecipe(ConanFile):
 
         self.requires('inja/[^3.4]')
 
+        self.requires('nlohmann_json/[^3.11]')
+
         self.requires('openssl/[^3.2]', options=self._optional_opts({
             # Deprecated features are needed by Qt (otherwise linker error _SSL_CTX_use_RSAPrivateKey)
             # 'no_deprecated': True,
