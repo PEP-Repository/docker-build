@@ -132,7 +132,7 @@ workflow:
       --push
       --file "./$IMAGE_KIND/$IMAGE_NAME.Dockerfile"
       --tag "$CONTAINER_IMAGE"
-      $EXTRA_DOCKER_ARGS
+      ${EXTRA_DOCKER_ARGS-}
       "./"
 
 # ==== Builders ====
