@@ -61,6 +61,13 @@ class PepRecipe(ConanFile):
             # Using Qt from Conan on Linux may give problems and is generally unnecessary
             self.options.use_system_qt = True
 
+        if self.settings.os == 'Emscripten':
+            del self.options.with_assessor
+            del self.options.with_logon
+            del self.options.with_servers
+            del self.options.with_castor
+            del self.options.use_system_qt
+
     def configure(self):
         if self.options.shared_libs:
             self.options['*'].shared = True
@@ -108,10 +115,10 @@ class PepRecipe(ConanFile):
         # Force passing build type also in multiconfig case,
         #  see https://gitlab.pep.cs.ru.nl/pep/core/issues/499
         tc.cache_variables['CMAKE_BUILD_TYPE'] = str(self.settings.build_type)
-        tc.cache_variables['WITH_ASSESSOR'] = self.options.with_assessor
-        tc.cache_variables['WITH_LOGON'] = self.options.with_logon
-        tc.cache_variables['WITH_SERVERS'] = self.options.with_servers
-        tc.cache_variables['WITH_CASTOR'] = self.options.with_castor
+        tc.cache_variables['WITH_ASSESSOR'] = self.options.get_safe('with_assessor', False)
+        tc.cache_variables['WITH_LOGON'] = self.options.get_safe('with_logon', False)
+        tc.cache_variables['WITH_SERVERS'] = self.options.get_safe('with_servers', False)
+        tc.cache_variables['WITH_CASTOR'] = self.options.get_safe('with_castor', False)
         tc.cache_variables['WITH_TESTS'] = self.options.with_tests
         tc.cache_variables['WITH_BENCHMARK'] = self.options.with_benchmark
         tc.cache_variables['WITH_UNWINDER'] = self.options.get_safe('with_unwinder', False)
@@ -129,8 +136,11 @@ class PepRecipe(ConanFile):
 
     def requirements(self):
         # Do we require these pep libraries?
-        with_http_serverlib = self.options.with_assessor or self.options.with_logon or self.options.with_servers
-        with_metricslib = self.options.with_servers or self.options.with_castor
+        with_http_serverlib = (self.options.get_safe('with_assessor', False) or
+                             self.options.get_safe('with_logon', False) or
+                             self.options.get_safe('with_servers', False))
+        with_metricslib = (self.options.get_safe('with_servers', False) or
+                          self.options.get_safe('with_castor', False))
 
         self.requires('libarchive/[^3.7]', options=self._optional_opts({
             'with_zlib': False,
@@ -201,7 +211,7 @@ class PepRecipe(ConanFile):
                 })})
 
         # XXX Remove when std timezones are widely supported
-        if self.options.with_castor:
+        if self.options.get_safe('with_castor', False):
             # Use system timezone database where possible, auto-download to ~/Downloads on Windows
             self.requires('date/[^3.0]', options={} if self.settings.os == 'Windows' else {'use_system_tz_db': True})
 
@@ -229,7 +239,7 @@ class PepRecipe(ConanFile):
 
         self.requires('protobuf/[^3.21]')
 
-        if self.options.with_assessor and not self.options.use_system_qt:
+        if self.options.get_safe('with_assessor', False) and not self.options.get_safe('use_system_qt', False):
             self.requires('qt/[^6.6 <6.8]', options={
                 'essential_modules': False,
                 'qtsvg': True,
@@ -268,7 +278,7 @@ class PepRecipe(ConanFile):
 
         self.tool_requires('protobuf/<host_version>')  # protoc
 
-        if self.options.with_assessor and not self.options.use_system_qt:
+        if self.options.get_safe('with_assessor', False) and not self.options.get_safe('use_system_qt', False):
             # XXX windeployqt is referencing the wrong DLLs (build instead of runtime),
             #  so we list them here as well.
             #  See https://github.com/conan-io/conan-center-index/issues/22693
@@ -296,7 +306,7 @@ class PepRecipe(ConanFile):
         apt = Apt(self)
         brew = Brew(self)
 
-        if self.options.with_assessor and self.options.use_system_qt:
+        if self.options.get_safe('with_assessor', False) and self.options.get_safe('use_system_qt', False):
             apt.install([
                 'qt6-base-dev',
                 'qt6-tools-dev',
