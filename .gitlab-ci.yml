@@ -429,7 +429,7 @@ builder/weblib:
   extends: .conan-builder
   variables:
     IMAGE_NAME: weblib
-    CONAN_FLAGS: --profile:host=./builder/conan/conan_profile_wasm32
+    CONAN_FLAGS: --profile:host=conan_profile_wasm32
 
 builder/flatpak:
   stage: conan-install
