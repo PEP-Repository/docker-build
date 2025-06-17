@@ -127,6 +127,7 @@ workflow:
     - fi
     - bold '==== Building & pushing image ===='
     - echo "Tagging image as $CONTAINER_IMAGE"
+    - set -x
     - docker buildx build
       --pull
       --push
@@ -157,10 +158,12 @@ builder/base/flatpak:
 
 builder/base/weblib:
   extends: .docker-image
+  needs:
+    - builder/base/ubuntu-lts
   variables:
     IMAGE_KIND: builder
     IMAGE_NAME: weblib
-    EXTRA_DOCKER_ARGS: --build-arg "BASE_IMAGE=$CI_REGISTRY_IMAGE/$IMAGE_KIND-ubuntu-lts:$IMAGE_TAG_TEST"
+    EXTRA_DOCKER_ARGS: --build-arg=BASE_IMAGE=$CI_REGISTRY_IMAGE/$IMAGE_KIND-ubuntu-lts:$IMAGE_TAG_TEST
 
 # ==== Runtimes ====
 
