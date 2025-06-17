@@ -127,7 +127,6 @@ workflow:
     - fi
     - bold '==== Building & pushing image ===='
     - echo "Tagging image as $CONTAINER_IMAGE"
-    - set -x
     - docker buildx build
       --pull
       --push
