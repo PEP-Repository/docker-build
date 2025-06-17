@@ -1,0 +1,25 @@
+{% set compiler, version, compiler_exe = detect_api.detect_default_compiler() %}
+## Unfortunately, at this time we are just given one compiler_exe by Conan
+{% set libcxx = detect_api.detect_libcxx(compiler, version, compiler_exe) %}
+
+[settings]
+build_type=Release
+pep/*:build_type=Debug
+
+os=Emscripten
+arch=wasm
+compiler={{compiler}}
+compiler.version={{detect_api.default_compiler_version(compiler, version)}}
+{% if libcxx %} compiler.libcxx={{libcxx}} {% endif %}
+compiler.cppstd=20
+
+[conf]
+tools.build:compiler_executables={'c':'emcc', 'cpp':'em++'}
+tools.cmake.cmaketoolchain:user_toolchain=[ '{{ os.getenv('EMSDK') + '/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake' }}' ]
+{% set compile_flags = ['-matomics', '-mbulk-memory', '-fwasm-exceptions'] %}
+tools.build:cflags={{compile_flags}}
+tools.build:cxxflags={{compile_flags}}
+
+# Make sure to rebuild when we change flags
+tools.info.package_id:confs=['tools.build:cflags', 'tools.build:cxxflags', 'tools.build:exelinkflags', 'tools.build:sharedlinkflags']
+tools.cmake.cmaketoolchain:generator=Ninja
