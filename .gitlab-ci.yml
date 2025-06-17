@@ -399,7 +399,8 @@ merge-lockfiles:
     -   docker container cp ./builder/cache/conan-home/ "$container:/root/.conan2/"
     - fi
     - docker container cp ./builder/conan/ "$container:/tmp/conan"
-    - docker container exec "$container" /tmp/conan/conan_install_ci.sh $concurrency_option_conan $CONAN_FLAGS
+    # Login to load profile with potential environment variables
+    - docker container exec "$container" sh -l -c "/tmp/conan/conan_install_ci.sh $concurrency_option_conan $CONAN_FLAGS"
     - docker container exec "$container" rm -rf '/tmp/*'
     - rm -rf ./builder/cache/conan-home/
     - mkdir -p ./builder/cache/
@@ -429,9 +430,6 @@ builder/weblib:
   variables:
     IMAGE_NAME: weblib
     CONAN_FLAGS: --profile:host=./builder/conan/conan_profile_wasm32
-  #language=sh
-  before_script:
-    - . /emsdk/emsdk_env.sh
 
 builder/flatpak:
   stage: conan-install

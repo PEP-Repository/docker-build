@@ -12,6 +12,8 @@ RUN apt-get update && \
 RUN git clone --depth=1 https://github.com/emscripten-core/emsdk.git && \
     /emsdk/emsdk install latest && \
     /emsdk/emsdk activate latest && \
-    (cd /emsdk/upstream/emscripten/ && PATH="/emsdk/node/$(ls --reverse /emsdk/node/ | head -1)/bin:$PATH" npm install)
+    echo '. /emsdk/emsdk_env.sh' >>~/.profile && \
+    echo 'export PATH="/emsdk/node/$(ls -r /emsdk/node/ | head -1)/bin:$PATH"' >>~/.profile && . ~/.profile && \
+    (cd /emsdk/upstream/emscripten/ && npm install)
 
 ENV DEBIAN_FRONTEND=''
