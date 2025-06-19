@@ -1,4 +1,5 @@
-{% set compiler, compiler_version, compiler_exe = detect_clang_compiler(compiler_exe="em++") %}
+## This doesn't work, as Emscripten bundles a development version of Clang, of which Conan doesn't recognize the version
+## {% set compiler, compiler_version, compiler_exe = detect_api.detect_clang_compiler(compiler_exe=os.getenv('EMSDK') + '/upstream/bin/clang++') %}
 
 [settings]
 build_type=Release
@@ -6,8 +7,9 @@ pep/*:build_type=Debug
 
 os=Emscripten
 arch=wasm
-compiler={{compiler}}
-compiler.version={{compiler_version}}
+compiler=clang
+# Newest recognized at this moment
+compiler.version=20
 compiler.libcxx=libc++
 compiler.cppstd=20
 
