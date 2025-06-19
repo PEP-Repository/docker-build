@@ -4,7 +4,7 @@
 
 {% set operating_system = detect_api.detect_os() %}
 {% set compiler, version, compiler_exe = detect_api.detect_default_compiler() %}
-## Unfortunately, at this time we are just given one compiler_exe by Conan
+{# Unfortunately, at this time we are just given one compiler_exe by Conan #}
 {% set c_compiler_exe = compiler_exe %}
 {% set cxx_compiler_exe = os.getenv("CXX") or {'cc':'c++', 'clang':'clang++', 'gcc':'g++'}[compiler_exe] or compiler_exe %}
 
