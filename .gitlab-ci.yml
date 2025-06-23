@@ -383,7 +383,7 @@ merge-lockfiles:
     - merge-lockfiles
   variables:
     CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/builder-$IMAGE_NAME:$IMAGE_TAG_TEST
-    CONAN_FLAGS: -o '&:with_assessor=False'
+    CONAN_FLAGS: -o &:with_assessor=False
   #language=sh
   script:
     - *script_header
