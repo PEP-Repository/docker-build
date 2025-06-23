@@ -12,6 +12,8 @@ RUN apt-get update && \
 RUN git clone --depth=1 https://github.com/emscripten-core/emsdk.git && \
     /emsdk/emsdk install latest && \
     /emsdk/emsdk activate latest && \
-    echo '. /emsdk/emsdk_env.sh' >>~/.profile
+    echo '. /emsdk/emsdk_env.sh' >>~/.profile && \
+    # tsc isn't installed by default but we need it for --emit-tsd, see related https://github.com/emscripten-core/emsdk/issues/1370
+    . ~/.profile && (cd /emsdk/upstream/emscripten/ && npm install typescript)
 
 ENV DEBIAN_FRONTEND=''
