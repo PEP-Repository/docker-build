@@ -402,7 +402,7 @@ merge-lockfiles:
     - fi
     - docker container cp ./builder/conan/ "$container:/tmp/conan"
     # Login to load profile with potential environment variables
-    - docker container exec "$container" sh -l -c "/tmp/conan/conan_install_ci.sh $concurrency_option_conan $CONAN_FLAGS"
+    - docker container exec "$container" bash --login /tmp/conan/conan_install_ci.sh $concurrency_option_conan $CONAN_FLAGS
     - docker container exec "$container" rm -rf '/tmp/*'
     - rm -rf ./builder/cache/conan-home/
     - mkdir -p ./builder/cache/
