@@ -225,6 +225,7 @@ runtime/ubuntu-lts:
     # Create weblib Release & Debug lockfile
     # Runtime requirements should be the same for each OS, but build_requirements may differ per OS
     - conan lock create ./ --update
+      --profile:build=./conan_profile
       --profile:host=./conan_profile_wasm32
       --lockfile=''
       --lockfile-out=./conan-wasm32-rel.lock
@@ -232,6 +233,7 @@ runtime/ubuntu-lts:
       -o "&:with_tests=True"
       -o "&:with_benchmark=True"
     - conan lock create ./ --update
+      --profile:build=./conan_profile
       --profile:host=./conan_profile_wasm32
       --lockfile=''
       --lockfile-out=./conan-wasm32-dbg.lock
