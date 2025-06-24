@@ -5,7 +5,6 @@
 
 [settings]
 build_type=Release
-pep/*:build_type=Debug
 
 os=Emscripten
 arch=wasm
