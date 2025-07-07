@@ -121,7 +121,7 @@ workflow:
       fi
     - *docker_login
     - if command -v apt-proxy-checker.sh >/dev/null; then
-    -   echo 'Acquire::http::Proxy "$(apt-proxy-checker.sh)";' >./apt-cache/90pep-proxy
+    -   echo "Acquire::http::Proxy \"$(apt-proxy-checker.sh)\";" >./apt-cache/90pep-proxy
     - fi
     - bold '==== Building & pushing image ===='
     - echo "Tagging image as $CONTAINER_IMAGE"
