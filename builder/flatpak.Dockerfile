@@ -1,7 +1,8 @@
 FROM ubuntu
 ENV CLICOLOR_FORCE=1 DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update \
+RUN --mount=src=apt-cache/90pep-proxy,dst=/etc/apt/apt.conf.d/90pep-proxy \
+    apt-get update \
     && apt-get upgrade -y --autoremove --purge \
     && apt-get install -y flatpak flatpak-builder bzip2 jq \
     && apt-get clean \

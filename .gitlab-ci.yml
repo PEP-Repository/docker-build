@@ -120,6 +120,9 @@ workflow:
         exit 1
       fi
     - *docker_login
+    - if command -v apt-proxy-checker.sh >/dev/null; then
+    -   echo 'Acquire::http::Proxy "$(apt-proxy-checker.sh)";' >./apt-cache/90pep-proxy
+    - fi
     - bold '==== Building & pushing image ===='
     - echo "Tagging image as $CONTAINER_IMAGE"
     - docker buildx build
@@ -127,7 +130,7 @@ workflow:
       --push
       --file "./$IMAGE_KIND/$IMAGE_NAME.Dockerfile"
       --tag "$CONTAINER_IMAGE"
-      "./$IMAGE_KIND/"
+      "./"
 
 # ==== Builders ====
 
