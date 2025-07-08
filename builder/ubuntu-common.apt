@@ -1,5 +1,7 @@
 # APT dependencies for Ubuntu builders
 
+ca-certificates
+
 # For installation
 pipx  # To install Python tools (i.e. Conan)
 software-properties-common  # add-apt-repository
@@ -9,6 +11,8 @@ ccache
 clang
 cmake
 golang
+# make is used internally in some dependencies
+make
 ninja-build
 
 # Used by scripts
@@ -18,4 +22,5 @@ git
 gnupg
 jq
 python3
+python3-yaml
 valgrind  # For tests
