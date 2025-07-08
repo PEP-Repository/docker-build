@@ -11,6 +11,8 @@ ccache
 clang
 cmake
 golang
+# make is used internally in some dependencies
+make
 ninja-build
 
 # Used by scripts
