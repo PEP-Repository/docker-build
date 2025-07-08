@@ -23,4 +23,5 @@ gnupg
 jq
 python3
 python3-yaml
+ssh-client
 valgrind  # For tests
