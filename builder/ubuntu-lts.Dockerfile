@@ -29,7 +29,7 @@ RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /
 RUN --mount=src=apt-cache/90pep-proxy,dst=/etc/apt/apt.conf.d/90pep-proxy \
     add-apt-repository -y ppa:apptainer/ppa \
     && apt-get update \
-    && apt-get install -y --no-install-recommends docker-ce docker-ce-cli containerd.io apptainer \
+    && apt-get install -y --no-install-recommends docker-ce docker-ce-cli docker-buildx-plugin docker-compose-plugin containerd.io apptainer \
     && apt-get clean \
     && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
