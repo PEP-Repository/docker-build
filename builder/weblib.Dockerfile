@@ -3,7 +3,7 @@ ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 ENV DEBIAN_FRONTEND=noninteractive
 
-COPY ./weblib.apt /tmp/
+COPY ./builder/weblib.apt /tmp/
 
 # should be in one RUN command, to avoid huge caches between steps
 RUN apt-get update && \
