@@ -45,6 +45,11 @@ tools.build:compiler_executables={ 'c':'{{c_compiler_exe}}', 'cpp':'{{cxx_compil
 tools.build:defines=['_WIN32_WINNT=0x0A00']
 {%- endif %}
 
+{% if operating_system == 'Macos' -%}
+# We don't want to install full Xcode on macOS, so we disable this check as it doesn't seem to be required for what we do
+qt/*:tools.cmake.cmaketoolchain:extra_variables={'QT_NO_XCODE_MIN_VERSION_CHECK': 'ON'}
+{%- endif %}
+
 [options]
 # windeployqt needs shared libraries
 # (and also wants to be shared itself, see https://github.com/conan-io/conan-center-index/issues/22693 )
