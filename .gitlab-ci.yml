@@ -259,7 +259,7 @@ builder/lockfile/macos-x86:
   extends: .generate-lockfile
   needs: []
   tags:
-    - macos-x86
+    - macos-intel
   variables:
     name: macos-x86
 
