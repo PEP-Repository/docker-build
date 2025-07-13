@@ -210,7 +210,7 @@ class PepRecipe(ConanFile):
         }))
 
         if self.options.with_client and not self.options.use_system_qt:
-            self.requires('qt/[^6.6]', options={
+            self.requires('qt/[^6.6 <6.8]', options={
                 'essential_modules': False,
                 'qtsvg': True,
                 'qttranslations': True,
