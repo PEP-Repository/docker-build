@@ -28,6 +28,11 @@ compiler.cppstd=20
 compiler.runtime={{runtime}}
 {%- endif %}
 
+{% if libcxx == 'libstdc++11' -%}
+# Add GNU extensions for __int128 support in STL, see https://github.com/qt/qtbase/commit/9bb2ab5978625eee96f703871d5eca8e54b31386
+qt/*:compiler.cppstd=gnu20
+{%- endif %}
+
 [conf]
 {% if compiler_exe -%}
 # Specify executables consistent with compiler in settings above
