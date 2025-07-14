@@ -32,7 +32,7 @@
         "civetweb/1.16#f4a42c8aa0bc0fe4bbe2a2270af0cea2%1750148475.207",
         "bzip2/1.0.8#00b4a4658791c1f06914e087f0e792f5%1744702067.178",
         "boost/1.88.0#8852c0b72ce8271fb8ff7c53456d4983%1750780640.186",
-        "benchmark/1.9.1#73d267daf0371b7f6605edef1594a681%1736524768.274"
+        "benchmark/1.9.4#ce4403f7a24d3e1f907cd9da4b678be4%1749892625.885"
     ],
     "build_requires": [
         "zlib/1.3.1#b8bc2603263cf7eccbd6e17e66b0ed76%1733936244.862",
