@@ -8,8 +8,8 @@ RUN --mount=src=apt-cache/90pep-proxy,dst=/etc/apt/apt.conf.d/90pep-proxy \
     && apt-get clean \
     && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
-RUN flatpak --user remote-add flathub https://dl.flathub.org/repo/flathub.flatpakrepo \
-    && flatpak --user install -y org.kde.Platform//6.7 \
-    && flatpak --user install -y org.kde.Sdk//6.7
+RUN flatpak remote-add flathub https://dl.flathub.org/repo/flathub.flatpakrepo \
+    && flatpak install -y org.kde.Platform//6.7 \
+    && flatpak install -y org.kde.Sdk//6.7
 
 ENV DEBIAN_FRONTEND=''
