@@ -42,7 +42,7 @@
         "civetweb/1.16#f4a42c8aa0bc0fe4bbe2a2270af0cea2%1750148475.207",
         "bzip2/1.0.8#00b4a4658791c1f06914e087f0e792f5%1744702067.178",
         "brotli/1.1.0#406ce8f1c997f4ef7852fa01ff85ef9f%1743158659.041",
-        "boost/1.86.0#1a9d6c7521c03c76356cfec29a82acb2%1750170391.818",
+        "boost/1.86.0#5af697a73801bfd7ee2186f6556bd0aa%1752681737.208",
         "benchmark/1.9.4#ce4403f7a24d3e1f907cd9da4b678be4%1749892625.885"
     ],
     "build_requires": [
