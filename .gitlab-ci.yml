@@ -193,7 +193,7 @@ runtime/ubuntu-lts:
       --lockfile=''
       --lockfile-out=./conan-rel.lock
       -s build_type=Release
-      -o "&:with_client=True"
+      -o "&:with_assessor=True"
       -o "&:with_tests=True"
       -o "&:with_benchmark=True"
       -o "&:use_system_qt=False"
@@ -202,7 +202,7 @@ runtime/ubuntu-lts:
       --lockfile=''
       --lockfile-out=./conan-dbg.lock
       -s "&:build_type=Debug"
-      -o "&:with_client=True"
+      -o "&:with_assessor=True"
       -o "&:with_tests=True"
       -o "&:with_benchmark=True"
       -o "&:use_system_qt=False"
@@ -524,7 +524,7 @@ deploy:
     - |
       cat >./git-password.sh <<'EOF'
       #!/usr/bin/env sh
-      exec echo "$GITLAB_ACCESS_TOKEN"
+      exec echo "$PEP_GROUP_REPOSITORY_TOKEN"
       EOF
       chmod +x ./git-password.sh
       git config --global core.askPass "$PWD/git-password.sh"

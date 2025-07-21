@@ -19,8 +19,7 @@ if [ -e "$conan_profile" ]; then
   esac
 fi
 
-# Render our autodetect profile and take one section ('Build profile:') to put in the profile file (and print)
-conan profile show --profile:all="$(dirname -- "$0")/conan_profile" |
-  awk 'p==1 {print $0} /Build profile:/ {p=1}' |
+# Render our autodetect profile
+conan profile show --profile:all="$(dirname -- "$0")/conan_profile" --context host |
   tee "$conan_profile"
 echo "Profile written to $conan_profile"
