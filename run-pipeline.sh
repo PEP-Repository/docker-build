@@ -55,7 +55,7 @@ echo 'Polling status'
 last_status=''
 while true
 do
-  status=$(curl --no-progress-meter --fail --header "PRIVATE-TOKEN:$GITLAB_ACCESS_TOKEN" "$CI_API_V4_URL/projects/$foss_project_urlencoded/pipelines/$pipelineid" | jq ".status")
+  status=$(curl --no-progress-meter --fail --header "PRIVATE-TOKEN:$PEP_GROUP_READ_API_TOKEN" "$CI_API_V4_URL/projects/$foss_project_urlencoded/pipelines/$pipelineid" | jq ".status")
 
   if [ "$status" != "$last_status" ]; then
     printf '\n%s' "$status"
