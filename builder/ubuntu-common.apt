@@ -9,6 +9,7 @@ software-properties-common  # add-apt-repository
 # Build tools
 ccache
 clang
+clang-tidy
 cmake
 golang
 # make is used internally in some dependencies
