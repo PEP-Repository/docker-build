@@ -14,8 +14,9 @@ RUN git clone --depth=1 https://github.com/emscripten-core/emsdk.git && \
     /emsdk/emsdk install latest && \
     /emsdk/emsdk activate latest && \
     echo '. /emsdk/emsdk_env.sh' >>~/.profile && \
-    # tsc isn't installed by default but we need it for --emit-tsd, see related https://github.com/emscripten-core/emsdk/issues/1370
-    bash --login -c 'cd /emsdk/upstream/emscripten/ && npm install typescript'
+    # tsc isn't installed by default as it's in devDependencies but we need it for --emit-tsd,
+    # see related https://github.com/emscripten-core/emsdk/issues/1370
+    bash --login -c 'cd /emsdk/upstream/emscripten/ && npm install --omit=dev --save-prod typescript'
 
 RUN pipx install websockify
 
