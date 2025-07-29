@@ -251,7 +251,7 @@ builder/lockfile/macos-arm:
   extends: .generate-lockfile
   needs: []
   tags:
-    - macos-arm
+    - macos-arm64
   variables:
     name: macos-arm
 
