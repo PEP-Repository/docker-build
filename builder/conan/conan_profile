@@ -50,9 +50,6 @@ tools.build:compiler_executables={ 'c':'{{c_compiler_exe}}', 'cpp':'{{cxx_compil
 tools.build:defines=['_WIN32_WINNT=0x0A00']
 {%- endif %}
 
-# Add Conan backup sources repo as fallback in case official sources are down
-core.sources:download_urls=["origin", "https://c3i.jfrog.io/artifactory/conan-center-backup-sources"]
-
 [options]
 # windeployqt needs shared libraries
 # (and also wants to be shared itself, see https://github.com/conan-io/conan-center-index/issues/22693 )
