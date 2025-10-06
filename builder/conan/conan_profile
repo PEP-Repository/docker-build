@@ -9,7 +9,7 @@
 {% set cxx_compiler_exe = os.getenv("CXX") or {'cc':'c++', 'clang':'clang++', 'gcc':'g++'}[compiler_exe] or compiler_exe %}
 
 {% if compiler == 'msvc' %}
-    {% set runtime, _ = detect_api.default_msvc_runtime(compiler) %}
+  {% set runtime, _ = detect_api.default_msvc_runtime(compiler) %}
 {% endif %}
 {% set libcxx = detect_api.detect_libcxx(compiler, version, compiler_exe) %}
 
@@ -19,7 +19,16 @@ build_type=Release
 os={{operating_system}}
 arch={{detect_api.detect_arch()}}
 compiler={{compiler}}
-compiler.version={{detect_api.default_compiler_version(compiler, version)}}
+{% set major_version = detect_api.default_compiler_version(compiler, version) %}
+# Update this when Conan supports new Clang version
+{% if compiler == 'clang' and major_version > 20 %}
+  # Clang versions >20 are currently rejected by Conan,
+  # see https://docs.conan.io/2/reference/config_files/settings.html
+  compiler.version=20
+{% else %}
+  compiler.version={{major_version}}
+{% endif %}
+
 {% if libcxx %} compiler.libcxx={{libcxx}} {% endif %}
 compiler.cppstd=20
 
