@@ -177,7 +177,7 @@ class PepRecipe(ConanFile):
                 'without_python': True,
                 # 'without_random': True,
                 # 'without_regex': True,  # For iostreams, log
-                'without_serialization': True,
+                # 'without_serialization': True,  # Required since Boost 1.89: see https://gitlab.pep.cs.ru.nl/pep/docker-build/-/issues/24
                 'without_stacktrace': True,
                 # 'without_system': True,
                 'without_test': True,
