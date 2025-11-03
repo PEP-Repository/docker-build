@@ -129,7 +129,8 @@ class PepRecipe(ConanFile):
 
     def requirements(self):
         # Do we require these pep libraries?
-        with_http_serverlib = self.options.with_assessor or self.options.with_logon or self.options.with_servers
+        with_oauth_clientlib = self.options.with_assessor or self.options.with_logon
+        with_http_serverlib = with_oauth_clientlib or self.options.with_servers
         with_metricslib = self.options.with_servers or self.options.with_castor
 
         self.requires('libarchive/[^3.7]', options=self._optional_opts({
@@ -140,9 +141,9 @@ class PepRecipe(ConanFile):
         if self.options.with_benchmark:
             self.requires('benchmark/[^1.8]')
 
-        # See /cpp/pep/httpserver/CMakeLists.txt
-        with_boost_process = with_http_serverlib and self.settings.os in ['Linux', 'Macos']
-        self.requires('boost/[^1.86]', options={
+        # See /cpp/pep/oauth-client/CMakeLists.txt
+        with_boost_process = with_oauth_clientlib and self.settings.os in ['Linux', 'Macos']
+        self.requires('boost/[^1.87]', options={
             # Instruct Boost that it can use std::filesystem
             'filesystem_use_std_fs': True,
 
