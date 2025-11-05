@@ -143,7 +143,7 @@ class PepRecipe(ConanFile):
 
         # See /cpp/pep/oauth-client/CMakeLists.txt
         with_boost_process = with_oauth_clientlib and self.settings.os in ['Linux', 'Macos']
-        self.requires('boost/[^1.87]', options={
+        self.requires('boost/[^1.89]', options={
             # Instruct Boost that it can use std::filesystem
             'filesystem_use_std_fs': True,
 
