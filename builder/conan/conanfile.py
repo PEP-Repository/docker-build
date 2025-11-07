@@ -136,11 +136,11 @@ class PepRecipe(ConanFile):
 
     def requirements(self):
         # Do we require these pep libraries?
-        with_http_serverlib = (self.options.get_safe('with_assessor', False) or
-                             self.options.get_safe('with_logon', False) or
-                             self.options.get_safe('with_servers', False))
+        with_oauth_clientlib = (self.options.get_safe('with_assessor', False) or
+                                self.options.get_safe('with_logon', False))
+        with_http_serverlib = with_oauth_clientlib or self.options.get_safe('with_servers', False)
         with_metricslib = (self.options.get_safe('with_servers', False) or
-                          self.options.get_safe('with_castor', False))
+                           self.options.get_safe('with_castor', False))
 
         self.requires('libarchive/[^3.7]', options=self._optional_opts({
             'with_zlib': False,
@@ -150,9 +150,9 @@ class PepRecipe(ConanFile):
         if self.options.with_benchmark:
             self.requires('benchmark/[^1.8]')
 
-        # See /cpp/pep/httpserver/CMakeLists.txt
-        with_boost_process = with_http_serverlib and self.settings.os in ['Linux', 'Macos']
-        self.requires('boost/[^1.86]', options={
+        # See /cpp/pep/oauth-client/CMakeLists.txt
+        with_boost_process = with_oauth_clientlib and self.settings.os in ['Linux', 'Macos']
+        self.requires('boost/[^1.89]', options={
             # Instruct Boost that it can use std::filesystem
             'filesystem_use_std_fs': True,
 
@@ -187,7 +187,7 @@ class PepRecipe(ConanFile):
                 'without_python': True,
                 # 'without_random': True,
                 # 'without_regex': True,  # For iostreams, log
-                'without_serialization': True,
+                # 'without_serialization': True,  # Required since Boost 1.89: see https://gitlab.pep.cs.ru.nl/pep/docker-build/-/issues/24
                 'without_stacktrace': True,
                 # 'without_system': True,
                 'without_test': True,
