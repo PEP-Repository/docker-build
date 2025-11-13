@@ -3,6 +3,7 @@
 # Example: CC=clang CXX=clang++ conan install ./ --profile:all=./docker-build/builder/conan/conan_profile
 
 {% set operating_system = detect_api.detect_os() %}
+{% set arch = detect_api.detect_arch() %}
 {% set compiler, version, compiler_exe = detect_api.detect_default_compiler() %}
 ## Unfortunately, at this time we are just given one compiler_exe by Conan
 {% set c_compiler_exe = compiler_exe %}
@@ -17,7 +18,7 @@
 build_type=Release
 
 os={{operating_system}}
-arch={{detect_api.detect_arch()}}
+arch={{arch}}
 compiler={{compiler}}
 compiler.version={{detect_api.default_compiler_version(compiler, version)}}
 {% if libcxx %} compiler.libcxx={{libcxx}} {% endif %}
@@ -56,9 +57,13 @@ qt/*:tools.cmake.cmaketoolchain:extra_variables={'QT_NO_XCODE_MIN_VERSION_CHECK'
 {%- endif %}
 
 [options]
+{% if operating_system == 'Macos' and arch == 'x86_64' -%}
+# Do not build Qt as shared library to work around https://github.com/conan-io/conan-center-index/issues/28389
+{% else -%}
 # windeployqt needs shared libraries
 # (and also wants to be shared itself, see https://github.com/conan-io/conan-center-index/issues/22693 )
 qt/*:shared=True
+{%- endif %}
 
 {% if operating_system == 'Macos' -%}
 openssl/*:openssldir=/etc/ssl/
