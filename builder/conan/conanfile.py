@@ -231,7 +231,7 @@ class PepRecipe(ConanFile):
         self.requires('protobuf/[^3.21]')
 
         if self.options.with_assessor and not self.options.use_system_qt:
-            self.requires('qt/[^6.6 <6.8]', options={
+            self.requires('qt/[^6.6]', options={
                 'essential_modules': False,
                 'qtsvg': True,
                 'qttranslations': True,
