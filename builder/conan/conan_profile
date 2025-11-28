@@ -66,13 +66,10 @@ qt/*:tools.cmake.cmaketoolchain:extra_variables={'QT_NO_XCODE_MIN_VERSION_CHECK'
 {%- endif %}
 
 [options]
-{% if operating_system == 'Macos' and arch == 'x86_64' -%}
-# Do not build Qt as shared library to work around https://github.com/conan-io/conan-center-index/issues/28389
-{% else -%}
-# windeployqt needs shared libraries
-# (and also wants to be shared itself, see https://github.com/conan-io/conan-center-index/issues/22693 )
+# Static Qt plugins don't work well with Conan,
+# plus this saves space if multiple executables use Qt.
+# See e.g. https://github.com/conan-io/conan-center-index/issues/23382
 qt/*:shared=True
-{%- endif %}
 
 {% if operating_system == 'Macos' -%}
 openssl/*:openssldir=/etc/ssl/
