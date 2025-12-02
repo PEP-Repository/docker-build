@@ -228,7 +228,7 @@ class PepRecipe(ConanFile):
                 'with_pull': False,
             }))
 
-        self.requires('protobuf/[^3.21]')
+        self.requires('protobuf/[>=3.21 <7]')
 
         if self.options.with_assessor and not self.options.use_system_qt:
              # Workaround for https://github.com/conan-io/conan-center-index/issues/28389
