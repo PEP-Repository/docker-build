@@ -61,10 +61,10 @@ tools.build:defines=['_WIN32_WINNT=0x0A00']
 {%- endif %}
 
 {% if operating_system == 'Macos' -%}
-# We don't want to install full Xcode on macOS, so we disable this check as it doesn't seem to be required for what we do
-qt/*:tools.cmake.cmaketoolchain:extra_variables={'QT_NO_XCODE_MIN_VERSION_CHECK': 'ON'}
-#XXX See https://qt-project.atlassian.net/browse/QTBUG-138427
-qt/[^6.9]:tools.cmake.cmaketoolchain:extra_variables={'QT_NO_APPLE_SDK_AND_XCODE_CHECK': 'ON'}
+# We don't want to install full Xcode on macOS, so we disable this check as it doesn't seem to be required for what we do.
+#XXX We'd like to just disable the Xcode check (QT_NO_XCODE_MIN_VERSION_CHECK),
+# but see https://qt-project.atlassian.net/browse/QTBUG-138427
+qt/*:tools.cmake.cmaketoolchain:extra_variables={'QT_NO_APPLE_SDK_AND_XCODE_CHECK': 'ON'}
 {%- endif %}
 
 [options]
