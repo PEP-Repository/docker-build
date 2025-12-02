@@ -243,7 +243,7 @@ builder/lockfile/windows:
   extends: .generate-lockfile
   needs: []
   tags:
-    - windows
+    - windows-parallel
   variables:
     name: windows
   # Override
