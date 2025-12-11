@@ -267,6 +267,8 @@ class PepRecipe(ConanFile):
     def build_requirements(self):
         # Add these to PATH
 
+        self.tool_requires('cmake/[>=3.28 <5]')
+
         self.tool_requires('protobuf/<host_version>')  # protoc
 
         if self.options.with_assessor and not self.options.use_system_qt:
