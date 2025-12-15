@@ -14,3 +14,6 @@ tzdata  # For timezone info (/usr/share/zoneinfo, used e.g. in `date` package)
 bash-completion
 pkg-config
 zsh
+
+# for envsubst, to use env vars in config files
+gettext
