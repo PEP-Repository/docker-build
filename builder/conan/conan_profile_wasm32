@@ -10,7 +10,7 @@ os=Emscripten
 arch=wasm
 compiler=clang
 # Newest recognized at this moment
-compiler.version=20
+compiler.version=21
 compiler.libcxx=libc++
 compiler.cppstd=20
 
