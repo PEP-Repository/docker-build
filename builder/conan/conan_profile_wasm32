@@ -18,6 +18,8 @@ compiler.cppstd=20
 tools.build:compiler_executables={'c':'emcc', 'cpp':'em++'}
 {# Make sure to not crash on lockfile generation when EMSDK is not set #}
 tools.cmake.cmaketoolchain:user_toolchain=[ '{{ (os.getenv('EMSDK') or "/EMSDK-NOT-SET") + '/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake' }}' ]
+# Use native WASM EH (and not Emscripten EH): https://emscripten.org/docs/porting/exceptions.html#webassembly-exception-handling-based-support
+# Note that this currently uses the well-supported legacy WASM EH, see https://emscripten.org/docs/tools_reference/settings_reference.html#wasm-legacy-exceptions
 {% set compile_flags = ['-matomics', '-mbulk-memory', '-fwasm-exceptions'] %}
 tools.build:cflags={{compile_flags}}
 tools.build:cxxflags={{compile_flags}}
