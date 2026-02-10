@@ -2,6 +2,8 @@
 # See https://docs.conan.io/2/reference/config_files/profiles.html
 # Example: CC=clang CXX=clang++ conan install ./ --profile:all=./docker-build/builder/conan/conan_profile
 
+include(./base_conan_profile)
+
 {% set operating_system = detect_api.detect_os() %}
 {% set arch = detect_api.detect_arch() %}
 {% set compiler, version, compiler_exe = detect_api.detect_default_compiler() %}
@@ -80,3 +82,4 @@ openssl/*:openssldir=/etc/ssl/
 [tool_requires]
 # See https://github.com/conan-io/conan-center-index/blob/master/docs/faqs.md#why-recipes-that-use-build-tools-like-cmake-that-have-packages-in-conan-center-do-not-use-it-as-a-build-require-by-default
 cmake/[>=3.28]
+{% if compiler != 'msvc' %} ninja/[*] {% endif %}
