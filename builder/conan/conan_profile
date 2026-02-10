@@ -80,6 +80,7 @@ openssl/*:openssldir=/etc/ssl/
 {%- endif %}
 
 [tool_requires]
-# See https://github.com/conan-io/conan-center-index/blob/master/docs/faqs.md#why-recipes-that-use-build-tools-like-cmake-that-have-packages-in-conan-center-do-not-use-it-as-a-build-require-by-default
-cmake/[>=3.28]
+{# See 'context' comment in base_conan_profile #}
+{% if context == 'host' %}
 {% if compiler != 'msvc' %} ninja/[*] {% endif %}
+{% endif %}
