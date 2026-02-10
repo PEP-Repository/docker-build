@@ -5,8 +5,10 @@ set -eu
 # cd to script directory
 cd "$(dirname -- "$0")"
 
-mkdir -p "$(conan config home)/profiles/"
-cp ./conan_profile "$(conan config home)/profiles/default"
+conan_home="$(conan config home)"
+mkdir -p "$conan_home/profiles/"
+cp ./base_conan_profile "$conan_home/profiles/"
+cp ./conan_profile "$conan_home/profiles/default"
 
 # Install dependencies with Conan for configurations used in CI
 
