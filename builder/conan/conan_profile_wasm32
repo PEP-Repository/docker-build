@@ -2,7 +2,7 @@ include(./base_conan_profile)
 
 {# Try to find local EMSDK installation #}
 {% set emsdk = os.getenv('EMSDK') %}
-# This should match the installed EMSDK version
+{# This should match the installed EMSDK version #}
 {% set emsdk_version = '4.0.22' %}
 
 [settings]
@@ -15,10 +15,8 @@ compiler.cppstd=20
 compiler.threads=posix
 
 [conf]
-
-{% if emsdk -%}
-# Use local EMSDK
 tools.build:compiler_executables={'c':'emcc', 'cpp':'em++'}
+{% if emsdk -%}
 tools.cmake.cmaketoolchain:user_toolchain=[ '{{ emsdk + '/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake' }}' ]
 {%- endif %}
 
@@ -38,8 +36,3 @@ tools.cmake.cmaketoolchain:generator=Ninja
 
 [tool_requires]
 ninja/[*]
-
-{% if not emsdk -%}
-# Keep consistent with compiler.version above
-emsdk/{{emsdk_version}}
-{%- endif %}
