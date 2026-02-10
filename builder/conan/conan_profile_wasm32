@@ -1,20 +1,27 @@
 include(./base_conan_profile)
 
+{# Try to find local EMSDK installation #}
+{% set emsdk = os.getenv('EMSDK') %}
+# This should match the installed EMSDK version
+{% set emsdk_version = '4.0.22' %}
+
 [settings]
 os=Emscripten
 arch=wasm
 compiler=emcc
-# This should be updated to match the installed EMSDK version
-#XXX detect_api support not available yet: https://github.com/conan-io/conan/issues/19590
-compiler.version=4.0.22
+compiler.version={{emsdk_version}}
 compiler.libcxx=libc++
 compiler.cppstd=20
 compiler.threads=posix
 
 [conf]
+
+{% if emsdk -%}
+# Use local EMSDK
 tools.build:compiler_executables={'c':'emcc', 'cpp':'em++'}
-{# Make sure to not crash on lockfile generation when EMSDK is not set #}
-tools.cmake.cmaketoolchain:user_toolchain=[ '{{ (os.getenv('EMSDK') or "/EMSDK-NOT-SET") + '/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake' }}' ]
+tools.cmake.cmaketoolchain:user_toolchain=[ '{{ emsdk + '/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake' }}' ]
+{%- endif %}
+
 # Use native WASM EH (and not Emscripten EH): https://emscripten.org/docs/porting/exceptions.html#webassembly-exception-handling-based-support
 # Note that this currently uses the well-supported legacy WASM EH, see https://emscripten.org/docs/tools_reference/settings_reference.html#wasm-legacy-exceptions
 {% set compile_flags = ['-matomics', '-mbulk-memory', '-fwasm-exceptions'] %}
@@ -31,5 +38,8 @@ tools.cmake.cmaketoolchain:generator=Ninja
 
 [tool_requires]
 ninja/[*]
-#TODO Use https://github.com/conan-io/conan-toolchains/tree/main/conan_config/profiles/emsdk ?
-# But: Have to unset e.g. memory growth (currently warns because of performance overhead with Pthreads)
+
+{% if not emsdk -%}
+# Keep consistent with compiler.version above
+emsdk/{{emsdk_version}}
+{%- endif %}
