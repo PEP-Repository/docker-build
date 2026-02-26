@@ -2,14 +2,13 @@ include(./base_conan_profile)
 
 {# Try to find local EMSDK installation #}
 {% set emsdk = os.getenv('EMSDK') %}
-{# This should match the installed EMSDK version #}
-{% set emsdk_version = '4.0.22' %}
+{% set compiler, compiler_version, compiler_exe = detect_api.detect_emcc_compiler() %}
 
 [settings]
 os=Emscripten
 arch=wasm
-compiler=emcc
-compiler.version={{emsdk_version}}
+compiler={{compiler}}
+compiler.version={{compiler_version}}
 compiler.libcxx=libc++
 compiler.cppstd=20
 compiler.threads=posix
