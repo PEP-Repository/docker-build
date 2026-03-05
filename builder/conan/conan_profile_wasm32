@@ -1,5 +1,7 @@
 include(./base_conan_profile)
 
+{% set build_os = platform.system() %}
+
 {# Try to find local EMSDK installation #}
 {% set emsdk = os.getenv('EMSDK') %}
 
@@ -17,8 +19,17 @@ compiler.version={{compiler_version}}
 {%- endif %}
 
 [conf]
-tools.build:compiler_executables={'c':'emcc', 'cpp':'em++'}
 {% if emsdk -%}
+{% if build_os == 'Windows' -%}
+# We need to add extensions (.bat) because otherwise boost says "failed updating 0 target",
+# see https://github.com/conan-io/conan-center-index/issues/27607.
+# However, then we get an error (with OpenSSL) that the command line is too long due to CMD restrictions,
+# so we directly call python instead.
+{% set python = (os.getenv('EMSDK_PYTHON') or 'python') | replace('\\','/') %}
+tools.build:compiler_executables={'c':'"{{python}}" -E "{{ emsdk + '/upstream/emscripten/emcc.py' }}"', 'cpp':'"{{python}}" -E "{{ emsdk + '/upstream/emscripten/em++.py' }}"'}
+{%- else -%}
+tools.build:compiler_executables={'c':'emcc', 'cpp':'em++'}
+{%- endif %}
 tools.cmake.cmaketoolchain:user_toolchain=[ '{{ emsdk + '/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake' }}' ]
 {%- endif %}
 
