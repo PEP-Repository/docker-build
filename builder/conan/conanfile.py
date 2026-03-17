@@ -204,7 +204,7 @@ class PepRecipe(ConanFile):
         # XXX Remove when std timezones are widely supported
         if self.options.with_castor:
             # Use system timezone database where possible, auto-download to ~/Downloads on Windows
-            self.requires('date/[^3.0]', options={} if self.settings.os == 'Windows' else {'use_system_tz_db': True})
+            self.requires('date/[^3.0]', options={} if self.settings.os == 'Windows' else {'tz_db': 'system'})
 
         if self.options.with_tests:
             self.requires('gtest/[^1.14]')
