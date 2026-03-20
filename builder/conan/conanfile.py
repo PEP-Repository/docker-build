@@ -232,9 +232,9 @@ class PepRecipe(ConanFile):
 
         if self.options.with_assessor and not self.options.use_system_qt:
             qt_version = (
-                # See https://gitlab.pep.cs.ru.nl/pep/core/-/issues/2658
-                # Workaround for https://github.com/conan-io/conan-center-index/issues/28389
-                '[^6.6 <6.8]' if self.settings.os == 'Macos' and 'x86' in self.settings.arch
+                # 6.8 is broken on macOS x86
+                # See https://gitlab.pep.cs.ru.nl/pep/core/-/issues/2658 & https://github.com/conan-io/conan-center-index/issues/28389
+                '[^6.6 <6.8 || ^6.10]' if self.settings.os == 'Macos' and 'x86' in self.settings.arch
                 else '[^6.6]')
             self.requires(f'qt/{qt_version}', options={
                 'essential_modules': False,
