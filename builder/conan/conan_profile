@@ -72,7 +72,7 @@ openssl/*:openssldir=/etc/ssl/
 {%- endif %}
 
 [tool_requires]
-{# See 'context' comment in base_conan_profile #}
-{% if context == 'host' %}
-{% if compiler != 'msvc' %} ninja/[*] {% endif %}
+{% if compiler != 'msvc' %}
+# See comments for cmake in base_conan_profile
+!(cmake/*|ninja/*): ninja/[*]
 {% endif %}

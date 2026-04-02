@@ -49,7 +49,7 @@ tools.info.package_id:confs=['tools.build:cflags', 'tools.build:cxxflags', 'tool
 tools.cmake.cmaketoolchain:generator=Ninja
 
 [tool_requires]
-ninja/[*]
+!(cmake/*|ninja/*): ninja/[*]
 
 [buildenv]
 {% if emsdk -%}
