@@ -213,7 +213,7 @@ class PepRecipe(ConanFile):
         # XXX Remove when std timezones are widely supported
         if self.options.get_safe('with_castor', False):
             # Use system timezone database where possible, auto-download to ~/Downloads on Windows
-            self.requires('date/[^3.0]', options={} if self.settings.os == 'Windows' else {'use_system_tz_db': True})
+            self.requires('date/[^3.0]', options={} if self.settings.os == 'Windows' else {'tz_db': 'system'})
 
         if self.options.with_tests:
             self.requires('gtest/[^1.14]')
@@ -240,14 +240,7 @@ class PepRecipe(ConanFile):
         self.requires('protobuf/[>=3.21 <7]')
 
         if self.options.get_safe('with_assessor', False) and not self.options.get_safe('use_system_qt', False):
-            qt_version = (
-                # See https://gitlab.pep.cs.ru.nl/pep/core/-/issues/2658
-                # Workaround for https://github.com/conan-io/conan-center-index/issues/28389
-                '[^6.6 <6.8]' if self.settings.os == 'Macos' and 'x86' in self.settings.arch
-                # Workaround for https://qt-project.atlassian.net/browse/QTBUG-138427
-                else '[^6.6 <6.9]' if self.settings.os == 'Macos'
-                else '[^6.6]')
-            self.requires(f'qt/{qt_version}', options={
+            self.requires(f'qt/[^6.6]', options={
                 'essential_modules': False,
                 'qtsvg': True,
                 'qttranslations': True,
