@@ -5,6 +5,16 @@ include(./base_conan_profile)
 {# Try to find local EMSDK installation #}
 {% set emsdk = os.getenv('EMSDK') %}
 
+{% if build_os == 'Windows' -%}
+{#
+  We need to add extensions (.bat) because otherwise boost says "failed updating 0 target",
+  see https://github.com/conan-io/conan-center-index/issues/27607.
+#}
+{% set script_suffix = '.bat' %}
+{%- else -%}
+{% set script_suffix = '' %}
+{%- endif %}
+
 [settings]
 os=Emscripten
 arch=wasm
@@ -20,13 +30,7 @@ compiler.version={{compiler_version}}
 
 [conf]
 {% if emsdk -%}
-{% if build_os == 'Windows' -%}
-# We need to add extensions (.bat) because otherwise boost says "failed updating 0 target",
-# see https://github.com/conan-io/conan-center-index/issues/27607.
-tools.build:compiler_executables={'c':'emcc.bat', 'cpp':'em++.bat'}
-{%- else -%}
-tools.build:compiler_executables={'c':'emcc', 'cpp':'em++'}
-{%- endif %}
+tools.build:compiler_executables={'c':'emcc{{script_suffix}}', 'cpp':'em++{{script_suffix}}'}
 tools.cmake.cmaketoolchain:user_toolchain=[ '{{ emsdk + '/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake' }}' ]
 {%- endif %}
 
@@ -46,3 +50,14 @@ tools.cmake.cmaketoolchain:generator=Ninja
 
 [tool_requires]
 ninja/[*]
+
+[buildenv]
+{% if emsdk -%}
+# Set envvars to use these tools, as the default ones may be incompatible (especially on macOS).
+# On Windows, we get an error with emar.bat building OpenSSL that the command line is too long due to CMD restrictions,
+# so we call the executables that it would call directly.
+AR="{{emsdk+'/upstream/bin/llvm-ar'}}"
+NM="{{emsdk+'/upstream/bin/llvm-nm'}}"
+RANLIB="{{emsdk+'/upstream/bin/llvm-ranlib'}}"
+STRIP="{{emsdk+'/upstream/bin/llvm-strip'}}"
+{%- endif %}
