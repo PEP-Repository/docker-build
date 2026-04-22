@@ -37,7 +37,7 @@ RUN --mount=src=apt-cache/90pep-proxy,dst=/etc/apt/apt.conf.d/90pep-proxy \
 RUN mkdir -p /usr/share/man/man1 \
     && INFER_VERSION="v1.2.0" \
     && ARCHIVE="infer-linux-x86_64-${INFER_VERSION}.tar.xz" \
-    && curl -fL "https://github.com/facebook/infer/releases/download/${INFER_VERSION}/${ARCHIVE}" | tar -xJ -C /opt \
+    && curl --no-progress-meter -fL "https://github.com/facebook/infer/releases/download/${INFER_VERSION}/${ARCHIVE}" | tar -xJ -C /opt \
     && ln -sfn "/opt/infer-linux-x86_64-${INFER_VERSION}" /infer
 
 ENV PATH="/infer/bin:${PATH}"
