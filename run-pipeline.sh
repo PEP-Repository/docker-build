@@ -28,16 +28,18 @@ response=$(curl --no-progress-meter --fail --globoff --request POST "$CI_API_V4_
     --data-urlencode "variables[DOCKER_BUILD_LOCKFILE_JOB]=$lockfile_job" \
     --data-urlencode "variables[BUILD_ALL_TARGETS]=yes"
 )
-echo "Response: $response"
-pipelineid=$(echo "$response" | jq ".id")
+pipelineid=$(printf %s "$response" | jq ".id")
 echo "Pipeline ID $pipelineid"
 if [ "$pipelineid" = "null" ]
 then
   exit 1
 fi
 
+# Print pipeline URL
+printf %s "$response" | jq --raw-output .web_url
+
 # Set pipeline name
-curl --no-progress-meter --fail --globoff --request PUT "$CI_API_V4_URL/projects/$foss_project_urlencoded/pipelines/$pipelineid/metadata" \
+>/dev/null curl --no-progress-meter --fail --globoff --request PUT "$CI_API_V4_URL/projects/$foss_project_urlencoded/pipelines/$pipelineid/metadata" \
     --data-urlencode "token=$CI_JOB_TOKEN" \
     --data-urlencode "name=Testing images for docker-build pipeline $CI_PIPELINE_ID"
 
@@ -66,14 +68,17 @@ do
 
   if contains "$success_statuses" "$status"
   then
+    echo
     echo "Pipeline succeeded with status: '$status'"
     exit 0
   elif contains "$failure_statuses" "$status"
   then
+    echo
     echo "Pipeline failed with status: '$status'"
     exit 1
   elif ! contains "$running_statuses" "$status"
   then
+    echo
     echo "Received unsupported status \"$status\" from Gitlab API"
     exit 1
   fi
