@@ -240,7 +240,12 @@ class PepRecipe(ConanFile):
         self.requires('protobuf/[>=3.21 <7]')
 
         if self.options.get_safe('with_assessor', False) and not self.options.get_safe('use_system_qt', False):
-            self.requires(f'qt/[^6.6]', options={
+            qt_version = (
+                # See https://gitlab.pep.cs.ru.nl/pep/core/-/work_items/2860
+                # Workaround for https://github.com/conan-io/conan-center-index/issues/28389
+                '[^6.6 <6.8]' if self.settings.os == 'Macos' and 'x86' in self.settings.arch
+                else '[^6.6]')
+            self.requires(f'qt/{qt_version}', options={
                 'essential_modules': False,
                 'qtsvg': True,
                 'qttranslations': True,

@@ -33,4 +33,13 @@ RUN --mount=src=apt-cache/90pep-proxy,dst=/etc/apt/apt.conf.d/90pep-proxy \
     && apt-get clean \
     && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
+# Install infer for SAST, mkdir the man/man1 directory due to Debian bug #863199
+RUN mkdir -p /usr/share/man/man1 \
+    && INFER_VERSION="v1.2.0" \
+    && ARCHIVE="infer-linux-x86_64-${INFER_VERSION}.tar.xz" \
+    && curl --no-progress-meter -fL "https://github.com/facebook/infer/releases/download/${INFER_VERSION}/${ARCHIVE}" | tar -xJ -C /opt \
+    && ln -sfn "/opt/infer-linux-x86_64-${INFER_VERSION}" /infer
+
+ENV PATH="/infer/bin:${PATH}"
+
 ENV DEBIAN_FRONTEND='' CC=clang CXX=clang++
