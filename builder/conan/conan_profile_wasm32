@@ -34,7 +34,7 @@ tools.build:compiler_executables={'c':'emcc{{script_suffix}}', 'cpp':'em++{{scri
 tools.cmake.cmaketoolchain:user_toolchain=[ '{{ emsdk + '/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake' }}' ]
 {%- endif %}
 
-# Use native WASM EH (and not Emscripten EH): https://emscripten.org/docs/porting/exceptions.html#webassembly-exception-handling-based-support
+# Use native WASM Exception Handling (and not Emscripten EH): https://emscripten.org/docs/porting/exceptions.html#webassembly-exception-handling-based-support
 # Note that this currently uses the well-supported legacy WASM EH, see https://emscripten.org/docs/tools_reference/settings_reference.html#wasm-legacy-exceptions
 {% set compile_flags = ['-matomics', '-mbulk-memory', '-fwasm-exceptions'] %}
 tools.build:cflags={{compile_flags}}
