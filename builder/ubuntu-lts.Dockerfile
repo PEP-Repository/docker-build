@@ -28,10 +28,14 @@ RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list >/dev/null
 RUN --mount=src=apt-cache/90pep-proxy,dst=/etc/apt/apt.conf.d/90pep-proxy \
     add-apt-repository -y ppa:apptainer/ppa \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends docker-ce docker-ce-cli docker-buildx-plugin docker-compose-plugin containerd.io apptainer \
-    && apt-get clean \
-    && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
+    && apt-get update
+RUN apt-get install -y --no-install-recommends docker-ce
+RUN apt-get install -y --no-install-recommends docker-ce-cli
+RUN apt-get install -y --no-install-recommends docker-buildx-plugin
+RUN apt-get install -y --no-install-recommends docker-compose-plugin
+RUN apt-get install -y --no-install-recommends containerd.io
+RUN apt-get install -y --no-install-recommends apptainer
+RUN apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
 # Install infer for SAST, mkdir the man/man1 directory due to Debian bug #863199
 RUN mkdir -p /usr/share/man/man1 \
