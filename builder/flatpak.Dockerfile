@@ -1,4 +1,4 @@
-FROM ubuntu
+FROM ubuntu:24.04
 ENV CLICOLOR_FORCE=1 DEBIAN_FRONTEND=noninteractive
 
 RUN --mount=src=apt-cache/90pep-proxy,dst=/etc/apt/apt.conf.d/90pep-proxy \
