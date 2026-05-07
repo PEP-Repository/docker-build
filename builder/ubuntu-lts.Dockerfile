@@ -26,8 +26,7 @@ RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 # Install apptainer: adapted from https://apptainer.org/docs/admin/main/installation.html#install-ubuntu-packages
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list >/dev/null
-RUN --mount=src=apt-cache/90pep-proxy,dst=/etc/apt/apt.conf.d/90pep-proxy \
-    add-apt-repository -y ppa:apptainer/ppa \
+RUN add-apt-repository -y ppa:apptainer/ppa \
     && apt-get update \
     && apt-get install -y --no-install-recommends docker-ce docker-ce-cli docker-buildx-plugin docker-compose-plugin containerd.io apptainer \
     && apt-get clean \
