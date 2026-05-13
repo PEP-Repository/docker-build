@@ -4,6 +4,6 @@
 bear
 xz-utils
 
-# For code coverage
-compiler-rt
+# For code coverage with Clang
+llvm
 gcovr
