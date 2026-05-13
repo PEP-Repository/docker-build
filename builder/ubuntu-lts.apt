@@ -3,3 +3,7 @@
 # For SAST
 bear
 xz-utils
+
+# For code coverage
+compiler-rt
+gcovr
