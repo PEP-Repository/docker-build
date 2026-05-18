@@ -143,7 +143,10 @@ class PepRecipe(ConanFile):
 
         # See /cpp/pep/oauth-client/CMakeLists.txt
         with_boost_process = with_oauth_clientlib and self.settings.os in ['Linux', 'Macos']
-        self.requires('boost/[^1.89]', options={
+        #XXX Skip Boost 1.91.0 because of https://github.com/boostorg/url/issues/992,
+        #   see https://gitlab.pep.cs.ru.nl/pep/core/-/work_items/2881
+        #   Hopefully this will be fixed in 1.91.1
+        self.requires('boost/[^1.87 <1.91 || ^1.91 >1.91.0]', options={
             # Instruct Boost that it can use std::filesystem
             'filesystem_use_std_fs': True,
 
@@ -204,7 +207,7 @@ class PepRecipe(ConanFile):
         # XXX Remove when std timezones are widely supported
         if self.options.with_castor:
             # Use system timezone database where possible, auto-download to ~/Downloads on Windows
-            self.requires('date/[^3.0]', options={} if self.settings.os == 'Windows' else {'use_system_tz_db': True})
+            self.requires('date/[^3.0]', options={} if self.settings.os == 'Windows' else {'tz_db': 'system'})
 
         if self.options.with_tests:
             self.requires('gtest/[^1.14]')
@@ -232,11 +235,9 @@ class PepRecipe(ConanFile):
 
         if self.options.with_assessor and not self.options.use_system_qt:
             qt_version = (
-                # See https://gitlab.pep.cs.ru.nl/pep/core/-/issues/2658
+                # See https://gitlab.pep.cs.ru.nl/pep/core/-/work_items/2860
                 # Workaround for https://github.com/conan-io/conan-center-index/issues/28389
                 '[^6.6 <6.8]' if self.settings.os == 'Macos' and 'x86' in self.settings.arch
-                # Workaround for https://qt-project.atlassian.net/browse/QTBUG-138427
-                else '[^6.6 <6.9]' if self.settings.os == 'Macos'
                 else '[^6.6]')
             self.requires(f'qt/{qt_version}', options={
                 'essential_modules': False,
