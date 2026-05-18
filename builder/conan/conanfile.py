@@ -238,9 +238,7 @@ class PepRecipe(ConanFile):
                 # See https://gitlab.pep.cs.ru.nl/pep/core/-/work_items/2860
                 # Workaround for https://github.com/conan-io/conan-center-index/issues/28389
                 '[^6.6 <6.8]' if self.settings.os == 'Macos' and 'x86' in self.settings.arch
-                # Exclude 6.11.0: see https://gitlab.pep.cs.ru.nl/pep/core/-/work_items/2854#note_59590
-                # Apparently the MacOS build failure will be fixed in 6.11.1
-                else '[^6.6 <6.11 || ^6.11 >6.11.0]')
+                else '[^6.6]')
             self.requires(f'qt/{qt_version}', options={
                 'essential_modules': False,
                 'qtsvg': True,
