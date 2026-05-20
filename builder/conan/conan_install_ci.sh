@@ -33,7 +33,7 @@ conan install ./ --build=missing \
   $concurrency_option_conan \
   -o "&:with_assessor=False" \
   -o "&:with_tests=True" \
-  -o "&:with_benchmark=False"
+  -o "&:with_benchmark=True"
 
 echo 'Cleaning cache'
 # Remove old packages
