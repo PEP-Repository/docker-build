@@ -519,24 +519,23 @@ deploy:
     -   rm -rf ./pep
     #   --depth=1: Shallow clone: do not fetch history
     #   This requires $FOSS_REF to exist
-    -   git clone
+    -   if git clone
         --branch="$FOSS_REF"
         --no-tags
         --depth=1
         --shallow-submodules
         --recurse-submodules=docker-build
-        "$CI_SERVER_URL/$FOSS_PROJECT.git" ./pep && true
-    -   if [ "$?" = 128 ]; then
-    #     Is default value?
+        "$CI_SERVER_URL/$FOSS_PROJECT.git" ./pep; then
+    -     foss_repo="$CI_PROJECT_DIR/pep"
+    -     docker_build_repo="$foss_repo/docker-build"
+    -   else
+    #     Is default FOSS_REF value? (Not set manually)
     -     if [ "$FOSS_REF" = "$CI_COMMIT_REF_NAME" ]; then
     -       warn "Could not clone branch $FOSS_REF of $FOSS_PROJECT, assuming the branch does not exist, and falling back to only updating $CI_PROJECT_NAME"
     -       UPDATE_FOSS=no
     -     else
     -       exit 1
     -     fi
-    -   else
-    -     foss_repo="$CI_PROJECT_DIR/pep"
-    -     docker_build_repo="$foss_repo/docker-build"
     -   fi
     - fi
     # Code above may update UPDATE_FOSS, so `else` would not work
