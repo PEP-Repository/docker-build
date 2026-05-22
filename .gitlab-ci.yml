@@ -525,10 +525,22 @@ deploy:
         --depth=1
         --shallow-submodules
         --recurse-submodules=docker-build
-        "$CI_SERVER_URL/$FOSS_PROJECT.git" ./pep
-    -   foss_repo="$CI_PROJECT_DIR/pep"
-    -   docker_build_repo="$foss_repo/docker-build"
-    - else
+        "$CI_SERVER_URL/$FOSS_PROJECT.git" ./pep && true
+    -   if [ "$?" = 128 ]; then
+    #     Is default value?
+    -     if [ "$FOSS_REF" = "$CI_COMMIT_REF_NAME" ]; then
+    -       warn "Could not clone branch $FOSS_REF of $FOSS_PROJECT, assuming the branch does not exist, and falling back to only updating $CI_PROJECT_NAME"
+    -       UPDATE_FOSS=no
+    -     else
+    -       exit 1
+    -     fi
+    -   else
+    -     foss_repo="$CI_PROJECT_DIR/pep"
+    -     docker_build_repo="$foss_repo/docker-build"
+    -   fi
+    - fi
+    # Code above may update UPDATE_FOSS, so `else` would not work
+    - if [ "$UPDATE_FOSS" = no ]; then
     -   bold "Cloning only $CI_PROJECT_NAME"
     -   rm -rf ./docker-build
     -   git clone
