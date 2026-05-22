@@ -1,4 +1,4 @@
-FROM ubuntu
+FROM ubuntu:24.04
 ENV CLICOLOR_FORCE=1 DEBIAN_FRONTEND=noninteractive
 
 RUN --mount=src=apt-cache/90pep-proxy,dst=/etc/apt/apt.conf.d/90pep-proxy \
@@ -10,7 +10,6 @@ RUN --mount=src=apt-cache/90pep-proxy,dst=/etc/apt/apt.conf.d/90pep-proxy \
 
 # Keep versions consistent with nl.ru.pep.base.yml
 RUN flatpak remote-add flathub https://dl.flathub.org/repo/flathub.flatpakrepo \
-    && flatpak install -y org.kde.Platform//6.8 \
-    && flatpak install -y org.kde.Sdk//6.8
+    && flatpak install -y org.kde.Platform//6.9 org.kde.Sdk//6.9
 
 ENV DEBIAN_FRONTEND=''
