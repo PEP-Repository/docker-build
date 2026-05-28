@@ -40,10 +40,6 @@ tools.cmake.cmaketoolchain:user_toolchain=[ '{{ emsdk + '/upstream/emscripten/cm
 tools.build:cflags={{compile_flags}}
 tools.build:cxxflags={{compile_flags}}
 
-# Silence __COUNTER__ error for Clang >=22
-#XXX Workaround for https://github.com/google/benchmark/issues/2057
-benchmark/1.9.4:tools.build:cxxflags+=['-Wno-c2y-extensions']
-
 # Make sure to rebuild when we change flags
 tools.info.package_id:confs=['tools.build:cflags', 'tools.build:cxxflags', 'tools.build:exelinkflags', 'tools.build:sharedlinkflags']
 tools.cmake.cmaketoolchain:generator=Ninja

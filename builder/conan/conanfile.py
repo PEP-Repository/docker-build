@@ -148,7 +148,7 @@ class PepRecipe(ConanFile):
         }))
 
         if self.options.with_benchmark:
-            self.requires('benchmark/[^1.8]')
+            self.requires('benchmark/[~1 >=1.9.5]')
 
         # See /cpp/pep/oauth-client/CMakeLists.txt
         with_boost_process = with_oauth_clientlib and self.settings.os in ['Linux', 'Macos']
