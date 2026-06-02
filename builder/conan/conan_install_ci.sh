@@ -25,7 +25,7 @@ conan install ./ --build=missing \
   --lockfile=./conan-ci.lock \
   -s build_type=Debug \
   -o "&:with_tests=True" \
-  -o "&:with_benchmark=False" \
+  -o "&:with_benchmark=True" \
   "$@"
 
 echo 'Cleaning cache'

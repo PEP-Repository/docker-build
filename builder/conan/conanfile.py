@@ -248,9 +248,7 @@ class PepRecipe(ConanFile):
             if self.settings.os == 'Macos' and 'x86' in self.settings.arch:
                 qt_version = '[^6.6 <6.8]'
             else:
-                #XXX Remove restriction when https://github.com/conan-io/conan-center-index/issues/30246 is solved
-                # See https://gitlab.pep.cs.ru.nl/pep/core/-/work_items/2888
-                qt_version = '[^6.6 <6.11]'
+                qt_version = '[^6.6]'
             self.requires(f'qt/{qt_version}', options={
                 'essential_modules': False,
                 'qtsvg': True,
