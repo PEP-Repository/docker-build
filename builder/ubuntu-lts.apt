@@ -7,4 +7,3 @@ xz-utils
 # For code coverage with Clang
 llvm
 libclang-rt-dev
-gcovr
