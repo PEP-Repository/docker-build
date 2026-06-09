@@ -120,6 +120,9 @@ class PepRecipe(ConanFile):
             tc.cache_variables[name] = value
         if str(self.options.subbuild_name):
             tc.presets_prefix = str(self.options.subbuild_name)
+        if self.settings.os == 'Macos':
+            tc.cache_variables['SPARKLE_LIBRARY'] = os.path.join(
+                self.dependencies['sparkle'].package_folder, 'Sparkle.framework')
         tc.generate()
 
     def build(self):
@@ -132,6 +135,9 @@ class PepRecipe(ConanFile):
         with_oauth_clientlib = self.options.with_assessor or self.options.with_logon
         with_http_serverlib = with_oauth_clientlib or self.options.with_servers
         with_metricslib = self.options.with_servers or self.options.with_castor
+
+        if self.settings.os == 'Macos':
+            self.requires('sparkle/[^2.9]@local')
 
         self.requires('libarchive/[^3.7]', options=self._optional_opts({
             'with_zlib': False,
