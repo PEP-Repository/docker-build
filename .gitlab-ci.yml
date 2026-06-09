@@ -231,7 +231,8 @@ runtime/ubuntu-lts:
     - conan lock create ./ --update
       --profile:build=./conan_profile
       --profile:host=./conan_profile_wasm32
-      --lockfile=''
+      --lockfile="$AMEND_LOCKFILE"
+      --lockfile-clean
       --lockfile-out=./conan-wasm32-rel.lock
       -s build_type=Release
       -o "&:with_tests=True"
@@ -239,7 +240,8 @@ runtime/ubuntu-lts:
     - conan lock create ./ --update
       --profile:build=./conan_profile
       --profile:host=./conan_profile_wasm32
-      --lockfile=''
+      --lockfile="$AMEND_LOCKFILE"
+      --lockfile-clean
       --lockfile-out=./conan-wasm32-dbg.lock
       -s "&:build_type=Debug"
       -o "&:with_tests=True"
