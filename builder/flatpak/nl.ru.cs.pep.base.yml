@@ -45,6 +45,8 @@ modules:
       - type: file
         path: ../conan/conan_profile
       - type: file
+        path: ../conan/base_conan_profile
+      - type: file
         path: ../conan/conanfile.py
       - type: file
         path: ../conan/conan-ci.lock
