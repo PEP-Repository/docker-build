@@ -15,8 +15,6 @@ class SparkleConan(ConanFile):
     topics = ("macos", "autoupdate", "framework")
     package_type = "shared-library"
 
-    # build_type and compiler are irrelevant — xcodebuild uses its own Release config.
-    # The package hash varies only by architecture, so one build serves Debug and Release.
     settings = "os", "arch"
 
     def validate(self):
@@ -32,7 +30,6 @@ class SparkleConan(ConanFile):
     def build(self):
         # Cant use XcodeBuild as it unconditionally adds -alltargets which conflicts with -scheme.
         # So we use self.run() directly; to_apple_arch()
-        # Products land at ${SYMROOT}/Release/ (EFFECTIVE_PLATFORM_NAME is empty on macOS).
         arch = to_apple_arch(self)
         cmd = (f"xcodebuild -project Sparkle.xcodeproj"
                f" -scheme sparkle-cli"
@@ -43,8 +40,6 @@ class SparkleConan(ConanFile):
 
     def package(self):
         products_dir = os.path.join(self.build_folder, "Release")
-        # Sparkle.framework and sparkle.app land as siblings in products_dir.
-        # cli/CMakeLists.txt expects both as siblings in the same directory.
         copy(self, "Sparkle.framework/**", src=products_dir, dst=self.package_folder)
         copy(self, "sparkle.app/**", src=products_dir, dst=self.package_folder)
 
@@ -57,6 +52,3 @@ class SparkleConan(ConanFile):
         self.cpp_info.bindirs = []
         self.cpp_info.frameworkdirs = [self.package_folder]
         self.cpp_info.frameworks = ["Sparkle"]
-        # -F is needed at compile time (not just link time) for #import <Sparkle/Sparkle.h>
-        self.cpp_info.cxxflags = [f"-F{self.package_folder}"]
-        self.cpp_info.cflags = [f"-F{self.package_folder}"]
