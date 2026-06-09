@@ -1,0 +1,11 @@
+include(./conan_profile_wasm32)
+
+[conf]
+# Use Emscripten Exception Handling
+{% set compile_flags = ['-matomics', '-mbulk-memory', '-fexceptions'] %}
+tools.build:cflags={{compile_flags}}
+tools.build:cxxflags={{compile_flags}}
+
+[options]
+#XXX Work around Boost wanting to use WASM EH, see https://github.com/conan-io/conan-center-index/pull/28703
+boost/*:extra_b2_flags='exception-handling=on exception-handling-method=js'

@@ -50,6 +50,7 @@ variables:
     builder-ubuntu-lts
     builder-ubuntu-rolling
     builder-flatpak
+    builder-weblib
     runtime-ubuntu-lts
 
 # Applies to whole pipeline
@@ -131,6 +132,7 @@ workflow:
       --push
       --file "./$IMAGE_KIND/$IMAGE_NAME.Dockerfile"
       --tag "$CONTAINER_IMAGE"
+      ${EXTRA_DOCKER_ARGS-}
       "./"
 
 # ==== Builders ====
@@ -153,6 +155,14 @@ builder/base/flatpak:
     IMAGE_KIND: builder
     IMAGE_NAME: flatpak
 
+builder/base/weblib:
+  extends: .docker-image
+  needs:
+    - builder/base/ubuntu-lts
+  variables:
+    IMAGE_KIND: builder
+    IMAGE_NAME: weblib
+    EXTRA_DOCKER_ARGS: --build-arg=BASE_IMAGE=$CI_REGISTRY_IMAGE/$IMAGE_KIND-ubuntu-lts:$IMAGE_TAG_TEST
 
 # ==== Runtimes ====
 
@@ -194,7 +204,7 @@ runtime/ubuntu-lts:
   script:
     - cd ./builder/conan/
     - conan remote add pep-local-recipes ./local-recipes --type local-recipes-index --force
-    # Create Release & Debug lockfile and merge them
+    # Create Release & Debug lockfile
     - conan lock create ./ --update
       --profile:all=./conan_profile
       --lockfile="$AMEND_LOCKFILE"
@@ -215,9 +225,33 @@ runtime/ubuntu-lts:
       -o "&:with_tests=True"
       -o "&:with_benchmark=True"
       -o "&:use_system_qt=False"
+
+    # Create weblib Release & Debug lockfile
+    # Runtime requirements should be the same for each OS, but build_requirements may differ per OS
+    - conan lock create ./ --update
+      --profile:build=./conan_profile
+      --profile:host=./conan_profile_wasm32
+      --lockfile="$AMEND_LOCKFILE"
+      --lockfile-clean
+      --lockfile-out=./conan-wasm32-rel.lock
+      -s build_type=Release
+      -o "&:with_tests=True"
+      -o "&:with_benchmark=True"
+    - conan lock create ./ --update
+      --profile:build=./conan_profile
+      --profile:host=./conan_profile_wasm32
+      --lockfile="$AMEND_LOCKFILE"
+      --lockfile-clean
+      --lockfile-out=./conan-wasm32-dbg.lock
+      -s "&:build_type=Debug"
+      -o "&:with_tests=True"
+      -o "&:with_benchmark=True"
+
     - conan lock merge
       --lockfile=./conan-rel.lock
       --lockfile=./conan-dbg.lock
+      --lockfile=./conan-wasm32-rel.lock
+      --lockfile=./conan-wasm32-dbg.lock
       --lockfile-out="./conan.$name.lock"
   artifacts:
     paths:
@@ -346,10 +380,16 @@ merge-lockfiles:
     - merge-lockfiles
   variables:
     CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/builder-$IMAGE_NAME:$IMAGE_TAG_TEST
+    CONAN_FLAGS: -o &:with_assessor=False
   #language=sh
   script:
     - *script_header
     - *set_concurrency_limit
+    - |
+      concurrency_option_conan=''
+      if [ -n "$concurrency_limit" ]; then
+        concurrency_option_conan="-c:a tools.build:jobs=$concurrency_limit"
+      fi
     - *docker_login
     - bold '==== Executing Conan in container ===='
     - container="$(docker container run --pull=always --interactive --detach "$CONTAINER_IMAGE")"
@@ -358,7 +398,8 @@ merge-lockfiles:
     -   docker container cp ./builder/cache/conan-home/ "$container:/root/.conan2/"
     - fi
     - docker container cp ./builder/conan/ "$container:/tmp/conan"
-    - docker container exec "$container" /tmp/conan/conan_install_ci.sh "$concurrency_limit"
+    # Login to load profile with potential environment variables
+    - docker container exec "$container" bash --login /tmp/conan/conan_install_ci.sh $concurrency_option_conan $CONAN_FLAGS
     - docker container exec "$container" rm -rf '/tmp/*'
     - rm -rf ./builder/cache/conan-home/
     - mkdir -p ./builder/cache/
@@ -369,7 +410,7 @@ merge-lockfiles:
     - bold '==== Pushing image ===='
     - docker push "$CONTAINER_IMAGE"
   cache:
-    key: docker-builder-cache
+    key: docker-builder-cache-$IMAGE_NAME
     paths:
       - ./builder/cache/
 
@@ -382,6 +423,12 @@ builder/ubuntu-rolling:
   extends: .conan-builder
   variables:
     IMAGE_NAME: ubuntu-rolling
+
+builder/weblib:
+  extends: .conan-builder
+  variables:
+    IMAGE_NAME: weblib
+    CONAN_FLAGS: --profile:host=conan_profile_wasm32
 
 builder/flatpak:
   stage: conan-install

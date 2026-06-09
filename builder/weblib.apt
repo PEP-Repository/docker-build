@@ -1,0 +1,4 @@
+# Additional APT dependencies for weblib builder
+
+# xz used by emsdk install
+xz-utils
