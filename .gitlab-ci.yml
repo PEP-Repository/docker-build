@@ -193,6 +193,7 @@ runtime/ubuntu-lts:
   #language=sh
   script:
     - cd ./builder/conan/
+    - conan remote add pep-local-recipes ./local-recipes --type local-recipes-index --force
     # Create Release & Debug lockfile and merge them
     - conan lock create ./ --update
       --profile:all=./conan_profile
