@@ -17,6 +17,7 @@ RUN --mount=src=apt-cache/90pep-proxy,dst=/etc/apt/apt.conf.d/90pep-proxy \
 # so we put binaries in /usr/local/bin instead of the default ~/.local/bin
 ENV PIPX_BIN_DIR=/usr/local/bin
 RUN pipx install 'conan==2.*'
+RUN pipx install lcov_cobertura
 
 ENV GOPATH="/usr/local/go"
 ENV PATH="${GOPATH}/bin:${PATH}"
