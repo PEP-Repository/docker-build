@@ -8,8 +8,8 @@ RUN --mount=src=apt-cache/90pep-proxy,dst=/etc/apt/apt.conf.d/90pep-proxy \
     && apt-get clean \
     && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
+# Keep versions consistent with nl.ru.pep.base.yml
 RUN flatpak remote-add flathub https://dl.flathub.org/repo/flathub.flatpakrepo \
-    && flatpak install -y org.kde.Platform//6.7 \
-    && flatpak install -y org.kde.Sdk//6.7
+    && flatpak install -y org.kde.Platform//6.9 org.kde.Sdk//6.9
 
 ENV DEBIAN_FRONTEND=''
