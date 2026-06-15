@@ -393,17 +393,18 @@ merge-lockfiles:
     - *docker_login
     - bold '==== Executing Conan in container ===='
     - container="$(docker container run --pull=always --interactive --detach "$CONTAINER_IMAGE")"
-    - if [ -d ./builder/cache/conan-home/ ]; then
-    -   echo 'Copying cached .conan2 folder'
-    -   docker container cp ./builder/cache/conan-home/ "$container:/root/.conan2/"
+    - if [ -d ./builder/cache/conan-home/p/ ]; then
+    -   echo 'Copying cached .conan2/p folder'
+    -   docker container exec "$container" mkdir /root/.conan2/
+    -   docker container cp ./builder/cache/conan-home/p/ "$container:/root/.conan2/p"
     - fi
     - docker container cp ./builder/conan/ "$container:/tmp/conan"
     # Login to load profile with potential environment variables
     - docker container exec "$container" bash --login /tmp/conan/conan_install_ci.sh $concurrency_option_conan $CONAN_FLAGS
     - docker container exec "$container" rm -rf '/tmp/*'
     - rm -rf ./builder/cache/conan-home/
-    - mkdir -p ./builder/cache/
-    - docker container cp "$container:/root/.conan2/" ./builder/cache/conan-home
+    - mkdir -p ./builder/cache/conan-home/
+    - docker container cp "$container:/root/.conan2/p/" ./builder/cache/conan-home/p
     - docker container stop "$container"
     - docker container commit --message 'Add Conan packages' "$container" "$CONTAINER_IMAGE"
 
