@@ -15,7 +15,13 @@ class SparkleConan(ConanFile):
     topics = ("macos", "autoupdate", "framework")
     package_type = "shared-library"
 
-    settings = "os", "arch"
+    settings = "os", "arch", "build_type"
+
+    @property
+    def _configuration(self):
+        # Sparkle's Xcode project only provides Debug and Release configurations,
+        # so map any other build type like RelWithDebInfo to Release.
+        return "Debug" if self.settings.build_type == "Debug" else "Release"
 
     def validate(self):
         if self.settings.os != "Macos":
@@ -33,13 +39,13 @@ class SparkleConan(ConanFile):
         arch = to_apple_arch(self)
         cmd = (f"xcodebuild -project Sparkle.xcodeproj"
                f" -scheme sparkle-cli"
-               f" -configuration Release"
+               f" -configuration {self._configuration}"
                f" -arch {arch}"
                f" SYMROOT={self.build_folder}")
         self.run(cmd, cwd=self.source_folder)
 
     def package(self):
-        products_dir = os.path.join(self.build_folder, "Release")
+        products_dir = os.path.join(self.build_folder, self._configuration)
         copy(self, "Sparkle.framework/**", src=products_dir, dst=self.package_folder)
         copy(self, "sparkle.app/**", src=products_dir, dst=self.package_folder)
 
