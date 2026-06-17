@@ -1,7 +1,7 @@
 import os
 from conan import ConanFile
 from conan.errors import ConanInvalidConfiguration
-from conan.tools.apple import to_apple_arch
+from conan.tools.apple import XcodeBuild
 from conan.tools.files import get, copy
 
 
@@ -34,20 +34,25 @@ class SparkleConan(ConanFile):
             strip_root=True)
 
     def build(self):
-        # Cant use XcodeBuild as it unconditionally adds -alltargets which conflicts with -scheme.
-        # So we use self.run() directly; to_apple_arch()
-        arch = to_apple_arch(self)
-        cmd = (f"xcodebuild -project Sparkle.xcodeproj"
-               f" -scheme sparkle-cli"
-               f" -configuration {self._configuration}"
-               f" -arch {arch}"
-               f" SYMROOT={self.build_folder}")
-        self.run(cmd, cwd=self.source_folder)
+        # sparkle-cli produces Sparkle.framework + sparkle.app, generate_appcast is a separate
+        # standalone tool target that is not a dependency of sparkle-cli, so build both. We build
+        # by -target so we can use Conan's XcodeBuild helper, but also pass -scheme 
+        # (not natively supported by XcodeBuild), so the build works.
+        xcodebuild = XcodeBuild(self)
+        xcodeproj = os.path.join(self.source_folder, "Sparkle.xcodeproj")
+        for target in ("sparkle-cli", "generate_appcast"):
+            xcodebuild.build(xcodeproj, target=target,
+                             configuration=self._configuration,
+                             cli_args=[f"SYMROOT={self.build_folder}", f"-scheme {target}"])
 
     def package(self):
         products_dir = os.path.join(self.build_folder, self._configuration)
         copy(self, "Sparkle.framework/**", src=products_dir, dst=self.package_folder)
         copy(self, "sparkle.app/**", src=products_dir, dst=self.package_folder)
+        # generate_appcast is a standalone CI tool; place it under bin/ to match the
+        # conventional Sparkle distribution layout ($SPARKLE_DIR/bin/generate_appcast).
+        copy(self, "generate_appcast", src=products_dir,
+             dst=os.path.join(self.package_folder, "bin"))
 
     def package_info(self):
         self.cpp_info.set_property("cmake_file_name", "Sparkle")
@@ -55,6 +60,6 @@ class SparkleConan(ConanFile):
         self.cpp_info.set_property("cmake_find_mode", "config")
         self.cpp_info.includedirs = []  # headers live inside Sparkle.framework, not a separate include/
         self.cpp_info.libdirs = []
-        self.cpp_info.bindirs = []
+        self.cpp_info.bindirs = ["bin"]  # exposes generate_appcast on the run environment PATH
         self.cpp_info.frameworkdirs = [self.package_folder]
         self.cpp_info.frameworks = ["Sparkle"]
