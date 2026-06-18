@@ -21,6 +21,9 @@ modules:
 
         export CONAN_HOME="$FLATPAK_DEST/tmp/conan/"
 
+        # Add the local-recipes-index remote so recipes we package ourselves can be resolved
+        conan remote add pep-local-recipes ./local-recipes --type local-recipes-index --force
+
         # -fuse-ld=gold: Use faster and less memory-intensive GNU gold linker
         # --lockfile-partial --update: If for some reason we would need different dependencies for Flatpak
         #  than for the platforms we generated the lockfile on (e.g. because of the different compiler),
@@ -50,6 +53,9 @@ modules:
         path: ../conan/conanfile.py
       - type: file
         path: ../conan/conan-ci.lock
+      - type: dir
+        path: ../conan/local-recipes
+        dest: local-recipes
     build-options:
       build-args:
         - --share=network
