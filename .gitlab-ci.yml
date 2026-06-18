@@ -204,6 +204,10 @@ runtime/ubuntu-lts:
   script:
     - cd ./builder/conan/
     - conan remote add pep-local-recipes ./local-recipes --type local-recipes-index --force
+    # Local recipes should be regenerated every time
+    - conan lock remove --requires="*/*@local" --build-requires="*/*@local"
+      --lockfile=./conan-ci.lock
+      --lockfile-out=./conan-ci.lock
     # Create Release & Debug lockfile
     - conan lock create ./ --update
       --profile:all=./conan_profile
