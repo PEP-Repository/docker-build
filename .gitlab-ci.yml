@@ -285,7 +285,7 @@ builder/lockfile/windows:
   extends: .generate-lockfile
   needs: []
   tags:
-    - windows-parallel
+    - windows-sequential
   variables:
     name: windows
   # Override
