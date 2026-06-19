@@ -5,6 +5,26 @@ from conan.tools.apple import XcodeBuild
 from conan.tools.files import get, copy
 
 
+class SchemeXcodeBuild(XcodeBuild):
+    """XcodeBuild hack that passes -scheme alongside -target.
+
+    A bare -target build does not resolve the target's dependencies, so we want
+    -scheme too. But xcodebuild rejects a -scheme that follows a KEY=VALUE
+    build-setting token ("You cannot specify both a scheme and targets"). -target
+    and -scheme together are fine. The base build() hard-appends
+    MACOSX_DEPLOYMENT_TARGET=... before cli_args, so a -scheme routed through cli_args
+    always lands after that token and fails. Instead we fold -scheme into the target
+    value: the base wraps it as `-target '{}'`, which expands to
+    `-target 'X' -scheme 'X'`, placing the scheme before the deployment-target
+    override while reusing all of super()'s command assembly.
+    """
+
+    def build(self, xcodeproj, target=None, configuration=None, cli_args=None):
+        scheme_target = "{0}' -scheme '{0}".format(target)
+        return super().build(xcodeproj, target=scheme_target,
+                             configuration=configuration, cli_args=cli_args)
+
+
 class SparkleConan(ConanFile):
     name = "sparkle"
     user = "local"
@@ -34,17 +54,13 @@ class SparkleConan(ConanFile):
             strip_root=True)
 
     def build(self):
-        # sparkle-cli produces Sparkle.framework + sparkle.app. generate_appcast is a separate
-        # standalone tool. Pass -target (via target=) to build only the desired one, otherwise
-        # XcodeBuild builds the default/all targets. A bare -target build does not resolve the
-        # target's dependencies, so also pass -scheme; xcodebuild accepts both together. In the future,
-        # hopefully the class is updated to support this natively.
-        xcodebuild = XcodeBuild(self)
+        # sparkle-cli produces Sparkle.framework + sparkle.app. generate_appcast is a separate standalone tool.
+        xcodebuild = SchemeXcodeBuild(self)
         xcodeproj = os.path.join(self.source_folder, "Sparkle.xcodeproj")
         for target in ("sparkle-cli", "generate_appcast"):
             xcodebuild.build(xcodeproj, target=target,
                              configuration=self._configuration,
-                             cli_args=[f"SYMROOT={self.build_folder}", "-scheme", target])
+                             cli_args=[f"SYMROOT={self.build_folder}"])
 
     def package(self):
         products_dir = os.path.join(self.build_folder, self._configuration)
