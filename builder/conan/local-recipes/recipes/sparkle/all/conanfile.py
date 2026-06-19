@@ -34,16 +34,17 @@ class SparkleConan(ConanFile):
             strip_root=True)
 
     def build(self):
-        # sparkle-cli produces Sparkle.framework + sparkle.app, generate_appcast is a separate
-        # standalone tool target that is not a dependency of sparkle-cli, so build both. We build
-        # by -target so we can use Conan's XcodeBuild helper, but also pass -scheme 
-        # (not natively supported by XcodeBuild), so the build works.
+        # sparkle-cli produces Sparkle.framework + sparkle.app. generate_appcast is a separate
+        # standalone tool. Pass -target (via target=) to build only the desired one, otherwise
+        # XcodeBuild builds the default/all targets. A bare -target build does not resolve the
+        # target's dependencies, so also pass -scheme; xcodebuild accepts both together. In the future,
+        # hopefully the class is updated to support this natively.
         xcodebuild = XcodeBuild(self)
         xcodeproj = os.path.join(self.source_folder, "Sparkle.xcodeproj")
         for target in ("sparkle-cli", "generate_appcast"):
             xcodebuild.build(xcodeproj, target=target,
                              configuration=self._configuration,
-                             cli_args=[f"SYMROOT={self.build_folder}", f"-scheme {target}"])
+                             cli_args=[f"SYMROOT={self.build_folder}", "-scheme", target])
 
     def package(self):
         products_dir = os.path.join(self.build_folder, self._configuration)
