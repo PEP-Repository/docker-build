@@ -182,6 +182,13 @@ runtime/ubuntu-lts:
 # In the end, we should have a lockfile that works for all CI runners, and likely for most devboxes as well.
 # See https://docs.conan.io/2/tutorial/versioning/lockfiles.html.
 
+# Windows runners share a Conan home, so the local-recipes remote that the shared script adds/removes can
+# interfere with concurrently running Conan jobs. We shadow `conan` with a function that routes every call through
+# windows-ci-conan.ps1, which serializes them with a file lock (also used by the FOSS Windows build jobs).
+#language=powershell
+.setup_conan_windows: &setup_conan_windows
+  function conan { pwsh -ExecutionPolicy Bypass -File "$CI_PROJECT_DIR/scripts/windows-ci-conan.ps1" @args }
+
 .generate-lockfile:
   stage: generate-lockfile
   rules:
@@ -197,16 +204,23 @@ runtime/ubuntu-lts:
         AMEND_LOCKFILE: ./conan-ci.lock
   variables:
     CLICOLOR_FORCE: '1'  # Colored output for Conan
+    # Conan profile-scope separator. PowerShell mangles colons in script arguments, so on Windows we pass `__`,
+    # which windows-ci-conan.ps1 converts back to `:`. Used as a value (not a command), so it works in both shells.
+    CONAN_PROFILE_SEP: ':'
   before_script:
     - *script_header
   # This script must work with both bash and powershell
   #language=sh
   script:
     - cd ./builder/conan/
-
+    - conan remote add pep-local-recipes ./local-recipes --type local-recipes-index --force
+    # Local recipes should be regenerated every time
+    - conan lock remove --requires="*/*@local" --build-requires="*/*@local"
+      --lockfile=./conan-ci.lock
+      --lockfile-out=./conan-ci.lock
     # Create Release & Debug lockfile
     - conan lock create ./ --update
-      --profile:all=./conan_profile
+      --profile${CONAN_PROFILE_SEP}all=./conan_profile
       --lockfile="$AMEND_LOCKFILE"
       --lockfile-clean
       --lockfile-out=./conan-rel.lock
@@ -216,7 +230,7 @@ runtime/ubuntu-lts:
       -o "&:with_benchmark=True"
       -o "&:use_system_qt=False"
     - conan lock create ./ --update
-      --profile:all=./conan_profile
+      --profile${CONAN_PROFILE_SEP}all=./conan_profile
       --lockfile="$AMEND_LOCKFILE"
       --lockfile-clean
       --lockfile-out=./conan-dbg.lock
@@ -229,8 +243,8 @@ runtime/ubuntu-lts:
     # Create weblib Release & Debug lockfile
     # Runtime requirements should be the same for each OS, but build_requirements may differ per OS
     - conan lock create ./ --update
-      --profile:build=./conan_profile
-      --profile:host=./conan_profile_wasm32
+      --profile${CONAN_PROFILE_SEP}build=./conan_profile
+      --profile${CONAN_PROFILE_SEP}host=./conan_profile_wasm32
       --lockfile="$AMEND_LOCKFILE"
       --lockfile-clean
       --lockfile-out=./conan-wasm32-rel.lock
@@ -238,8 +252,8 @@ runtime/ubuntu-lts:
       -o "&:with_tests=True"
       -o "&:with_benchmark=True"
     - conan lock create ./ --update
-      --profile:build=./conan_profile
-      --profile:host=./conan_profile_wasm32
+      --profile${CONAN_PROFILE_SEP}build=./conan_profile
+      --profile${CONAN_PROFILE_SEP}host=./conan_profile_wasm32
       --lockfile="$AMEND_LOCKFILE"
       --lockfile-clean
       --lockfile-out=./conan-wasm32-dbg.lock
@@ -253,6 +267,9 @@ runtime/ubuntu-lts:
       --lockfile=./conan-wasm32-rel.lock
       --lockfile=./conan-wasm32-dbg.lock
       --lockfile-out="./conan.$name.lock"
+  after_script:
+    # Remove remote such that jobs on this runner that don't have the local-recipes folder don't fail
+    - conan remote remove pep-local-recipes
   artifacts:
     paths:
       - ./builder/conan/conan.$name.lock
@@ -285,10 +302,18 @@ builder/lockfile/windows:
     - windows-parallel
   variables:
     name: windows
+    CONAN_PROFILE_SEP: '__'
+    PEP_NO_SOFTWARE_INSTALL: '1'
   # Override
   #language=powershell
   before_script:
     - Set-StrictMode -Version 3.0
+    - *setup_conan_windows
+  # after_script runs in a fresh shell, so re-install the function
+  #language=powershell
+  after_script:
+    - *setup_conan_windows
+    - conan remote remove pep-local-recipes
 
 builder/lockfile/macos-arm:
   extends: .generate-lockfile
@@ -393,17 +418,18 @@ merge-lockfiles:
     - *docker_login
     - bold '==== Executing Conan in container ===='
     - container="$(docker container run --pull=always --interactive --detach "$CONTAINER_IMAGE")"
-    - if [ -d ./builder/cache/conan-home/ ]; then
-    -   echo 'Copying cached .conan2 folder'
-    -   docker container cp ./builder/cache/conan-home/ "$container:/root/.conan2/"
+    - if [ -d ./builder/cache/conan-home/p/ ]; then
+    -   echo 'Copying cached .conan2/p folder'
+    -   docker container exec "$container" mkdir /root/.conan2/
+    -   docker container cp ./builder/cache/conan-home/p/ "$container:/root/.conan2/p"
     - fi
     - docker container cp ./builder/conan/ "$container:/tmp/conan"
     # Login to load profile with potential environment variables
     - docker container exec "$container" bash --login /tmp/conan/conan_install_ci.sh $concurrency_option_conan $CONAN_FLAGS
     - docker container exec "$container" rm -rf '/tmp/*'
     - rm -rf ./builder/cache/conan-home/
-    - mkdir -p ./builder/cache/
-    - docker container cp "$container:/root/.conan2/" ./builder/cache/conan-home
+    - mkdir -p ./builder/cache/conan-home/
+    - docker container cp "$container:/root/.conan2/p/" ./builder/cache/conan-home/p
     - docker container stop "$container"
     - docker container commit --message 'Add Conan packages' "$container" "$CONTAINER_IMAGE"
 

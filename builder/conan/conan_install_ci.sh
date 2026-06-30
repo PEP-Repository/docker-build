@@ -10,6 +10,8 @@ mkdir -p "$conan_home/profiles/"
 cp ./base_conan_profile "$conan_home/profiles/"
 cp ./conan_profile "$conan_home/profiles/default"
 
+conan remote add pep-local-recipes ./local-recipes --type local-recipes-index --force
+
 # Install dependencies with Conan for configurations used in CI
 
 echo '==== Installing Release packages ===='
