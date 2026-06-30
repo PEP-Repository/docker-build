@@ -9,8 +9,6 @@
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true # PowerShell Core only
 
-Write-Host "==== windows-ci-conan.ps1 invoked with args: $args ===="
-
 # Replace `-[...]__[...]` by `-[...]:[...]`. Workaround for https://github.com/PowerShell/PowerShell/issues/16432.
 # (?<=...) = RegEx lookbehind
 $ConanArgs = $args -replace '(?<=^-[^_]*)__', ':'
