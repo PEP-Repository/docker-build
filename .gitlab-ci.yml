@@ -481,6 +481,7 @@ builder/flatpak:
     #   (https://github.com/conan-io/conan/blob/478f44fb26763654672871606c26a5200afc19e4/conan/internal/util/files.py#L264).
     #   Since `chmod` would be executed after `chown` (https://github.com/python/cpython/blob/cb409342a19f25656f62e679f8bac265fe1442c3/Lib/tarfile.py#L2513), this command gets skipped,
     #   leading to a non-executable file, eventually manifesting as a permission error when executing `ninja`.
+    #   See https://github.com/conan-io/conan/issues/18337#issuecomment-5118520743
     - container="$(docker container run --pull=always --privileged --user ubuntu:ubuntu --workdir /tmp/ --interactive --detach "$CONTAINER_IMAGE")"
     #TODO Cache ~/.conan2 like above?
     - docker container cp ./builder/flatpak/ "$container:/tmp/flatpak"
