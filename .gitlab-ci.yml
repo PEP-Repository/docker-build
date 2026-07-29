@@ -492,8 +492,9 @@ builder/flatpak:
       fi
     # Generate base image for nl.ru.cs.pep.client.yml and save as /pep-base.flatpak
     - docker container exec "$container" flatpak-builder $concurrency_option --repo /tmp/flatpak/repo /tmp/flatpak/build /tmp/flatpak/nl.ru.cs.pep.base.yml
-    - docker container exec "$container" flatpak build-bundle /tmp/flatpak/repo /pep-base.flatpak nl.ru.cs.pep.base --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo
-    - docker container exec "$container" rm -rf '/tmp/*'
+    - docker container exec "$container" flatpak build-bundle /tmp/flatpak/repo /tmp/pep-base.flatpak nl.ru.cs.pep.base --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo
+    - docker container exec --user root:root "$container" mv /tmp/pep-base.flatpak /pep-base.flatpak
+    - docker container exec --user root:root "$container" rm -rf '/tmp/*'
     - docker container stop "$container"
     - docker container commit --message 'Build base flatpak with Conan packages' "$container" "$CONTAINER_IMAGE"
 
