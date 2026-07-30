@@ -486,7 +486,7 @@ builder/flatpak:
     #   Conan downloads a tar file with binaries for tools (cmake, ninja, etc.) and then untars it.
     #   However, because we run as root (uid=0), Python's tarfile tries to set the owner & group of the files to the original owner (1001-conan) in the tar
     #   (https://github.com/python/cpython/blob/cb409342a19f25656f62e679f8bac265fe1442c3/Lib/tarfile.py#L2831).
-    #   This then causes an error, because since Ubuntu 24.04, `chown` causes a permission error in Flatpak when run inside Docker. This may have something to do with AppArmor + Bubblewrap, but that's not certain.
+    #   This then causes an error, because since Ubuntu 26.04, `chown` causes a permission error in Flatpak when run inside Docker. This may have something to do with AppArmor + Bubblewrap, but that's not certain.
     #   In any case, the error silently gets swallowed, since Conan intentionally uses the default `errorlevel` of 1 for `TarFile.extractall()` and doesn't pass `debug`
     #   (https://github.com/conan-io/conan/blob/478f44fb26763654672871606c26a5200afc19e4/conan/internal/util/files.py#L264).
     #   Since `chmod` would be executed after `chown` (https://github.com/python/cpython/blob/cb409342a19f25656f62e679f8bac265fe1442c3/Lib/tarfile.py#L2513), this command gets skipped,
