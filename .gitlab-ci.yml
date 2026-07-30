@@ -472,6 +472,16 @@ builder/flatpak:
     - *docker_login
     - bold '==== Executing Flatpak Builder with Conan in container ===='
     # --privileged is necessary for flatpak-builder, see https://github.com/flatpak/flatpak-builder/issues/237
+    - container="$(docker container run --pull=always --privileged --interactive --detach "$CONTAINER_IMAGE")"
+    #TODO Cache ~/.conan2 like above?
+    - docker container cp ./builder/flatpak/ "$container:/tmp/flatpak"
+    - docker container cp ./builder/conan/ "$container:/tmp/conan"
+    - |
+      concurrency_option=''
+      if [ -n "$concurrency_limit" ]; then
+        concurrency_option="--jobs=$concurrency_limit"
+      fi
+    # Generate base image for nl.ru.cs.pep.client.yml and save as /pep-base.flatpak
     # --user ubuntu:ubuntu and --workdir /tmp/ were added because otherwise we run as root, which causes problems:
     #   Conan downloads a tar file with binaries for tools (cmake, ninja, etc.) and then untars it.
     #   However, because we run as root (uid=0), Python's tarfile tries to set the owner & group of the files to the original owner (1001-conan) in the tar
@@ -482,20 +492,10 @@ builder/flatpak:
     #   Since `chmod` would be executed after `chown` (https://github.com/python/cpython/blob/cb409342a19f25656f62e679f8bac265fe1442c3/Lib/tarfile.py#L2513), this command gets skipped,
     #   leading to a non-executable file, eventually manifesting as a permission error when executing `ninja`.
     #   See https://github.com/conan-io/conan/issues/18337#issuecomment-5118520743
-    - container="$(docker container run --pull=always --privileged --user ubuntu:ubuntu --workdir /tmp/ --interactive --detach "$CONTAINER_IMAGE")"
-    #TODO Cache ~/.conan2 like above?
-    - docker container cp ./builder/flatpak/ "$container:/tmp/flatpak"
-    - docker container cp ./builder/conan/ "$container:/tmp/conan"
-    - |
-      concurrency_option=''
-      if [ -n "$concurrency_limit" ]; then
-        concurrency_option="--jobs=$concurrency_limit"
-      fi
-    # Generate base image for nl.ru.cs.pep.client.yml and save as /pep-base.flatpak
-    - docker container exec "$container" flatpak-builder $concurrency_option --repo /tmp/flatpak/repo /tmp/flatpak/build /tmp/flatpak/nl.ru.cs.pep.base.yml
-    - docker container exec "$container" flatpak build-bundle /tmp/flatpak/repo /tmp/pep-base.flatpak nl.ru.cs.pep.base --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo
-    - docker container exec --user root:root "$container" mv /tmp/pep-base.flatpak /pep-base.flatpak
-    - docker container exec --user root:root "$container" rm -rf '/tmp/*'
+    - docker container exec --user ubuntu:ubuntu --workdir /tmp/ "$container" flatpak-builder $concurrency_option --repo /tmp/flatpak/repo /tmp/flatpak/build /tmp/flatpak/nl.ru.cs.pep.base.yml
+    - docker container exec --user ubuntu:ubuntu --workdir /tmp/ "$container" flatpak build-bundle /tmp/flatpak/repo /tmp/pep-base.flatpak nl.ru.cs.pep.base --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo
+    - docker container exec "$container" mv /tmp/pep-base.flatpak /pep-base.flatpak
+    - docker container exec "$container" rm -rf '/tmp/*'
     - docker container stop "$container"
     - docker container commit --message 'Build base flatpak with Conan packages' "$container" "$CONTAINER_IMAGE"
 
