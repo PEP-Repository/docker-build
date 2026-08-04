@@ -22,8 +22,10 @@ class PepRecipe(ConanFile):
         'with_benchmark': [True, False],
         'with_unwinder': [True, False],
 
-        # Build dependencies as shared libraries
-        'shared_libs': [True, False],
+        # Build dependencies and optionally PEP libraries as shared libraries.
+        # Note that there is no option to use shared libraries just for PEP, as,
+        # without changing our CMake link logic, it leads to static dependencies being linked multiple times, violating ODR.
+        'shared_libs': [False, 'dependencies', 'all'],
         # Setting this to False may increase the chance that prebuilt binaries are available
         'custom_dependency_opts': [True, False],
         # Setting this forces the built to be directly under --output-folder, instead of e.g. ./<output>/Debug
@@ -115,6 +117,7 @@ class PepRecipe(ConanFile):
         # Force passing build type also in multiconfig case,
         #  see https://gitlab.pep.cs.ru.nl/pep/core/issues/499
         tc.cache_variables['CMAKE_BUILD_TYPE'] = str(self.settings.build_type)
+        tc.cache_variables['BUILD_SHARED_LIBS'] = self.options.shared_libs == 'all'
         tc.cache_variables['WITH_ASSESSOR'] = self.options.get_safe('with_assessor', False)
         tc.cache_variables['WITH_LOGON'] = self.options.get_safe('with_logon', False)
         tc.cache_variables['WITH_SERVERS'] = self.options.get_safe('with_servers', False)
