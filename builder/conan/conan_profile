@@ -26,7 +26,7 @@ compiler={{compiler}}
 compiler.version={{major_version}}
 
 {% if libcxx %} compiler.libcxx={{libcxx}} {% endif %}
-compiler.cppstd=20
+compiler.cppstd=23
 
 {% if runtime -%}
 # MSVC
@@ -35,7 +35,7 @@ compiler.runtime={{runtime}}
 
 {% if libcxx == 'libstdc++11' -%}
 # Add GNU extensions for __int128 support in STL, see https://github.com/qt/qtbase/commit/9bb2ab5978625eee96f703871d5eca8e54b31386
-qt/*:compiler.cppstd=gnu20
+qt/*:compiler.cppstd=gnu23
 {%- endif %}
 
 [conf]
