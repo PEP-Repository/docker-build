@@ -1,0 +1,12 @@
+[settings]
+build_type=Release
+
+[conf]
+
+[options]
+
+[tool_requires]
+# See https://github.com/conan-io/conan-center-index/blob/master/docs/faqs.md#why-recipes-that-use-build-tools-like-cmake-that-have-packages-in-conan-center-do-not-use-it-as-a-build-require-by-default
+# We prevent a cycle in the build profile using an exclusion pattern,
+# see also https://github.com/conan-io/conan/issues/19412
+!(cmake/*|ninja/*): cmake/[>=3.28]

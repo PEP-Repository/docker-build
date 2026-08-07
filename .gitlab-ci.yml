@@ -23,13 +23,13 @@ variables:
     value: $CI_COMMIT_REF_NAME
     description: Override to set branch/ref of the PEP FOSS repo to test images on & commit to (for a branch)
 
-  UPDATE_LOCKFILE:
-    value: 'necessary'
+  UPGRADE_LOCKFILE:
+    value: 'if-scheduled'
     options:
-      - 'necessary'  # Only for branch pipelines where conanfile.py / conan_profile changed
-      - 'yes'  # Only for branch pipelines
+      - 'if-scheduled'  # Only for scheduled branch pipelines
+      - 'yes'  # Force (only for branch pipelines)
       - 'no'
-    description: Update conan-ci.lock
+    description: Regenerate conan-ci.lock with latest dependencies
   TEST_BEFORE_DEPLOY:
     value: necessary
     options:
@@ -50,6 +50,7 @@ variables:
     builder-ubuntu-lts
     builder-ubuntu-rolling
     builder-flatpak
+    builder-weblib
     runtime-ubuntu-lts
 
 # Applies to whole pipeline
@@ -131,6 +132,7 @@ workflow:
       --push
       --file "./$IMAGE_KIND/$IMAGE_NAME.Dockerfile"
       --tag "$CONTAINER_IMAGE"
+      ${EXTRA_DOCKER_ARGS-}
       "./"
 
 # ==== Builders ====
@@ -153,6 +155,14 @@ builder/base/flatpak:
     IMAGE_KIND: builder
     IMAGE_NAME: flatpak
 
+builder/base/weblib:
+  extends: .docker-image
+  needs:
+    - builder/base/ubuntu-lts
+  variables:
+    IMAGE_KIND: builder
+    IMAGE_NAME: weblib
+    EXTRA_DOCKER_ARGS: --build-arg=BASE_IMAGE=$CI_REGISTRY_IMAGE/$IMAGE_KIND-ubuntu-lts:$IMAGE_TAG_TEST
 
 # ==== Runtimes ====
 
@@ -172,29 +182,47 @@ runtime/ubuntu-lts:
 # In the end, we should have a lockfile that works for all CI runners, and likely for most devboxes as well.
 # See https://docs.conan.io/2/tutorial/versioning/lockfiles.html.
 
+# Windows runners share a Conan home, so the local-recipes remote that the shared script adds/removes can
+# interfere with concurrently running Conan jobs. We shadow `conan` with a function that routes every call through
+# windows-ci-conan.ps1, which serializes them with a file lock (also used by the FOSS Windows build jobs).
+#language=powershell
+.setup_conan_windows: &setup_conan_windows
+  function conan { pwsh -ExecutionPolicy Bypass -File "$CI_PROJECT_DIR/scripts/windows-ci-conan.ps1" @args }
+
 .generate-lockfile:
   stage: generate-lockfile
   rules:
-    - if: $UPDATE_LOCKFILE == 'no' || $CI_COMMIT_BRANCH == null
+    - if: $CI_COMMIT_BRANCH == null
       when: never
-    - if: $UPDATE_LOCKFILE == 'yes'
-    - if: $UPDATE_LOCKFILE == 'necessary' && $CI_PIPELINE_SOURCE == 'schedule'
-    - if: $UPDATE_LOCKFILE == 'necessary'
-      changes:
-        - builder/conan/conanfile.py
-        - builder/conan/conan_profile
+    # When regenerating the lockfile, we ignore the existing lockfile
+    - if: $UPGRADE_LOCKFILE == 'yes' || ($UPGRADE_LOCKFILE == 'if-scheduled' && $CI_PIPELINE_SOURCE == 'schedule')
+      variables:
+        AMEND_LOCKFILE: ''
+    # When not regenerating the lockfile, we only make changes where necessary
+    - when: on_success
+      variables:
+        AMEND_LOCKFILE: ./conan-ci.lock
   variables:
     CLICOLOR_FORCE: '1'  # Colored output for Conan
+    # Conan profile-scope separator. PowerShell mangles colons in script arguments, so on Windows we pass `__`,
+    # which windows-ci-conan.ps1 converts back to `:`. Used as a value (not a command), so it works in both shells.
+    CONAN_PROFILE_SEP: ':'
   before_script:
     - *script_header
   # This script must work with both bash and powershell
   #language=sh
   script:
     - cd ./builder/conan/
-    # Create Release & Debug lockfile and merge them
+    - conan remote add pep-local-recipes ./local-recipes --type local-recipes-index --force
+    # Local recipes should be regenerated every time
+    - conan lock remove --requires="*/*@local" --build-requires="*/*@local"
+      --lockfile=./conan-ci.lock
+      --lockfile-out=./conan-ci.lock
+    # Create Release & Debug lockfile
     - conan lock create ./ --update
-      --profile:all=./conan_profile
-      --lockfile=''
+      --profile${CONAN_PROFILE_SEP}all=./conan_profile
+      --lockfile="$AMEND_LOCKFILE"
+      --lockfile-clean
       --lockfile-out=./conan-rel.lock
       -s build_type=Release
       -o "&:with_assessor=True"
@@ -202,18 +230,46 @@ runtime/ubuntu-lts:
       -o "&:with_benchmark=True"
       -o "&:use_system_qt=False"
     - conan lock create ./ --update
-      --profile:all=./conan_profile
-      --lockfile=''
+      --profile${CONAN_PROFILE_SEP}all=./conan_profile
+      --lockfile="$AMEND_LOCKFILE"
+      --lockfile-clean
       --lockfile-out=./conan-dbg.lock
       -s "&:build_type=Debug"
       -o "&:with_assessor=True"
       -o "&:with_tests=True"
       -o "&:with_benchmark=True"
       -o "&:use_system_qt=False"
+
+    # Create weblib Release & Debug lockfile
+    # Runtime requirements should be the same for each OS, but build_requirements may differ per OS
+    - conan lock create ./ --update
+      --profile${CONAN_PROFILE_SEP}build=./conan_profile
+      --profile${CONAN_PROFILE_SEP}host=./conan_profile_wasm32
+      --lockfile="$AMEND_LOCKFILE"
+      --lockfile-clean
+      --lockfile-out=./conan-wasm32-rel.lock
+      -s build_type=Release
+      -o "&:with_tests=True"
+      -o "&:with_benchmark=True"
+    - conan lock create ./ --update
+      --profile${CONAN_PROFILE_SEP}build=./conan_profile
+      --profile${CONAN_PROFILE_SEP}host=./conan_profile_wasm32
+      --lockfile="$AMEND_LOCKFILE"
+      --lockfile-clean
+      --lockfile-out=./conan-wasm32-dbg.lock
+      -s "&:build_type=Debug"
+      -o "&:with_tests=True"
+      -o "&:with_benchmark=True"
+
     - conan lock merge
       --lockfile=./conan-rel.lock
       --lockfile=./conan-dbg.lock
+      --lockfile=./conan-wasm32-rel.lock
+      --lockfile=./conan-wasm32-dbg.lock
       --lockfile-out="./conan.$name.lock"
+  after_script:
+    # Remove remote such that jobs on this runner that don't have the local-recipes folder don't fail
+    - conan remote remove pep-local-recipes
   artifacts:
     paths:
       - ./builder/conan/conan.$name.lock
@@ -246,10 +302,18 @@ builder/lockfile/windows:
     - windows-parallel
   variables:
     name: windows
+    CONAN_PROFILE_SEP: '__'
+    PEP_NO_SOFTWARE_INSTALL: '1'
   # Override
   #language=powershell
   before_script:
     - Set-StrictMode -Version 3.0
+    - *setup_conan_windows
+  # after_script runs in a fresh shell, so re-install the function
+  #language=powershell
+  after_script:
+    - *setup_conan_windows
+    - conan remote remove pep-local-recipes
 
 builder/lockfile/macos-arm:
   extends: .generate-lockfile
@@ -277,15 +341,6 @@ merge-lockfiles:
     - builder/lockfile/windows
     - builder/lockfile/macos-arm
     - builder/lockfile/macos-x86
-  rules:
-    - if: $UPDATE_LOCKFILE == 'no' || $CI_COMMIT_BRANCH == null
-      when: never
-    - if: $UPDATE_LOCKFILE == 'yes'
-    - if: $UPDATE_LOCKFILE == 'necessary' && $CI_PIPELINE_SOURCE == 'schedule'
-    - if: $UPDATE_LOCKFILE == 'necessary'
-      changes:
-        - builder/conan/conanfile.py
-        - builder/conan/conan_profile
   tags:
     - docker-small
   image: $CI_REGISTRY_IMAGE/builder-ubuntu-lts:$IMAGE_TAG_TEST
@@ -350,30 +405,38 @@ merge-lockfiles:
     - merge-lockfiles
   variables:
     CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/builder-$IMAGE_NAME:$IMAGE_TAG_TEST
+    CONAN_FLAGS: -o &:with_assessor=False
   #language=sh
   script:
     - *script_header
     - *set_concurrency_limit
+    - |
+      concurrency_option_conan=''
+      if [ -n "$concurrency_limit" ]; then
+        concurrency_option_conan="-c:a tools.build:jobs=$concurrency_limit"
+      fi
     - *docker_login
     - bold '==== Executing Conan in container ===='
     - container="$(docker container run --pull=always --interactive --detach "$CONTAINER_IMAGE")"
-    - if [ -d ./builder/cache/conan-home/ ]; then
-    -   echo 'Copying cached .conan2 folder'
-    -   docker container cp ./builder/cache/conan-home/ "$container:/root/.conan2/"
+    - if [ -d ./builder/cache/conan-home/p/ ]; then
+    -   echo 'Copying cached .conan2/p folder'
+    -   docker container exec "$container" mkdir /root/.conan2/
+    -   docker container cp ./builder/cache/conan-home/p/ "$container:/root/.conan2/p"
     - fi
     - docker container cp ./builder/conan/ "$container:/tmp/conan"
-    - docker container exec "$container" /tmp/conan/conan_install_ci.sh "$concurrency_limit"
+    # Login to load profile with potential environment variables
+    - docker container exec "$container" bash --login /tmp/conan/conan_install_ci.sh $concurrency_option_conan $CONAN_FLAGS
     - docker container exec "$container" rm -rf '/tmp/*'
     - rm -rf ./builder/cache/conan-home/
-    - mkdir -p ./builder/cache/
-    - docker container cp "$container:/root/.conan2/" ./builder/cache/conan-home
+    - mkdir -p ./builder/cache/conan-home/
+    - docker container cp "$container:/root/.conan2/p/" ./builder/cache/conan-home/p
     - docker container stop "$container"
     - docker container commit --message 'Add Conan packages' "$container" "$CONTAINER_IMAGE"
 
     - bold '==== Pushing image ===='
     - docker push "$CONTAINER_IMAGE"
   cache:
-    key: docker-builder-cache
+    key: docker-builder-cache-$IMAGE_NAME
     paths:
       - ./builder/cache/
 
@@ -387,28 +450,18 @@ builder/ubuntu-rolling:
   variables:
     IMAGE_NAME: ubuntu-rolling
 
+builder/weblib:
+  extends: .conan-builder
+  variables:
+    IMAGE_NAME: weblib
+    CONAN_FLAGS: --profile:host=conan_profile_wasm32
+
 builder/flatpak:
   stage: conan-install
   extends: .dind
-  # We need both the image with flatpak-builder and the lockfile,
-  # so we add the merge-lockfiles dependency if that job is run,
-  # and run this job in any case
   needs:
     - builder/base/flatpak
-  rules:
-    - if: $UPDATE_LOCKFILE == 'no' || $CI_COMMIT_BRANCH == null
-    - if: $UPDATE_LOCKFILE == 'yes' || ($UPDATE_LOCKFILE == 'necessary' && $CI_PIPELINE_SOURCE == 'schedule')
-      needs:
-        - builder/base/flatpak
-        - merge-lockfiles
-    - if: $UPDATE_LOCKFILE == 'necessary'
-      changes:
-        - builder/conan/conanfile.py
-        - builder/conan/conan_profile
-      needs:
-        - builder/base/flatpak
-        - merge-lockfiles
-    - when: on_success
+    - merge-lockfiles
   variables:
     IMAGE_NAME: flatpak
     CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/builder-$IMAGE_NAME:$IMAGE_TAG_TEST
@@ -429,8 +482,19 @@ builder/flatpak:
         concurrency_option="--jobs=$concurrency_limit"
       fi
     # Generate base image for nl.ru.cs.pep.client.yml and save as /pep-base.flatpak
-    - docker container exec "$container" flatpak-builder $concurrency_option --repo /tmp/flatpak/repo /tmp/flatpak/build /tmp/flatpak/nl.ru.cs.pep.base.yml
-    - docker container exec "$container" flatpak build-bundle /tmp/flatpak/repo /pep-base.flatpak nl.ru.cs.pep.base --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo
+    # --user ubuntu:ubuntu and --workdir /tmp/ were added because otherwise we run as root, which causes problems:
+    #   Conan downloads a tar file with binaries for tools (cmake, ninja, etc.) and then untars it.
+    #   However, because we run as root (uid=0), Python's tarfile tries to set the owner & group of the files to the original owner (1001-conan) in the tar
+    #   (https://github.com/python/cpython/blob/cb409342a19f25656f62e679f8bac265fe1442c3/Lib/tarfile.py#L2831).
+    #   This then causes an error, because since Ubuntu 26.04, `chown` causes a permission error in Flatpak when run inside Docker. This may have something to do with AppArmor + Bubblewrap, but that's not certain.
+    #   In any case, the error silently gets swallowed, since Conan intentionally uses the default `errorlevel` of 1 for `TarFile.extractall()` and doesn't pass `debug`
+    #   (https://github.com/conan-io/conan/blob/478f44fb26763654672871606c26a5200afc19e4/conan/internal/util/files.py#L264).
+    #   Since `chmod` would be executed after `chown` (https://github.com/python/cpython/blob/cb409342a19f25656f62e679f8bac265fe1442c3/Lib/tarfile.py#L2513), this command gets skipped,
+    #   leading to a non-executable file, eventually manifesting as a permission error when executing `ninja`.
+    #   See https://github.com/conan-io/conan/issues/18337#issuecomment-5118520743
+    - docker container exec --user ubuntu:ubuntu --workdir /tmp/ "$container" flatpak-builder $concurrency_option --repo /tmp/flatpak/repo /tmp/flatpak/build /tmp/flatpak/nl.ru.cs.pep.base.yml
+    - docker container exec --user ubuntu:ubuntu --workdir /tmp/ "$container" flatpak build-bundle /tmp/flatpak/repo /tmp/pep-base.flatpak nl.ru.cs.pep.base --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo
+    - docker container exec "$container" mv /tmp/pep-base.flatpak /pep-base.flatpak
     - docker container exec "$container" rm -rf '/tmp/*'
     - docker container stop "$container"
     - docker container commit --message 'Build base flatpak with Conan packages' "$container" "$CONTAINER_IMAGE"
@@ -463,7 +527,6 @@ test-images:
   script:
     - *script_header
     - apk add --no-cache jq curl
-    # $MERGE_LOCKFILES_JOB may not be set if $UPDATE_LOCKFILE is false
     - ./run-pipeline.sh "$IMAGE_TAG_TEST" "$FOSS_REF" "${MERGE_LOCKFILES_JOB-}"
 
 
@@ -541,16 +604,27 @@ deploy:
     -   rm -rf ./pep
     #   --depth=1: Shallow clone: do not fetch history
     #   This requires $FOSS_REF to exist
-    -   git clone
+    -   if git clone
         --branch="$FOSS_REF"
         --no-tags
         --depth=1
         --shallow-submodules
         --recurse-submodules=docker-build
-        "$CI_SERVER_URL/$FOSS_PROJECT.git" ./pep
-    -   foss_repo="$CI_PROJECT_DIR/pep"
-    -   docker_build_repo="$foss_repo/docker-build"
-    - else
+        "$CI_SERVER_URL/$FOSS_PROJECT.git" ./pep; then
+    -     foss_repo="$CI_PROJECT_DIR/pep"
+    -     docker_build_repo="$foss_repo/docker-build"
+    -   else
+    #     Is default FOSS_REF value? (Not set manually)
+    -     if [ "$FOSS_REF" = "$CI_COMMIT_REF_NAME" ]; then
+    -       warn "Could not clone branch $FOSS_REF of $FOSS_PROJECT, assuming the branch does not exist, and falling back to only updating $CI_PROJECT_NAME"
+    -       UPDATE_FOSS=no
+    -     else
+    -       exit 1
+    -     fi
+    -   fi
+    - fi
+    # Code above may update UPDATE_FOSS, so `else` would not work
+    - if [ "$UPDATE_FOSS" = no ]; then
     -   bold "Cloning only $CI_PROJECT_NAME"
     -   rm -rf ./docker-build
     -   git clone

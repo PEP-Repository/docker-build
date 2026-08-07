@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 # CLICOLOR_FORCE: Colored output for e.g. Conan & Ninja (otherwise -fcolor-diagnostics still won't work)
 # CMAKE_COLOR_DIAGNOSTICS: Let CMake pass -fcolor-diagnostics
 ENV CLICOLOR_FORCE=1 CMAKE_COLOR_DIAGNOSTICS=ON DEBIAN_FRONTEND=noninteractive
@@ -16,7 +16,8 @@ RUN --mount=src=apt-cache/90pep-proxy,dst=/etc/apt/apt.conf.d/90pep-proxy \
 # Profile is not loaded for docker runners (https://docs.gitlab.com/runner/shells/index.html#shell-profile-loading ),
 # so we put binaries in /usr/local/bin instead of the default ~/.local/bin
 ENV PIPX_BIN_DIR=/usr/local/bin
-RUN pipx install 'conan>=2.1,==2.*'
+RUN pipx install 'conan==2.*'
+RUN pipx install lcov_cobertura
 
 ENV GOPATH="/usr/local/go"
 ENV PATH="${GOPATH}/bin:${PATH}"
