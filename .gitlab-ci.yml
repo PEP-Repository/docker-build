@@ -209,15 +209,20 @@ runtime/ubuntu-lts:
     CONAN_PROFILE_SEP: ':'
   before_script:
     - *script_header
+    # Restore commit timestamps for local recipes, to prevent unnecessary timestamp update in lockfile
+    - ./builder/conan/local-recipes/restore-commit-timestamps.sh
   # This script must work with both bash and powershell
   #language=sh
   script:
     - cd ./builder/conan/
     - conan remote add pep-local-recipes ./local-recipes --type local-recipes-index --allowed-packages="*/*@local" --force
+    # For local recipes only one revision is available, so a previous version will be gone
+    - conan lock remove --requires="*/*@local" --build-requires="*/*@local"
+      --lockfile=./conan-ci.lock
+      --lockfile-out=./conan-ci.lock
+
     # Create Release & Debug lockfile
-    # Make sure to upgrade local recipes as only one revision is available
-    - conan lock upgrade ./ --update
-      --update-requires="*/*@local"
+    - conan lock create ./ --update
       --profile${CONAN_PROFILE_SEP}all=./conan_profile
       --lockfile="$AMEND_LOCKFILE"
       --lockfile-clean
@@ -227,8 +232,7 @@ runtime/ubuntu-lts:
       -o "&:with_tests=True"
       -o "&:with_benchmark=True"
       -o "&:use_system_qt=False"
-    - conan lock upgrade ./ --update
-      --update-requires="*/*@local"
+    - conan lock create ./ --update
       --profile${CONAN_PROFILE_SEP}all=./conan_profile
       --lockfile="$AMEND_LOCKFILE"
       --lockfile-clean
@@ -241,8 +245,7 @@ runtime/ubuntu-lts:
 
     # Create weblib Release & Debug lockfile
     # Runtime requirements should be the same for each OS, but build_requirements may differ per OS
-    - conan lock upgrade ./ --update
-      --update-requires="*/*@local"
+    - conan lock create ./ --update
       --profile${CONAN_PROFILE_SEP}build=./conan_profile
       --profile${CONAN_PROFILE_SEP}host=./conan_profile_wasm32
       --lockfile="$AMEND_LOCKFILE"
@@ -251,8 +254,7 @@ runtime/ubuntu-lts:
       -s build_type=Release
       -o "&:with_tests=True"
       -o "&:with_benchmark=True"
-    - conan lock upgrade ./ --update
-      --update-requires="*/*@local"
+    - conan lock create ./ --update
       --profile${CONAN_PROFILE_SEP}build=./conan_profile
       --profile${CONAN_PROFILE_SEP}host=./conan_profile_wasm32
       --lockfile="$AMEND_LOCKFILE"
@@ -309,6 +311,9 @@ builder/lockfile/windows:
   #language=powershell
   before_script:
     - Set-StrictMode -Version 3.0
+    # Restore commit timestamps for local recipes, to prevent unnecessary timestamp update in lockfile
+    - |
+      & "$env:ProgramFiles\Git\bin\bash.exe" ./builder/conan/local-recipes/restore-commit-timestamps.sh
     - *setup_conan_windows
   # after_script runs in a fresh shell, so re-install the function
   #language=powershell
