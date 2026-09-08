@@ -209,8 +209,6 @@ runtime/ubuntu-lts:
     CONAN_PROFILE_SEP: ':'
   before_script:
     - *script_header
-    # Restore commit timestamps for local recipes, to prevent unnecessary timestamp update in lockfile
-    - ./builder/conan/local-recipes/restore-commit-timestamps.sh
   # This script must work with both bash and powershell
   #language=sh
   script:
@@ -311,9 +309,6 @@ builder/lockfile/windows:
   #language=powershell
   before_script:
     - Set-StrictMode -Version 3.0
-    # Restore commit timestamps for local recipes, to prevent unnecessary timestamp update in lockfile
-    - |
-      & "$env:ProgramFiles\Git\bin\bash.exe" ./builder/conan/local-recipes/restore-commit-timestamps.sh
     - *setup_conan_windows
   # after_script runs in a fresh shell, so re-install the function
   #language=powershell
