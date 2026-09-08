@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -eu -o pipefail
+set -x #TODO temp
 
 scriptdir="$(realpath "$(dirname -- "$0")")"
 cd "$scriptdir"
