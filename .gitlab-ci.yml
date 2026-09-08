@@ -213,13 +213,11 @@ runtime/ubuntu-lts:
   #language=sh
   script:
     - cd ./builder/conan/
-    - conan remote add pep-local-recipes ./local-recipes --type local-recipes-index --force
-    # Local recipes should be regenerated every time
-    - conan lock remove --requires="*/*@local" --build-requires="*/*@local"
-      --lockfile=./conan-ci.lock
-      --lockfile-out=./conan-ci.lock
+    - conan remote add pep-local-recipes ./local-recipes --type local-recipes-index --allowed-packages="*/*@local" --force
     # Create Release & Debug lockfile
-    - conan lock create ./ --update
+    # Make sure to upgrade local recipes as only one revision is available
+    - conan lock upgrade ./ --update
+      --update-requires="*/*@local"
       --profile${CONAN_PROFILE_SEP}all=./conan_profile
       --lockfile="$AMEND_LOCKFILE"
       --lockfile-clean
@@ -229,7 +227,8 @@ runtime/ubuntu-lts:
       -o "&:with_tests=True"
       -o "&:with_benchmark=True"
       -o "&:use_system_qt=False"
-    - conan lock create ./ --update
+    - conan lock upgrade ./ --update
+      --update-requires="*/*@local"
       --profile${CONAN_PROFILE_SEP}all=./conan_profile
       --lockfile="$AMEND_LOCKFILE"
       --lockfile-clean
@@ -242,7 +241,8 @@ runtime/ubuntu-lts:
 
     # Create weblib Release & Debug lockfile
     # Runtime requirements should be the same for each OS, but build_requirements may differ per OS
-    - conan lock create ./ --update
+    - conan lock upgrade ./ --update
+      --update-requires="*/*@local"
       --profile${CONAN_PROFILE_SEP}build=./conan_profile
       --profile${CONAN_PROFILE_SEP}host=./conan_profile_wasm32
       --lockfile="$AMEND_LOCKFILE"
@@ -251,7 +251,8 @@ runtime/ubuntu-lts:
       -s build_type=Release
       -o "&:with_tests=True"
       -o "&:with_benchmark=True"
-    - conan lock create ./ --update
+    - conan lock upgrade ./ --update
+      --update-requires="*/*@local"
       --profile${CONAN_PROFILE_SEP}build=./conan_profile
       --profile${CONAN_PROFILE_SEP}host=./conan_profile_wasm32
       --lockfile="$AMEND_LOCKFILE"
