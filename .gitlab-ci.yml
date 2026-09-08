@@ -367,6 +367,11 @@ merge-lockfiles:
     # when running conan with this conanfile (and not a symlink).
     # We don't necessarily want to always use the lockfile on devboxes
     - conan lock merge "${merge_flags[@]}" --lockfile-out=./conan-ci.lock
+    # A local recipe revision is derived from the recipe contents, but its timestamp is the moment
+    # that revision entered the Conan cache, i.e. the moment this pipeline ran. Keep the committed
+    # timestamp for local recipes that resolved to the same revision, so that the lockfile only
+    # changes when a recipe actually changed.
+    - ./restore-local-recipe-timestamps.sh <(git show HEAD:./conan-ci.lock) ./conan-ci.lock
     # Also make git diff work for new files
     - git add --intent-to-add ./conan-ci.lock
     # `&& true` prevents quitting the shell
