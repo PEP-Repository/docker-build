@@ -11,7 +11,7 @@ ccache
 clang
 clang-tidy
 cmake
-golang
+golang-go
 # make is used internally in some dependencies
 make
 ninja-build
