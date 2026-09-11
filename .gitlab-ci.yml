@@ -371,7 +371,7 @@ merge-lockfiles:
     # that revision entered the Conan cache, i.e. the moment this pipeline ran. Keep the committed
     # timestamp for local recipes that resolved to the same revision, so that the lockfile only
     # changes when a recipe actually changed.
-    - ./restore-local-recipe-timestamps.sh <(git show HEAD:./conan-ci.lock) ./conan-ci.lock
+    - ./restore-local-recipe-timestamps.py <(git show HEAD:./conan-ci.lock) ./conan-ci.lock
     # Also make git diff work for new files
     - git add --intent-to-add ./conan-ci.lock
     # `&& true` prevents quitting the shell
