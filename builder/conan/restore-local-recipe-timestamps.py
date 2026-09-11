@@ -14,6 +14,7 @@ entry.
 
 import json
 import sys
+from pathlib import Path
 from typing import Any
 
 # A lockfile entry is either a reference, or a [reference, package_ids] pair
@@ -50,8 +51,8 @@ def with_reference(entry: Entry, reference: str) -> Entry:
     return reference if isinstance(entry, str) else [reference, entry[1]]
 
 
-def load_lockfile(path: str) -> Lockfile:
-    with open(path, encoding='utf-8') as file:
+def load_lockfile(path: Path) -> Lockfile:
+    with path.open(encoding='utf-8') as file:
         lockfile: Lockfile = json.load(file)
     return lockfile
 
@@ -87,14 +88,14 @@ def restore_timestamps(lockfile: Lockfile, timestamps: Timestamps) -> bool:
 def main(argv: list[str]) -> None:
     if len(argv) != 3:
         sys.exit(f'Usage: {argv[0]} <reference-lockfile> <target-lockfile>')
-    reference_path, target_path = argv[1], argv[2]
+    reference_path, target_path = Path(argv[1]), Path(argv[2])
 
     target = load_lockfile(target_path)
     if not restore_timestamps(target, local_recipe_timestamps(load_lockfile(reference_path))):
         print('No local recipe timestamps to restore')
         return
 
-    with open(target_path, 'w', encoding='utf-8') as file:
+    with target_path.open('w', encoding='utf-8') as file:
         # Write the way Conan does, so that only the timestamps differ from what it produced
         json.dump(target, file, indent=4)
         file.write('\n')
