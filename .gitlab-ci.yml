@@ -213,11 +213,12 @@ runtime/ubuntu-lts:
   #language=sh
   script:
     - cd ./builder/conan/
-    - conan remote add pep-local-recipes ./local-recipes --type local-recipes-index --force
-    # Local recipes should be regenerated every time
+    - conan remote add pep-local-recipes ./local-recipes --type local-recipes-index --allowed-packages="*/*@local" --force
+    # For local recipes only one revision is available, so a previous version will be gone
     - conan lock remove --requires="*/*@local" --build-requires="*/*@local"
       --lockfile=./conan-ci.lock
       --lockfile-out=./conan-ci.lock
+
     # Create Release & Debug lockfile
     - conan lock create ./ --update
       --profile${CONAN_PROFILE_SEP}all=./conan_profile
@@ -366,6 +367,11 @@ merge-lockfiles:
     # when running conan with this conanfile (and not a symlink).
     # We don't necessarily want to always use the lockfile on devboxes
     - conan lock merge "${merge_flags[@]}" --lockfile-out=./conan-ci.lock
+    # A local recipe revision is derived from the recipe contents, but its timestamp is the moment
+    # that revision entered the Conan cache, i.e. the moment this pipeline ran. Keep the committed
+    # timestamp for local recipes that resolved to the same revision, so that the lockfile only
+    # changes when a recipe actually changed.
+    - ./restore-local-recipe-timestamps.py <(git show HEAD:./conan-ci.lock) ./conan-ci.lock
     # Also make git diff work for new files
     - git add --intent-to-add ./conan-ci.lock
     # `&& true` prevents quitting the shell
