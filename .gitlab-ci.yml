@@ -752,7 +752,5 @@ deploy:
     -     curl --no-progress-meter --fail --globoff --request POST "$CI_API_V4_URL/projects/$foss_project_urlencoded/trigger/pipeline"
             --data-urlencode "token=$CI_JOB_TOKEN"
             --data-urlencode "ref=$FOSS_REF"
-    #     Response has no trailing newline
-    -     echo
     -   )
     - fi
