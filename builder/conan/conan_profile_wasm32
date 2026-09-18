@@ -20,7 +20,7 @@ os=Emscripten
 arch=wasm
 compiler=emcc
 compiler.libcxx=libc++
-compiler.cppstd=20
+compiler.cppstd=23
 compiler.threads=posix
 
 {% if emsdk -%}

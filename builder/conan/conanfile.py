@@ -3,6 +3,7 @@ from pathlib import Path
 
 from conan import ConanFile
 from conan.errors import ConanInvalidConfiguration
+from conan.tools.build import check_min_cppstd
 from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
 from conan.tools.system.package_manager import Apt, Brew
 
@@ -80,6 +81,8 @@ class PepRecipe(ConanFile):
             raise ConanInvalidConfiguration(
                 'We do not support multiconfig builds yet (see pep/core#499), '
                 'please explicitly specify -s:a build_type=<...> to force consistent builds.')
+
+        check_min_cppstd(self, 23)
 
     def layout(self):
         # If CMakeLists.txt is not besides conanfile.py, so we are called (without symlinks) in docker-build,
