@@ -591,16 +591,12 @@ deploy:
     # -====- Update repositories -====-
 
     # ==== Clone docker-build, and PEP FOSS repo if necessary (with docker-build as submodule) ====
-    - apk add --no-cache git
+    - apk add --no-cache git curl jq
     - *git_colors
     # Do not put token in the URL to prevent it from being printed on clone
     - |
-      cat >./git-password.sh <<'EOF'
-      #!/usr/bin/env sh
-      exec echo "$PEP_GROUP_REPOSITORY_TOKEN"
-      EOF
-      chmod +x ./git-password.sh
-      git config --global core.askPass "$PWD/git-password.sh"
+      git config --global "credential.$CI_SERVER_URL.username" gitlab-ci-token
+      git config --global "credential.$CI_SERVER_URL.helper" '!f() { [ "$1" = get ] && echo "password=$CI_JOB_TOKEN"; }; f'
     - |
       git config --global user.email support@pep.cs.ru.nl
       git config --global user.name "Gitlab CI script from $CI_PROJECT_NAME"
@@ -747,8 +743,15 @@ deploy:
     -   (
     -     cd "$foss_repo"
     -     bold "Pushing $FOSS_PROJECT"
-          # The pipeline triggered by this should terminate with the same status as the test pipeline (if we ran one above)
     -     git push
     -     'bold "Made commit at: $CI_SERVER_URL/$FOSS_PROJECT/-/commit/$foss_commit"'
+    #     Pushes authenticated with a job token do not trigger pipelines, so trigger one explicitly.
+    #     The pipeline should terminate with the same status as the test pipeline (if we ran one above)
+    -     bold "Triggering $FOSS_PROJECT pipeline on $FOSS_REF"
+    -     foss_project_urlencoded="$(printf %s "$FOSS_PROJECT" | jq --slurp --raw-input --raw-output @uri)"
+    -     triggered_pipeline="$(curl --no-progress-meter --fail --globoff --request POST "$CI_API_V4_URL/projects/$foss_project_urlencoded/trigger/pipeline"
+            --data-urlencode "token=$CI_JOB_TOKEN"
+            --data-urlencode "ref=$FOSS_REF")"
+    -     printf %s "$triggered_pipeline" | jq --raw-output .web_url
     -   )
     - fi
