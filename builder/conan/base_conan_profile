@@ -1,0 +1,9 @@
+[settings]
+build_type=Release
+
+[conf]
+
+[options]
+
+[tool_requires]
+!cmake/*: cmake/[>=3.28]

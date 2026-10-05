@@ -2,10 +2,12 @@
 # See https://docs.conan.io/2/reference/config_files/profiles.html
 # Example: CC=clang CXX=clang++ conan install ./ --profile:all=./docker-build/builder/conan/conan_profile
 
+include(./base_conan_profile)
+
 {% set operating_system = detect_api.detect_os() %}
 {% set arch = detect_api.detect_arch() %}
 {% set compiler, version, compiler_exe = detect_api.detect_default_compiler() %}
-## Unfortunately, at this time we are just given one compiler_exe by Conan
+{# Unfortunately, at this time we are just given one compiler_exe by Conan #}
 {% set c_compiler_exe = compiler_exe %}
 {% set cxx_compiler_exe = os.getenv("CXX") or {'cc':'c++', 'clang':'clang++', 'gcc':'g++'}[compiler_exe] or compiler_exe %}
 
@@ -21,17 +23,10 @@ os={{operating_system}}
 arch={{arch}}
 compiler={{compiler}}
 {% set major_version = detect_api.default_compiler_version(compiler, version) %}
-# Update this when Conan supports new Clang version
-{% if compiler == 'clang' and major_version > 20 %}
-  # Clang versions >20 are currently rejected by Conan,
-  # see https://docs.conan.io/2/reference/config_files/settings.html
-  compiler.version=20
-{% else %}
-  compiler.version={{major_version}}
-{% endif %}
+compiler.version={{major_version}}
 
 {% if libcxx %} compiler.libcxx={{libcxx}} {% endif %}
-compiler.cppstd=20
+compiler.cppstd=23
 
 {% if runtime -%}
 # MSVC
@@ -40,7 +35,7 @@ compiler.runtime={{runtime}}
 
 {% if libcxx == 'libstdc++11' -%}
 # Add GNU extensions for __int128 support in STL, see https://github.com/qt/qtbase/commit/9bb2ab5978625eee96f703871d5eca8e54b31386
-qt/*:compiler.cppstd=gnu20
+qt/*:compiler.cppstd=gnu23
 {%- endif %}
 
 [conf]
@@ -77,5 +72,9 @@ openssl/*:openssldir=/etc/ssl/
 {%- endif %}
 
 [tool_requires]
+{% if compiler != 'msvc' %}
 # See https://github.com/conan-io/conan-center-index/blob/master/docs/faqs.md#why-recipes-that-use-build-tools-like-cmake-that-have-packages-in-conan-center-do-not-use-it-as-a-build-require-by-default
-cmake/[>=3.28]
+# We prevent a cycle in the build profile using an exclusion pattern,
+# see also https://github.com/conan-io/conan/issues/19412
+!(cmake/*|ninja/*): ninja/[*]
+{% endif %}

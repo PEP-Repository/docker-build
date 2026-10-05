@@ -23,3 +23,11 @@ fi
 conan profile show --profile:all="$(dirname -- "$0")/conan_profile" --context host |
   tee "$conan_profile"
 echo "Profile written to $conan_profile"
+
+# Register the local recipes index remote for packages not on ConanCenter (e.g. Sparkle).
+# --force replaces any previously registered remote with this name.
+conan remote add pep-local-recipes \
+  "$(cd "$(dirname "$0")" && pwd)/local-recipes" \
+  --type local-recipes-index \
+  --force
+echo "Registered local-recipes-index remote: pep-local-recipes"

@@ -1,0 +1,70 @@
+import os
+from conan import ConanFile
+from conan.errors import ConanInvalidConfiguration
+from conan.tools.apple.apple import to_apple_arch
+from conan.tools.files import get, copy
+
+
+class SparkleConan(ConanFile):
+    name = "sparkle"
+    user = "local"
+    description = "Sparkle is a software update framework for macOS applications."
+    license = "MIT"
+    url = "https://sparkle-project.org/"
+    homepage = "https://github.com/sparkle-project/Sparkle"
+    topics = ("macos", "autoupdate", "framework")
+    package_type = "shared-library"
+
+    settings = "os", "arch", "build_type"
+
+    @property
+    def _configuration(self):
+        # Sparkle's Xcode project only provides Debug and Release configurations,
+        # so map any other build type like RelWithDebInfo to Release.
+        return "Debug" if self.settings.build_type == "Debug" else "Release"
+
+    def validate(self):
+        if self.settings.os != "Macos":
+            raise ConanInvalidConfiguration("Sparkle is only available on macOS")
+
+    def source(self):
+        get(self,
+            **self.conan_data["sources"][self.version],
+            destination=self.source_folder,
+            strip_root=True)
+
+    def build(self):
+        # sparkle-cli produces Sparkle.framework + sparkle.app. generate_appcast is a separate
+        # standalone tool. Build each by -scheme so its dependencies resolve. We invoke xcodebuild
+        # directly rather than via conan.tools.apple.XcodeBuild: that helper always emits -project
+        # plus -target/-alltargets, and xcodebuild rejects -scheme combined with a target when
+        # -project is set ("You cannot specify both a scheme and targets").
+        arch = to_apple_arch(self)
+        deployment = self.settings.get_safe("os.version")
+        xcodeproj = os.path.join(self.source_folder, "Sparkle.xcodeproj")
+        for scheme in ("sparkle-cli", "generate_appcast"):
+            cmd = (f"xcodebuild -project '{xcodeproj}' -scheme {scheme} "
+                   f"-configuration {self._configuration} -arch {arch} "
+                   f"SYMROOT='{self.build_folder}'")
+            if deployment:
+                cmd += f" MACOSX_DEPLOYMENT_TARGET={deployment}"
+            self.run(cmd)
+
+    def package(self):
+        products_dir = os.path.join(self.build_folder, self._configuration)
+        copy(self, "Sparkle.framework/**", src=products_dir, dst=self.package_folder)
+        copy(self, "sparkle.app/**", src=products_dir, dst=self.package_folder)
+        # generate_appcast is a standalone CI tool; place it under bin/ to match the
+        # conventional Sparkle distribution layout ($SPARKLE_DIR/bin/generate_appcast).
+        copy(self, "generate_appcast", src=products_dir,
+             dst=os.path.join(self.package_folder, "bin"))
+
+    def package_info(self):
+        self.cpp_info.set_property("cmake_file_name", "Sparkle")
+        self.cpp_info.set_property("cmake_target_name", "Sparkle::Sparkle")
+        self.cpp_info.set_property("cmake_find_mode", "config")
+        self.cpp_info.includedirs = []  # headers live inside Sparkle.framework, not a separate include/
+        self.cpp_info.libdirs = []
+        self.cpp_info.bindirs = ["bin"]  # exposes generate_appcast on the run environment PATH
+        self.cpp_info.frameworkdirs = [self.package_folder]
+        self.cpp_info.frameworks = ["Sparkle"]
