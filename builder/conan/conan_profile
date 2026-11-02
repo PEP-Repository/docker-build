@@ -14,10 +14,17 @@
 {% endif %}
 {% set libcxx = detect_api.detect_libcxx(compiler, version, compiler_exe) %}
 
+{# Minimum supported macOS version (deployment target) of everything we build #}
+{% set macos_version = '13.3' %}
+
 [settings]
 build_type=Release
 
 os={{operating_system}}
+{% if operating_system == 'Macos' -%}
+# Set macOS version to prevent building things for different versions
+os.version={{macos_version}}
+{%- endif %}
 arch={{arch}}
 compiler={{compiler}}
 {% set major_version = detect_api.default_compiler_version(compiler, version) %}
@@ -63,7 +70,9 @@ tools.build:defines=['_WIN32_WINNT=0x0A00']
 {% if operating_system == 'Macos' -%}
 # We don't want to install full Xcode on macOS, so we disable this check as it doesn't seem to be required for what we do.
 # Note: This is broken in Qt 6.9 - 6.10.2, see https://qt-project.atlassian.net/browse/QTBUG-138427
-qt/*:tools.cmake.cmaketoolchain:extra_variables={'QT_NO_XCODE_MIN_VERSION_CHECK': 'ON'}
+# Qt picks its deployment target before the Conan toolchain is loaded, so it ignores os.version
+#  (falling back to its own default, or something else on the CI runners). FORCE ours instead.
+qt/*:tools.cmake.cmaketoolchain:extra_variables={'QT_NO_XCODE_MIN_VERSION_CHECK': 'ON', 'CMAKE_OSX_DEPLOYMENT_TARGET': {'value': '{{macos_version}}', 'cache': True, 'type': 'STRING', 'force': True}}
 {%- endif %}
 
 [options]
