@@ -34,7 +34,7 @@
         "civetweb/1.16#f4a42c8aa0bc0fe4bbe2a2270af0cea2%1750148475.207",
         "bzip2/1.0.8#c470882369c2d95c5c77e970c0c7e321%1762886692.465",
         "boost/1.90.0#c53082fe7f85e9c7f7d23ffcbbfc5c53%1790854185.391",
-        "benchmark/1.9.5#b885dc73ad67b40a55d45684d1c88ad1%1774363287.434",
+        "benchmark/1.10.0#7fcf1950d0dfaeb2456561a379daa894%1793610279.35",
         "abseil/20260107.1#883e95a7be2b767999f64669ac642e5d%1773137897.755"
     ],
     "build_requires": [
