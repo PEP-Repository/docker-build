@@ -6,4 +6,4 @@ build_type=Release
 [options]
 
 [tool_requires]
-!cmake/*: cmake/[>=3.28]
+cmake/[>=3.28]
