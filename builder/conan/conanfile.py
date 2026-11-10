@@ -253,7 +253,7 @@ class PepRecipe(ConanFile):
                 'with_pull': False,
             }))
 
-        self.requires('protobuf/[>=3.21 <7]')
+        self.requires('protobuf/[>=3.21 <8]')
 
         if self.options.get_safe('with_assessor', False) and not self.options.get_safe('use_system_qt', False):
             # See https://gitlab.pep.cs.ru.nl/pep/core/-/work_items/2860
