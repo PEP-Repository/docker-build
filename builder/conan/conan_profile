@@ -51,7 +51,11 @@ qt/*:compiler.cppstd=gnu23
 tools.build:compiler_executables={ 'c':'{{c_compiler_exe}}', 'cpp':'{{cxx_compiler_exe}}' }
 {%- endif %}
 
-{% if compiler != 'msvc' %} tools.cmake.cmaketoolchain:generator=Ninja {% endif %}
+{% if compiler != 'msvc' %}
+tools.cmake.cmaketoolchain:generator=Ninja
+# Don't try to build Ninja with itself
+ninja/*:tools.cmake.cmaketoolchain:generator=!
+{% endif %}
 
 {% if operating_system == 'Windows' -%}
 # Set Windows version for headers to _WIN32_WINNT_WIN10 / NTDDI_WIN10_RS5,
@@ -86,5 +90,5 @@ openssl/*:openssldir=/etc/ssl/
 # See https://github.com/conan-io/conan-center-index/blob/master/docs/faqs.md#why-recipes-that-use-build-tools-like-cmake-that-have-packages-in-conan-center-do-not-use-it-as-a-build-require-by-default
 # We prevent a cycle in the build profile using an exclusion pattern,
 # see also https://github.com/conan-io/conan/issues/19412
-!(cmake/*|ninja/*): ninja/[*]
+!cmake/*: ninja/[*]
 {% endif %}
