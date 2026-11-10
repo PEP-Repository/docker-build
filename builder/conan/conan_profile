@@ -51,7 +51,11 @@ qt/*:compiler.cppstd=gnu23
 tools.build:compiler_executables={ 'c':'{{c_compiler_exe}}', 'cpp':'{{cxx_compiler_exe}}' }
 {%- endif %}
 
-{% if compiler != 'msvc' %} tools.cmake.cmaketoolchain:generator=Ninja {% endif %}
+{% if compiler != 'msvc' %}
+tools.cmake.cmaketoolchain:generator=Ninja
+# Don't try to build Ninja with itself
+ninja/*:tools.cmake.cmaketoolchain:generator=!
+{% endif %}
 
 {% if operating_system == 'Windows' -%}
 # Set Windows version for headers to _WIN32_WINNT_WIN10 / NTDDI_WIN10_RS5,
