@@ -11,7 +11,7 @@ RUN apt-get update && \
     apt-get clean && rm -rf /var/cache/* /var/lib/{apt,dpkg,cache,log}/* /tmp/* /var/tmp/*
 
 # When updating, also change in conan_profile_wasm32
-ARG EMSDK_VERSION=4.0.22
+ARG EMSDK_VERSION=7.0.0
 RUN git clone --depth=1 https://github.com/emscripten-core/emsdk.git && \
     /emsdk/emsdk install "$EMSDK_VERSION" && \
     /emsdk/emsdk activate "$EMSDK_VERSION" && \
