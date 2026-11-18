@@ -47,7 +47,7 @@ qt/*:compiler.cppstd=gnu23
 
 {% if compiler == 'msvc' -%}
 # Qt 6.12 fails when built for C++23 by MSVC (constexpr unique_ptr of incomplete QAbstractFileEngineIterator)
-# See https://github.com/microsoft/STL/issues/4417 and https://developercommunity.visualstudio.com/t/10604135
+# See https://gitlab.pep.cs.ru.nl/pep/core/-/work_items/3057
 qt/*:compiler.cppstd=20
 {%- endif %}
 
