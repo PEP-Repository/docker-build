@@ -37,7 +37,7 @@ if [ -n "$pipeline_url" ]; then printf '%s\n' "$pipeline_url"; fi
 
 # All possible statuses are documented on https://docs.gitlab.com/ee/api/pipelines.html. I cannot find any documentation on what these statuses mean.
 # Not all statuses are listed below. I don't expect we will encounter the missing statuses, but if we do we must investigate in which category they should fall.
-running_statuses="\"pending\" \"running\" \"created\" \"preparing\" \"waiting_for_resource\""
+running_statuses="\"pending\" \"running\" \"created\" \"preparing\" \"waiting_for_resource\" \"canceling\""
 success_statuses="\"success\" \"skipped\" \"manual\""
 failure_statuses="\"failed\" \"canceled\""
 
