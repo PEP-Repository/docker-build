@@ -514,26 +514,57 @@ builder/flatpak:
 # =====================
 # Test if PEP FOSS still builds with the images we just built:
 # start a pipeline in the FOSS repo that overrides the docker-build version
-# and forwards the updated lockfile
-test-images:
+# and forwards the updated lockfile.
+#
+# Starting and checking that pipeline are separate jobs: if a FOSS job fails, retry it there and
+# then retry only test-images-check, which picks up the same pipeline. Retrying test-images-trigger
+# starts a new FOSS pipeline (retry test-images-check after it).
+.test-images-condition: &test-images-condition
+  if:
+    $TEST_BEFORE_DEPLOY == 'always' ||
+    (
+      $TEST_BEFORE_DEPLOY == 'necessary' &&
+      ($CI_COMMIT_REF_PROTECTED == 'true' || $CI_PIPELINE_SOURCE == 'schedule')
+    )
+
+.test-images:
   stage: test-images
-  rules:
-    - if:
-        $TEST_BEFORE_DEPLOY == 'always' ||
-        (
-          $TEST_BEFORE_DEPLOY == 'necessary' &&
-          ($CI_COMMIT_REF_PROTECTED == 'true' || $CI_PIPELINE_SOURCE == 'schedule')
-        )
-    - when: manual
-      allow_failure: true  # Make sure that the pipeline still continues
   tags:
     - docker-small
   image: alpine
   #language=sh
+  before_script:
+    - apk add --no-cache jq curl
+
+test-images-trigger:
+  extends: .test-images
+  rules:
+    - *test-images-condition
+    - when: manual
+      allow_failure: true  # Make sure that the pipeline still continues
+  #language=sh
   script:
     - *script_header
-    - apk add --no-cache jq curl
-    - ./run-pipeline.sh "$IMAGE_TAG_TEST" "$FOSS_REF" "${MERGE_LOCKFILES_JOB-}"
+    - ./trigger-pipeline.sh "$IMAGE_TAG_TEST" "$FOSS_REF" "${MERGE_LOCKFILES_JOB-}" ./test-pipeline.env
+  artifacts:
+    reports:
+      # Save $TEST_PIPELINE_ID, $TEST_PIPELINE_URL for the job below
+      dotenv: ./test-pipeline.env
+
+test-images-check:
+  extends: .test-images
+  rules:
+    - *test-images-condition
+    # Skipped if the manual job above wasn't run. allow_failure as above
+    - when: on_success
+      allow_failure: true
+  needs:
+    # Also makes $TEST_PIPELINE_ID available
+    - test-images-trigger
+  #language=sh
+  script:
+    - *script_header
+    - ./check-pipeline.sh "${TEST_PIPELINE_ID-}" "${TEST_PIPELINE_URL-}"
 
 
 # ================
