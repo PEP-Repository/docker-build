@@ -45,6 +45,12 @@ compiler.runtime={{runtime}}
 qt/*:compiler.cppstd=gnu23
 {%- endif %}
 
+{% if compiler == 'msvc' -%}
+# TODO(workaround): see https://gitlab.pep.cs.ru.nl/pep/core/-/work_items/3057
+# Qt 6.12 fails when built for C++23 by MSVC (constexpr unique_ptr of incomplete QAbstractFileEngineIterator)
+qt/*:compiler.cppstd=20
+{%- endif %}
+
 [conf]
 {% if compiler_exe -%}
 # Specify executables consistent with compiler in settings above
