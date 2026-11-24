@@ -78,7 +78,13 @@ tools.build:defines=['_WIN32_WINNT=0x0A00']
 # Qt picks its deployment target before the Conan toolchain is loaded, so it ignores os.version
 #  (falling back to its own default, or something else on the CI runners). FORCE ours instead.
 #  See https://github.com/conan-io/conan-center-index/issues/20589 and https://github.com/conan-io/conan/issues/14988.
-qt/*:tools.cmake.cmaketoolchain:extra_variables={'QT_NO_XCODE_MIN_VERSION_CHECK': 'ON', 'CMAKE_OSX_DEPLOYMENT_TARGET': {'value': '{{macos_version}}', 'cache': True, 'type': 'STRING', 'force': True}}
+# On x86_64, Apple's new linker (ld-prime, Xcode 26) fails to link Qt's OpenSSL TLS plugin against static libcrypto:
+#  "fixup error (kind=imageOffset32) at 'anon-33' from inits-file, target '_OPENSSL_cpuid_setup' does not have address".
+#  The classic linker works, so use it for Qt's plugins.
+#  See https://gitlab.pep.cs.ru.nl/pep/core/-/work_items/3061 and https://qt-project.atlassian.net/browse/QTBUG-141933.
+#  Note: -ld_classic is deprecated and is removed from Xcode 27. But that version doesn't support x86_64, so that will
+#        never be a problem for the x86_64 builds where we use it
+qt/*:tools.cmake.cmaketoolchain:extra_variables={'QT_NO_XCODE_MIN_VERSION_CHECK': 'ON', 'CMAKE_OSX_DEPLOYMENT_TARGET': {'value': '{{macos_version}}', 'cache': True, 'type': 'STRING', 'force': True}{% if arch == 'x86_64' %}, 'CMAKE_MODULE_LINKER_FLAGS_INIT': '-Wl,-ld_classic'{% endif %}}
 {%- endif %}
 
 [options]
